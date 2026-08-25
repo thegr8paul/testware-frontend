@@ -157,12 +157,8 @@ if st.session_state.query:  # gate everything below on having a real submitted q
 
     for tool in tools:  # loop over each ranked tool result
         with st.container(border=True):  # bordered box makes each tool visually distinct
-            col1, col2 = st.columns([3, 1])  # left column for name/rationale, right for score
-            with col1:
-                st.subheader(tool["name"])  # tool name as subheading
-                st.write(tool["rationale"])  # why this tool was suggested (explainability)
-            with col2:
-                st.metric("Match", f"{tool['score']*100:.0f}%")  # confidence score, shown prominently
+            st.subheader(tool["name"])  # tool name as subheading
+            st.write(tool["rationale"])  # why this tool was suggested (explainability)
 
             # status pills: dev status / license / fidelity tier at a glance,
             # so an engineer can triage without opening Details
@@ -190,18 +186,8 @@ if st.session_state.query:  # gate everything below on having a real submitted q
                 st.markdown("**Outputs**")
                 for o in tool["outputs"]:
                     st.write(f"- {o}")
-                if tool["known_fail_modes"]:
-                    st.markdown("**Known fail modes**")
-                    for fm in tool["known_fail_modes"]:
-                        st.write(f"- {fm}")
-                if price.get("notes"):
-                    st.markdown(f"**Pricing notes:** {price['notes']}")
                 st.caption("Standards: " + ", ".join(tool["standards"]))  # certification mapping
-                st.markdown(f"[Source]({tool['source_url']}) · [Docs]({tool['docs_url']})")  # traceability links
-
-            with st.expander("Alternatives"):  # collapsed by default to avoid clutter
-                for alt in tool["alternatives"]:  # list runner-up tools
-                    st.write(f"- {alt}")
+                st.markdown(f"[Reference]({tool['source_url']})")  # traceability link
 
     # --- SECTION 3: WORKFLOW DIAGRAMS -------------------------------------------
     st.header("3. Workflow Diagram")  # fixed section per your spec
