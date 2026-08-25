@@ -23,6 +23,10 @@ mock_tools = [
         "development_status": "stable",
         "access_type": "commercial",
         "fidelity_tier": "continuum",
+        # -- scale tags, from _domain_and_model_specifics.spatial_scale / temporal_scale
+        # (real catalogue data stores these as free-text ranges, not numeric min/max) --
+        "spatial_scale": "~1 mm – ~10 m",
+        "temporal_scale": "~1 ms – ~1 year",
         # -- pricing, agreed shape ahead of Mitesh adding it to the schema --
         "pricing": {
             "model": "subscription",
@@ -38,6 +42,8 @@ mock_tools = [
         # -- io spec, from _domain_and_model_specifics.inputs/outputs --
         "inputs": ["Sensor time-series (pressure, temperature)", "CAD/geometry reference"],
         "outputs": ["Predicted component wear (time-series)", "Remaining useful life estimate"],
+        # -- standards, from _ecosystem_and_interoperability.interop_standards
+        # (real catalogue data is a flat list of format/interop descriptions, not certifications) --
         "standards": ["ISO 23247", "IEC 62443"],
         "source_url": "https://example.com/simulink",
         "docs_url": "https://example.com/simulink/docs",
@@ -50,6 +56,8 @@ mock_tools = [
         "development_status": "stable",
         "access_type": "open_source",
         "fidelity_tier": "system-level",
+        "spatial_scale": "N/A",
+        "temporal_scale": "~10 ms – ~5 years",
         "pricing": {
             "model": "open_source",
             "estimate_low": 0,
@@ -108,10 +116,62 @@ classDiagram
     DigitalTwinState --> PhysicalAsset : feedback
 """  # shows WHAT the components are and how they relate - the static architecture
 
+# --- CATEGORY TAXONOMY -------------------------------------------------------
+# Starter taxonomy for the cascading dropdowns. Industry -> Application is a
+# real dependency (Application options change per Industry); "Nature of
+# project" is a fixed list applied the same way regardless of Industry/App.
+# TODO: revisit/expand once real domain coverage requirements are clearer.
+INDUSTRY_TAXONOMY = {
+    "Manufacturing": ["Predictive maintenance", "Process optimisation", "Quality inspection"],
+    "Energy": ["Grid simulation", "Renewable asset monitoring", "Plant performance modelling"],
+    "Aerospace": ["Structural health monitoring", "Flight system simulation", "Fleet lifecycle management"],
+    "Automotive": ["Vehicle dynamics simulation", "Battery/powertrain modelling", "Production line twin"],
+    "Healthcare": ["Patient-specific modelling", "Medical device simulation", "Hospital operations twin"],
+    "Other / not listed": ["General / unspecified"],
+}
+NATURE_OPTIONS = ["OEM commercial", "Private hobby", "Research", "Market analysis"]
+
 # --- PAGE CONFIG -------------------------------------------------------------
 st.set_page_config(page_title="Digital Twin Model Selector", layout="wide")  # wide layout gives room for tool cards side by side
 
 st.title("Digital Twin Model Selection")  # main page title
+
+# --- CASCADING CATEGORY DROPDOWNS ---------------------------------------------
+# These live OUTSIDE the st.form below on purpose: a form only reruns the app
+# on submit, so if Industry lived inside the form, picking a new Industry
+# wouldn't refresh the Application list until Search was clicked. Keeping
+# them here means each dropdown updates immediately as you make a choice.
+# All three are optional -- a user can still search on free text alone.
+st.caption("Optionally narrow your search (all fields optional):")
+col_industry, col_application, col_nature = st.columns(3)
+
+with col_industry:
+    industry = st.selectbox(
+        "Industry",
+        options=["(Any)"] + list(INDUSTRY_TAXONOMY.keys()),
+    )  # top of the cascade; "(Any)" means no filter applied
+
+with col_application:
+    # Application options depend on the selected Industry. When Industry is
+    # "(Any)", fall back to the full de-duplicated list across all industries
+    # so the field still offers something useful.
+    if industry == "(Any)":
+        application_options = ["(Any)"] + sorted({app for apps in INDUSTRY_TAXONOMY.values() for app in apps})
+    else:
+        application_options = ["(Any)"] + INDUSTRY_TAXONOMY[industry]
+    application = st.selectbox("Application", options=application_options)
+
+with col_nature:
+    nature = st.selectbox("Nature of project", options=["(Any)"] + NATURE_OPTIONS)
+
+# Bundle selections into one dict so run_query() gets clean structured fields
+# rather than having to re-parse them out of the free-text query later. Your
+# backend's "enhanced prompt" step can decide how to fold these in.
+selected_categories = {
+    "industry": None if industry == "(Any)" else industry,
+    "application": None if application == "(Any)" else application,
+    "nature_of_project": None if nature == "(Any)" else nature,
+}
 
 # --- SEARCH BAR --------------------------------------------------------------
 # This is the real entry point of your architecture (question input -> enhance
@@ -121,6 +181,8 @@ st.title("Digital Twin Model Selection")  # main page title
 
 if "query" not in st.session_state:  # session_state persists values across reruns
     st.session_state.query = None  # None means "nothing submitted yet" -> hide results
+if "categories" not in st.session_state:
+    st.session_state.categories = {}  # persists the submitted dropdown selections alongside the query
 
 with st.form(key="search_form"):  # form batches the text input + button into one submit action
     user_query = st.text_input(
@@ -131,14 +193,18 @@ with st.form(key="search_form"):  # form batches the text input + button into on
 
 if submitted and user_query.strip():  # only proceed if the button was pressed and the field isn't blank
     st.session_state.query = user_query  # store the submitted query so it survives the rerun
+    st.session_state.categories = selected_categories  # store the dropdown selections alongside it
 
-def run_query(query: str):
+def run_query(query: str, categories: dict):
     """
     Placeholder for the real retrieval call.
     TODO: replace this with an actual request to the RAG backend
-    (ChromaDB + LangChain), passing `query` and returning real results
-    in the same shape as mock_description / mock_tools / mock_pipeline_diagram
-    / mock_architecture_diagram.
+    (ChromaDB + LangChain), passing `query` + `categories` and returning real
+    results in the same shape as mock_description / mock_tools /
+    mock_pipeline_diagram / mock_architecture_diagram.
+    `categories` is {"industry": ..., "application": ..., "nature_of_project": ...},
+    any of which may be None if left unselected -- this is where the backend's
+    "enhanced prompt" step would fold them into the query before embedding.
     """
     return mock_description, mock_tools, mock_pipeline_diagram, mock_architecture_diagram  # stubbed until backend is wired up
 
@@ -146,7 +212,14 @@ def run_query(query: str):
 if st.session_state.query:  # gate everything below on having a real submitted query
     st.caption(f"Query: *{st.session_state.query}*")  # shows what was asked, italicized for visual distinction
 
-    description, tools, pipeline_diagram, architecture_diagram = run_query(st.session_state.query)  # fetch results for the current query
+    # show which category filters (if any) were applied, for transparency
+    applied = [f"{k.replace('_', ' ').title()}: {v}" for k, v in st.session_state.categories.items() if v]
+    if applied:
+        st.caption("Filters: " + "  ·  ".join(applied))
+
+    description, tools, pipeline_diagram, architecture_diagram = run_query(
+        st.session_state.query, st.session_state.categories
+    )  # fetch results for the current query + category selections
 
     # --- SECTION 1: DESCRIPTION ---------------------------------------------
     st.header("1. Workflow Description")  # fixed section per your spec
@@ -160,11 +233,15 @@ if st.session_state.query:  # gate everything below on having a real submitted q
             st.subheader(tool["name"])  # tool name as subheading
             st.write(tool["rationale"])  # why this tool was suggested (explainability)
 
-            # status pills: dev status / license / fidelity tier at a glance,
-            # so an engineer can triage without opening Details
-            st.caption(
-                f"`{tool['development_status']}`  ·  `{tool['access_type']}`  ·  `{tool['fidelity_tier']} fidelity`"
-            )
+            # tag row: fidelity tier / spatial scale / temporal scale / standards,
+            # each labeled so it's clear what kind of value each tag is
+            tag_parts = [
+                f"`Fidelity: {tool['fidelity_tier']}`",
+                f"`Spatial: {tool['spatial_scale']}`",
+                f"`Temporal: {tool['temporal_scale']}`",
+            ]
+            tag_parts += [f"`Standard: {s}`" for s in tool["standards"]]  # one pill per standard
+            st.caption("  ·  ".join(tag_parts))
 
             # pricing + validation: the two numbers a lead engineer checks
             # right after "does it fit" - can I afford it, can I trust it
@@ -186,7 +263,6 @@ if st.session_state.query:  # gate everything below on having a real submitted q
                 st.markdown("**Outputs**")
                 for o in tool["outputs"]:
                     st.write(f"- {o}")
-                st.caption("Standards: " + ", ".join(tool["standards"]))  # certification mapping
                 st.markdown(f"[Reference]({tool['source_url']})")  # traceability link
 
     # --- SECTION 3: WORKFLOW DIAGRAMS -------------------------------------------
