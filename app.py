@@ -16,30 +16,97 @@ mock_description = (
 mock_tools = [
     {
         "name": "MATLAB Simulink",
+        # -- retrieval-time fields (per-query, not part of the static schema) --
         "score": 0.91,  # similarity score from vector search, 0-1
         "rationale": "Strong fit for physics-based hydraulic system modelling with real-time sync.",
+        # -- status pills, pulled from _provenance_and_lifecycle / _taxonomy_classification --
+        "development_status": "stable",
+        "access_type": "commercial",
+        "fidelity_tier": "continuum",
+        # -- pricing, agreed shape ahead of Mitesh adding it to the schema --
+        "pricing": {
+            "model": "subscription",
+            "estimate_low": 2500,
+            "estimate_high": 8000,
+            "currency": "USD",
+            "unit": "per seat/year",
+            "notes": "Academic pricing available at a discount.",
+        },
+        # -- validation, from _domain_and_model_specifics.validation_status --
+        "validation_level": "experimental-correlation",
+        "known_fail_modes": ["Struggles with highly stochastic sensor noise without pre-filtering."],
+        # -- io spec, from _domain_and_model_specifics.inputs/outputs --
+        "inputs": ["Sensor time-series (pressure, temperature)", "CAD/geometry reference"],
+        "outputs": ["Predicted component wear (time-series)", "Remaining useful life estimate"],
         "standards": ["ISO 23247", "IEC 62443"],
         "source_url": "https://example.com/simulink",
+        "docs_url": "https://example.com/simulink/docs",
         "alternatives": ["ANSYS Twin Builder", "Modelica/OpenModelica"],
     },
     {
         "name": "ChromaDB + LangChain",
         "score": 0.78,
         "rationale": "Handles the retrieval layer for historical maintenance logs feeding the twin.",
+        "development_status": "stable",
+        "access_type": "open_source",
+        "fidelity_tier": "system-level",
+        "pricing": {
+            "model": "open_source",
+            "estimate_low": 0,
+            "estimate_high": 0,
+            "currency": "USD",
+            "unit": "self-hosted",
+            "notes": "Hosting/infra cost only; no license fee.",
+        },
+        "validation_level": "benchmark-suite",
+        "known_fail_modes": ["Retrieval quality drops with sparse or inconsistent maintenance log formats."],
+        "inputs": ["Historical maintenance logs (text)", "Query embeddings"],
+        "outputs": ["Ranked relevant log excerpts", "Contextual retrieval for downstream model"],
         "standards": ["N/A"],
         "source_url": "https://example.com/chromadb",
+        "docs_url": "https://example.com/chromadb/docs",
         "alternatives": ["Weaviate", "Pinecone"],
     },
 ]
 
-mock_flowchart = """
-graph LR
-    A[Sensor Data Ingestion] --> B[Data Preprocessing]
-    B --> C[Simulation Layer]
-    C --> D[Predictive Maintenance Model]
-    D --> E[Feedback to Physical Asset]
-    E --> A
-"""
+mock_pipeline_diagram = """
+sequenceDiagram
+    participant Sensor as Sensor Interface
+    participant Prep as Preprocessing
+    participant Sim as Simulation Core (Simulink)
+    participant RAG as Retrieval Layer (ChromaDB)
+    participant Twin as Digital Twin State
+    Sensor->>Prep: Raw time-series data
+    Prep->>Sim: Cleaned signals
+    RAG->>Sim: Historical maintenance context
+    Sim->>Twin: Predicted wear + RUL estimate
+    Twin->>Sensor: Feedback to live asset
+"""  # shows WHEN each tool acts - the roadmap for assembling the pipeline
+
+mock_architecture_diagram = """
+classDiagram
+    class PhysicalAsset {
+        +sensorFeed
+    }
+    class SensorInterface {
+        +ingest()
+    }
+    class SimulationCore {
+        +runModel()
+    }
+    class RetrievalLayer {
+        +queryHistory()
+    }
+    class DigitalTwinState {
+        +predictedWear
+        +remainingUsefulLife
+    }
+    PhysicalAsset --> SensorInterface
+    SensorInterface --> SimulationCore
+    RetrievalLayer --> SimulationCore
+    SimulationCore --> DigitalTwinState
+    DigitalTwinState --> PhysicalAsset : feedback
+"""  # shows WHAT the components are and how they relate - the static architecture
 
 # --- PAGE CONFIG -------------------------------------------------------------
 st.set_page_config(page_title="Digital Twin Model Selector", layout="wide")  # wide layout gives room for tool cards side by side
@@ -70,15 +137,16 @@ def run_query(query: str):
     Placeholder for the real retrieval call.
     TODO: replace this with an actual request to the RAG backend
     (ChromaDB + LangChain), passing `query` and returning real results
-    in the same shape as mock_description / mock_tools / mock_flowchart.
+    in the same shape as mock_description / mock_tools / mock_pipeline_diagram
+    / mock_architecture_diagram.
     """
-    return mock_description, mock_tools, mock_flowchart  # stubbed until backend is wired up
+    return mock_description, mock_tools, mock_pipeline_diagram, mock_architecture_diagram  # stubbed until backend is wired up
 
 # --- RESULTS (only shown after a query has been submitted) -------------------
 if st.session_state.query:  # gate everything below on having a real submitted query
     st.caption(f"Query: *{st.session_state.query}*")  # shows what was asked, italicized for visual distinction
 
-    description, tools, flowchart = run_query(st.session_state.query)  # fetch results for the current query
+    description, tools, pipeline_diagram, architecture_diagram = run_query(st.session_state.query)  # fetch results for the current query
 
     # --- SECTION 1: DESCRIPTION ---------------------------------------------
     st.header("1. Workflow Description")  # fixed section per your spec
@@ -93,28 +161,71 @@ if st.session_state.query:  # gate everything below on having a real submitted q
             with col1:
                 st.subheader(tool["name"])  # tool name as subheading
                 st.write(tool["rationale"])  # why this tool was suggested (explainability)
-                st.caption("Standards: " + ", ".join(tool["standards"]))  # certification mapping
-                st.markdown(f"[Source]({tool['source_url']})")  # traceability link back to origin
             with col2:
                 st.metric("Match", f"{tool['score']*100:.0f}%")  # confidence score, shown prominently
+
+            # status pills: dev status / license / fidelity tier at a glance,
+            # so an engineer can triage without opening Details
+            st.caption(
+                f"`{tool['development_status']}`  ·  `{tool['access_type']}`  ·  `{tool['fidelity_tier']} fidelity`"
+            )
+
+            # pricing + validation: the two numbers a lead engineer checks
+            # right after "does it fit" - can I afford it, can I trust it
+            price = tool["pricing"]
+            if price["model"] == "open_source":
+                price_line = "Free (open source)"
+            else:
+                price_line = f"{price['currency']} {price['estimate_low']:,}-{price['estimate_high']:,} {price['unit']}"
+            col3, col4 = st.columns(2)
+            with col3:
+                st.write(f"**Est. price:** {price_line}")
+            with col4:
+                st.write(f"**Validation:** {tool['validation_level']}")
+
+            with st.expander("Details"):  # full schema dump, collapsed by default
+                st.markdown("**Inputs**")
+                for i in tool["inputs"]:
+                    st.write(f"- {i}")
+                st.markdown("**Outputs**")
+                for o in tool["outputs"]:
+                    st.write(f"- {o}")
+                if tool["known_fail_modes"]:
+                    st.markdown("**Known fail modes**")
+                    for fm in tool["known_fail_modes"]:
+                        st.write(f"- {fm}")
+                if price.get("notes"):
+                    st.markdown(f"**Pricing notes:** {price['notes']}")
+                st.caption("Standards: " + ", ".join(tool["standards"]))  # certification mapping
+                st.markdown(f"[Source]({tool['source_url']}) · [Docs]({tool['docs_url']})")  # traceability links
 
             with st.expander("Alternatives"):  # collapsed by default to avoid clutter
                 for alt in tool["alternatives"]:  # list runner-up tools
                     st.write(f"- {alt}")
 
-    # --- SECTION 3: FLOWCHART --------------------------------------------------
-    st.header("3. Workflow Flowchart")  # fixed section per your spec
+    # --- SECTION 3: WORKFLOW DIAGRAMS -------------------------------------------
+    st.header("3. Workflow Diagram")  # fixed section per your spec
 
-    mermaid_html = f"""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
-    <div class="mermaid">{flowchart}</div>
-    <script>mermaid.initialize({{ startOnLoad: true }});</script>
-    """  # wraps the mermaid syntax in the JS needed to render it in a browser
+    def render_mermaid(diagram: str, height: int = 320):
+        """Shared helper so both tabs embed mermaid the same way instead of
+        duplicating the components.html block."""
+        mermaid_html = f"""
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+        <div class="mermaid">{diagram}</div>
+        <script>mermaid.initialize({{ startOnLoad: true }});</script>
+        """  # wraps the mermaid syntax in the JS needed to render it in a browser
+        # TODO: components.html is deprecated (removal after 2026-06-01, Streamlit
+        # suggests st.iframe — but that expects a URL, not raw HTML, so it's not a
+        # drop-in swap). Revisit before the removal date, e.g. via streamlit-mermaid.
+        components.html(mermaid_html, height=height)  # embeds the mermaid diagram inline in the Streamlit page
 
-    # TODO: components.html is deprecated (removal after 2026-06-01, Streamlit
-    # suggests st.iframe — but that expects a URL, not raw HTML, so it's not a
-    # drop-in swap). Revisit before the removal date, e.g. via streamlit-mermaid.
-    components.html(mermaid_html, height=300)  # embeds the mermaid diagram inline in the Streamlit page
+    tab_pipeline, tab_architecture = st.tabs(["Pipeline", "Architecture"])  # two views of the same workflow
+    with tab_pipeline:
+        st.caption("Sequence of steps: what happens, in what order, when the system runs.")
+        render_mermaid(pipeline_diagram)
+    with tab_architecture:
+        st.caption("Static structure: the components and how they relate.")
+        render_mermaid(architecture_diagram)
 
     # --- SECTION 4: EXPORT -------------------------------------------------------
     st.header("4. Export")  # placeholder tying UI to your planned LaTeX output step
