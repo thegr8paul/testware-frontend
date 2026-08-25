@@ -1,0 +1,6 @@
+streamlit
+
+# Not needed yet — uncomment once retrieval is wired up to the real
+# ChromaDB/LangChain backend (kept out for now so the mockup stays light):
+# langchain
+# chromadb
