@@ -80,6 +80,7 @@ mermaid_html = f"""
 <script>mermaid.initialize({{ startOnLoad: true }});</script>
 """  # wraps the mermaid syntax in the JS needed to render it in a browser
 
+# TODO
 components.html(mermaid_html, height=300)  # embeds the mermaid diagram inline in the Streamlit page
 
 # --- SECTION 4: EXPORT -------------------------------------------------------
