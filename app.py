@@ -87,13 +87,37 @@ if submitted and user_query.strip():  # only proceed if the button was pressed a
     st.session_state.query = user_query  # store the submitted query so it survives the rerun
     st.session_state.categories = selected_categories  # store the dropdown selections alongside it
 
+def build_enhanced_query(raw_query: str, categories: dict) -> str:
+    """Fold the selected dropdown tags into the query text sent to the backend.
+
+    Each tag is optional -- an unset dropdown is stored as None in `categories`
+    and skipped here. With nothing selected, the raw query is returned as-is.
+    The backend embeds this same string for retrieval and reuses it for
+    generation, so the tags inform both.
+    """
+    labels = {
+        "industry": "Industry",
+        "application": "Application",
+        "nature_of_project": "Nature of project",
+    }
+    parts = [f"{labels[key]}: {value}" for key, value in categories.items() if value]
+    if not parts:
+        return raw_query
+    return f"{raw_query}\n\nContext — " + "; ".join(parts)
+
+
 def run_query(query: str, categories: dict):
     """
-    `categories` is accepted but not sent to the backend yet -- dropdown
-    filters aren't wired into retrieval this pass.
+    The selected `categories` are folded into the query text via
+    build_enhanced_query() before it's sent -- the API has no separate
+    categories field.
     """
     try:
-        resp = requests.post(f"{api_url}/query", json={"query": query}, timeout=300)
+        resp = requests.post(
+            f"{api_url}/query",
+            json={"query": build_enhanced_query(query, categories)},
+            timeout=300,
+        )
         resp.raise_for_status()
         data = resp.json()
         description = data["answer"]
