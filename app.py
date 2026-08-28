@@ -17,7 +17,7 @@ INDUSTRY_TAXONOMY = {
 NATURE_OPTIONS = ["OEM commercial", "Private hobby", "Research", "Market analysis"]
 
 # --- PAGE CONFIG -------------------------------------------------------------
-st.set_page_config(page_title="Digital Twin Model Selector", layout="wide")  # wide layout gives room for tool cards side by side
+st.set_page_config(page_title="Digital Twin Model Selector V1", layout="wide")  # wide layout gives room for tool cards side by side
 
 with st.sidebar:
     st.header("Settings")
