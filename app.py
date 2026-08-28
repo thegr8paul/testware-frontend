@@ -146,7 +146,7 @@ if st.session_state.query:  # gate everything below on having a real submitted q
     )  # fetch results for the current query + category selections
 
     # --- SECTION 1: DESCRIPTION ---------------------------------------------
-    st.header("1. Workflow Description")  # fixed section per your spec
+    st.header("1. Workflow Description V1")  # fixed section per your spec
     st.write(description)  # plain prose explanation of the digital twin workflow
 
     # --- SECTION 2: TOOL SUGGESTIONS ------------------------------------------
