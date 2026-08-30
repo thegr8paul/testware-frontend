@@ -50,6 +50,7 @@ CANNED = {
     ],
     "tools": [
         {
+            "catalogue_id": "presstwin-ro",
             "name": "PressTwin RO",
             "rationale": (
                 "Reduced-order structural model of hydraulic presses; pairs well "
@@ -80,6 +81,7 @@ CANNED = {
             "alternatives": ["OpenPress", "FEMPress"],
         },
         {
+            "catalogue_id": "baretool",
             "name": "BareTool (sparse record)",
             "rationale": "Sparse catalogue entry -- used to check the UI null fallbacks.",
             "development_status": None,
@@ -104,18 +106,63 @@ CANNED = {
             "alternatives": [],
         },
     ],
-    "pipeline_diagram": (
-        "graph LR\n"
-        "  T[Telemetry] --> P[PressTwin RO]\n"
-        "  P --> D[Degradation model]\n"
-        "  D --> A[Maintenance alert]"
-    ),
-    "architecture_diagram": (
-        "graph TD\n"
-        "  Sensors --> Ingest\n"
-        "  Ingest --> Twin[Digital Twin]\n"
-        "  Twin --> Dashboard"
-    ),
+    # Structured workflow for the Section-3 node canvas. Deliberately branchy
+    # (n8n-style) and covers every node type. Three `model` nodes: two whose
+    # catalogue_id matches a tool above (get the DB badge + suggestion ring),
+    # one unmatched (badge, no ring). Two `database` nodes for the cylinder
+    # style.
+    "workflow": {
+        "nodes": [
+            {"id": "sens", "type": "input", "label": "Sensor stream",
+             "inputs": [], "outputs": ["telemetry"]},
+            {"id": "cfg", "type": "input", "label": "Press config",
+             "inputs": [], "outputs": ["params"]},
+            {"id": "catalog", "type": "database", "label": "Model catalogue",
+             "inputs": [], "outputs": ["records"]},
+            {"id": "clean", "type": "process", "label": "Clean & resample",
+             "inputs": ["telemetry"], "outputs": ["clean"]},
+            {"id": "feat", "type": "process", "label": "Feature extract",
+             "inputs": ["clean"], "outputs": ["features"]},
+            {"id": "rom", "type": "model", "label": "PressTwin RO",
+             "inputs": ["features", "records"], "outputs": ["stress"],
+             "catalogue_id": "presstwin-ro"},
+            {"id": "ml", "type": "model", "label": "BareTool",
+             "inputs": ["features"], "outputs": ["degradation"],
+             "catalogue_id": "baretool"},
+            {"id": "fe", "type": "model", "label": "FE stress solver",
+             "inputs": ["params"], "outputs": ["field"],
+             "catalogue_id": "fe-solver-unlisted"},
+            {"id": "fuse", "type": "merge", "label": "Fuse estimates",
+             "inputs": ["stress", "degradation", "field"], "outputs": ["risk"]},
+            {"id": "risk", "type": "decision", "label": "Risk over limit?",
+             "inputs": ["risk"], "outputs": ["yes", "no"]},
+            {"id": "store", "type": "database", "label": "Time-series store",
+             "inputs": ["reading"], "outputs": []},
+            {"id": "alert", "type": "output", "label": "Maintenance alert",
+             "inputs": ["trigger"], "outputs": []},
+            {"id": "log", "type": "output", "label": "Log & continue",
+             "inputs": ["entry"], "outputs": []},
+            {"id": "dash", "type": "output", "label": "Dashboard",
+             "inputs": ["events"], "outputs": []},
+        ],
+        "edges": [
+            {"source": "sens", "target": "clean"},
+            {"source": "sens", "target": "store"},
+            {"source": "clean", "target": "feat"},
+            {"source": "cfg", "target": "fe"},
+            {"source": "catalog", "target": "rom", "target_port": 1},
+            {"source": "feat", "target": "rom", "target_port": 0},
+            {"source": "feat", "target": "ml"},
+            {"source": "rom", "target": "fuse", "target_port": 0},
+            {"source": "ml", "target": "fuse", "target_port": 1},
+            {"source": "fe", "target": "fuse", "target_port": 2},
+            {"source": "fuse", "target": "risk"},
+            {"source": "risk", "target": "alert", "source_port": 0, "label": "yes"},
+            {"source": "risk", "target": "log", "source_port": 1, "label": "no"},
+            {"source": "alert", "target": "dash"},
+            {"source": "log", "target": "dash"},
+        ],
+    },
 }
 
 

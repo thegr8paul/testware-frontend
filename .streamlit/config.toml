@@ -2,3 +2,15 @@
 # Re-run the app automatically when app.py is saved, so local UI iteration
 # doesn't need a manual browser refresh.
 runOnSave = true
+
+[theme]
+# Black & white by design. The one accent (Streamlit red) is reserved for
+# "important" things: widget labels, focus ring, the primary Search button,
+# selected-filter chips. Everything else is differentiated by border / weight
+# / spacing, not colour.
+base = "light"
+primaryColor = "#FF4B4B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F5F5"
+textColor = "#111111"
+font = "sans serif"
