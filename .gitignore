@@ -5,6 +5,7 @@ __pycache__/
 venv/
 .env
 .streamlit/secrets.toml
+mock_response.json
 .DS_Store
 .agents/
 .claude/

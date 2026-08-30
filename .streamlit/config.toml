@@ -1,0 +1,4 @@
+[server]
+# Re-run the app automatically when app.py is saved, so local UI iteration
+# doesn't need a manual browser refresh.
+runOnSave = true

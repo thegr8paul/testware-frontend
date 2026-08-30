@@ -132,6 +132,49 @@ def run_query(query: str, categories: dict):
 
     return description, tools, pipeline_diagram, architecture_diagram
 
+def render_thinking(height: int = 44):
+    """Claude-style 'thinking' cue shown while run_query() blocks.
+
+    Rendered via components.html so its JS keeps animating in the browser
+    while the Python thread is stuck on the blocking request. Self-contained
+    -- no CDN. The word swaps at a random 4-15s interval; the shimmer sweep
+    is pure CSS and freezes under prefers-reduced-motion.
+    """
+    thinking_html = """
+    <style>
+      .tw-think {
+        font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 0.95rem; font-weight: 600; letter-spacing: .2px;
+        background: linear-gradient(90deg, #9aa0a6 0%, #9aa0a6 35%, #f5f5f5 50%, #9aa0a6 65%, #9aa0a6 100%);
+        background-size: 220% 100%;
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent;
+        animation: tw-sweep 1.8s linear infinite;
+      }
+      @keyframes tw-sweep { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        .tw-think { animation: none; background: none; -webkit-background-clip: border-box;
+                    background-clip: border-box; color: #9aa0a6; }
+      }
+    </style>
+    <span class="tw-think" id="tw-think">Thinking</span>
+    <script>
+      (function () {
+        const WORDS = ["Thinking", "Musing", "Analyzing catalogue", "Evaluating models",
+                       "Retrieving context", "Choosing tools", "Composing answer"];
+        let i = 0;
+        const el = document.getElementById("tw-think");
+        function tick() {
+          i = (i + 1) % WORDS.length;
+          if (el) el.textContent = WORDS[i];
+          setTimeout(tick, 4000 + Math.random() * 11000);
+        }
+        setTimeout(tick, 4000 + Math.random() * 11000);
+      })();
+    </script>
+    """
+    components.html(thinking_html, height=height)
+
 # --- RESULTS (only shown after a query has been submitted) -------------------
 if st.session_state.query:  # gate everything below on having a real submitted query
     st.caption(f"Query: *{st.session_state.query}*")  # shows what was asked, italicized for visual distinction
@@ -141,9 +184,13 @@ if st.session_state.query:  # gate everything below on having a real submitted q
     if applied:
         st.caption("Filters: " + "  ·  ".join(applied))
 
+    thinking = st.empty()
+    with thinking:
+        render_thinking()  # animated cue; keeps moving in the browser while run_query() blocks
     description, tools, pipeline_diagram, architecture_diagram = run_query(
         st.session_state.query, st.session_state.categories
     )  # fetch results for the current query + category selections
+    thinking.empty()  # clear the cue once the answer (or error) is back
 
     # --- SECTION 1: DESCRIPTION ---------------------------------------------
     st.header("1. Workflow Description V1")  # fixed section per your spec
