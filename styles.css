@@ -227,3 +227,20 @@ body { -webkit-font-smoothing: antialiased; }
   border-radius: 10px;
   background: rgba(17, 17, 17, 0.03);
 }
+
+/* --- Read Me / demo-day deck (sidebar -> Read Me) ----------------------- */
+/* The deck is a full-bleed component (components/deck/, renders
+   presentation.md as animated slides). Break it out of the padded,
+   max-width content column so it spans the viewport. */
+.st-key-tw_readme {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+.st-key-tw_readme iframe,
+.st-key-tw_readme [data-testid="stIFrame"],
+.st-key-tw_readme [data-testid="stCustomComponentV1"] {
+  width: 100vw !important;
+  max-width: none !important;
+}
+.st-key-sb_readme button { font-weight: 600 !important; color: #111111 !important; }

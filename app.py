@@ -29,6 +29,10 @@ DEFAULT_API_URL = _resolve_api_url()
 _WF_DIR = Path(__file__).with_name("components") / "workflow"
 workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
+# Read Me / demo-day deck -- renders presentation.md as animated slides.
+_DECK_DIR = Path(__file__).with_name("components") / "deck"
+deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
+
 # Search-bar facets (curated -- see facets.json "_provenance"). Loaded once.
 _FACETS = json.loads(Path(__file__).with_name("facets.json").read_text())
 INDUSTRY_TAXONOMY = _FACETS["industries"]
@@ -113,6 +117,7 @@ st.session_state.setdefault("nature", "(Any)")
 st.session_state.setdefault("categories", {})
 st.session_state.setdefault("focus_tool", None)  # catalogue_id of the node clicked in Section 3
 st.session_state.setdefault("headline", random.choice(HEADLINES))
+st.session_state.setdefault("show_readme", False)  # sidebar "Read Me" -> full-page presentation.md
 
 
 def _current_categories() -> dict:
@@ -296,8 +301,20 @@ with st.sidebar:
         if _save_workflow(st.session_state.get("last_result")):
             st.toast("Workflow saved", icon=":material/check:")
         for _k in ("query", "query_input", "industry", "application", "nature",
-                   "categories", "focus_tool", "last_result", "results", "headline"):
+                   "categories", "focus_tool", "last_result", "results", "headline",
+                   "show_readme"):
             st.session_state.pop(_k, None)
+        st.rerun()
+
+    # Read Me: full-page project overview / demo-day presentation (presentation.md).
+    if st.button(
+        "← Back to app" if st.session_state.get("show_readme") else "Read Me",
+        icon=":material/menu_book:",
+        key="sb_readme",
+        use_container_width=True,
+        help="Project overview / demo-day presentation",
+    ):
+        st.session_state.show_readme = not st.session_state.get("show_readme", False)
         st.rerun()
 
     # Placeholders -- no function yet.
@@ -307,6 +324,20 @@ with st.sidebar:
               use_container_width=True, disabled=True)
     st.button("Help", icon=":material/help:", key="sb_help",
               use_container_width=True, disabled=True)
+
+
+# --- READ ME (project overview / demo-day deck) --------------------------
+# Full-page: replaces the main area; the sidebar (rendered above) stays.
+# The deck component renders presentation.md as animated slides. Edit the
+# slides in presentation.md (next to this file) -- Markdown, split by `---`;
+# see the header comment in that file. Push and Streamlit Cloud redeploys.
+if st.session_state.get("show_readme"):
+    with st.container(key="tw_readme"):
+        deck_view(
+            markdown=Path(__file__).with_name("presentation.md").read_text(),
+            key="tw_deck",
+        )
+    st.stop()
 
 
 # --- LAYOUT -----------------------------------------------------------------
