@@ -89,40 +89,43 @@
     content: ""; position: absolute; inset: -7px; border-radius: 50%;
   }
   .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
+  /* colour-group nodes carry a tinted port dot; texture-group keep the neutral one */
   .drawflow-node.t-model .twn-port .dot    { border-color: rgba(63,125,120,0.85); }
-  .drawflow-node.t-decision .twn-port .dot { border-color: rgba(169,130,47,0.85); }
-  .drawflow-node.t-output .twn-port .dot,
+  .drawflow-node.t-output .twn-port .dot   { border-color: rgba(63,125,85,0.85); }
   .drawflow-node.t-database .twn-port .dot { border-color: rgba(84,98,138,0.85); }
 
-  /* per-type tint + texture. Class is "t-<type>" (backend node type:
-     input | process | model | decision | merge | output | database). */
-  .drawflow-node.t-input    { background: rgba(255,255,255,0.55); }
-  .drawflow-node.t-process  { background:
-      radial-gradient(rgba(17,17,17,0.10) 0.9px, transparent 0.9px) 0 0 / 10px 10px,
-      rgba(255,255,255,0.55); }
-  .drawflow-node.t-merge    { background:
-      linear-gradient(rgba(17,17,17,0.07) 1px, transparent 1px) 0 0 / 100% 10px,
-      rgba(255,255,255,0.55); }
-  .drawflow-node.t-model    { background:
-      repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 8px),
-      rgba(63,125,120,0.22);
-      border-color: rgba(63,125,120,0.60); }
-  .drawflow-node.t-decision { background:
-      repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
-      repeating-linear-gradient(90deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
-      rgba(169,130,47,0.22);
-      border-color: rgba(169,130,47,0.60); }
-  .drawflow-node.t-output   { background: rgba(63,125,85,0.22); border-color: rgba(63,125,85,0.60); }
+  /* --- per-category encoding: EITHER colour OR texture, never both --------
+     Class is "t-<type>" (backend node type). Two groups:
+       flow / scaffold  (input, process, merge, decision)  -> one neutral
+         card, told apart by TEXTURE only (no tint).
+       substance        (model, output, database)          -> a flat colour
+         tint, no texture; database also keeps its cylinder silhouette. */
 
-  /* database -- indigo/slate tint, elliptical top+bottom edges (cylinder
-     silhouette) and a faint DB-cylinder glyph watermark in the corner. */
+  .drawflow-node.t-input,
+  .drawflow-node.t-process,
+  .drawflow-node.t-merge,
+  .drawflow-node.t-decision {
+    background-color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(120, 120, 120, 0.55);
+  }
+  /* t-input: no pattern -- the clean card is the cue */
+  .drawflow-node.t-process {
+    background-image: radial-gradient(rgba(17,17,17,0.11) 0.9px, transparent 0.9px);
+    background-size: 9px 9px;
+  }
+  .drawflow-node.t-merge {
+    background-image: repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 9px);
+  }
+  .drawflow-node.t-decision {
+    background-image: repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 9px);
+  }
+
+  .drawflow-node.t-model  { background: rgba(63, 125, 120, 0.20); border-color: rgba(63,125,120,0.60); }
+  .drawflow-node.t-output { background: rgba(63, 125, 85, 0.20);  border-color: rgba(63,125,85,0.60); }
   .drawflow-node.t-database {
-    border-color: rgba(84,98,138,0.60);
-    border-radius: 10px / 26px;
-    background:
-      no-repeat right -6px bottom -8px / 42px
-        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="rgba(17,17,17,0.16)" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 1.66 3.13 3 7 3s7-1.34 7-3V5"/><path d="M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3"/></svg>'),
-      rgba(84,98,138,0.20);
+    background: rgba(84, 98, 138, 0.18);
+    border-color: rgba(84, 98, 138, 0.60);
+    border-radius: 10px / 26px;   /* cylinder silhouette = identity, not decoration */
   }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
