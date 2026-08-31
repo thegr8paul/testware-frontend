@@ -255,3 +255,13 @@ body { -webkit-font-smoothing: antialiased; }
   max-width: none !important;
 }
 .st-key-sb_readme button { font-weight: 600 !important; color: #111111 !important; }
+
+/* --- Example workflows gallery (sidebar -> Examples) ------------------- */
+.st-key-tw_examples { max-width: 780px; margin: 0 auto; }
+.st-key-tw_examples [data-testid="stVerticalBlockBorderWrapper"] {
+  margin-bottom: 0.9rem;
+}
+.st-key-tw_examples [data-testid="stVerticalBlockBorderWrapper"] > div {
+  padding: 0.35rem 0.25rem;
+}
+.st-key-sb_saved button { font-weight: 600 !important; color: #111111 !important; }
