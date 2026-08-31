@@ -1,0 +1,21 @@
+{
+  "_provenance": "Curated industry verticals + typical digital-twin / modelling use cases. The catalogue has no industry field; these values are used only as query hints.",
+  "industries": {
+    "Aerospace & Defence": ["Structural health monitoring", "Flight & systems simulation", "Aerodynamics / CFD", "Fleet lifecycle management", "Mission / threat modelling"],
+    "Automotive": ["Vehicle dynamics", "Powertrain & battery modelling", "Crash & safety", "ADAS / autonomous", "Production line twin"],
+    "Manufacturing & Industrial": ["Predictive maintenance", "Process optimisation", "Quality inspection", "Production line twin", "Robotics & automation"],
+    "Energy & Utilities": ["Grid simulation", "Renewable asset monitoring", "Plant performance modelling", "Reservoir / subsurface", "Predictive maintenance"],
+    "Construction & AEC": ["BIM coordination", "Structural analysis", "Building performance / energy", "Construction sequencing", "Facility / asset management"],
+    "Healthcare & Life Sciences": ["Patient-specific modelling", "Medical device simulation", "Drug / molecular modelling", "Hospital operations twin", "Biomechanics"],
+    "Electronics & Semiconductors": ["Chip / package thermal", "Signal & power integrity", "MEMS / sensors", "Reliability & test", "Fab process twin"],
+    "Chemicals & Materials": ["Process simulation", "Materials discovery", "Molecular / electronic structure", "Reaction engineering", "Quality & scale-up"],
+    "Marine & Offshore": ["Hydrodynamics", "Structural / fatigue", "Mooring & risers", "Fleet / route optimisation", "Asset integrity"],
+    "Rail & Transport": ["Rolling-stock dynamics", "Track & infrastructure", "Signalling / traffic simulation", "Predictive maintenance", "Network optimisation"],
+    "Consumer Products": ["Product design & simulation", "Drop / durability", "Thermal & fluids", "Ergonomics / human factors", "Packaging"],
+    "Oil & Gas": ["Reservoir modelling", "Pipeline / flow assurance", "Facility twin", "Predictive maintenance", "HSE / risk modelling"],
+    "Academia / Research": ["Method development", "Benchmarking", "Teaching / demonstration", "Reproducibility studies"],
+    "Software & IT": ["Simulation tooling", "Data pipelines", "ML / surrogate models", "Visualization", "Integration / APIs"],
+    "Other / not listed": ["General / unspecified"]
+  },
+  "nature_options": ["OEM commercial", "Private hobby", "Research", "Market analysis", "Consulting / services", "Startup / product development", "Education", "Regulatory / certification"]
+}
