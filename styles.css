@@ -12,8 +12,12 @@
    ([data-testid="..."], .st-key-<key>) -- may break on a Streamlit upgrade.
 --------------------------------------------------------------------------- */
 
-/* --- global sizing: comfortable at the default zoom, no Cmd+ needed ------- */
-html { font-size: 17px; }
+/* --- global sizing --------------------------------------------------------
+   Larger, reader-friendly scale in the spirit of Perplexity / ChatGPT.
+   Everything below is in rem, so this root value drives the whole app; the
+   per-element rules further down only fine-tune the ratios. Colours are
+   unchanged -- this pass is font-size only. */
+html { font-size: 18px; }
 body { -webkit-font-smoothing: antialiased; }
 
 [data-testid="stAppViewContainer"] { background: #FBFAF7; overflow-x: hidden; }
@@ -40,10 +44,17 @@ body { -webkit-font-smoothing: antialiased; }
 }
 
 /* headings a touch larger + tighter, matching the roomier body */
-[data-testid="stHeading"] h1 { font-size: 2rem; letter-spacing: -0.02em; }
-[data-testid="stHeading"] h2 { font-size: 1.55rem; letter-spacing: -0.015em; margin-top: 2rem; }
-[data-testid="stHeading"] h3 { font-size: 1.2rem; letter-spacing: -0.01em; }
-[data-testid="stMarkdownContainer"] p { line-height: 1.65; }
+[data-testid="stHeading"] h1 { font-size: 2.15rem; letter-spacing: -0.02em; }
+[data-testid="stHeading"] h2 { font-size: 1.7rem; letter-spacing: -0.015em; margin-top: 2rem; }
+[data-testid="stHeading"] h3 { font-size: 1.32rem; letter-spacing: -0.01em; }
+
+/* body copy: answer prose + list items sit a step above the base, the way a
+   chat answer pane does; captions/meta stay quiet but readable. */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li { font-size: 1.05rem; line-height: 1.7; }
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p { font-size: 0.9rem; }
+[data-testid="stExpander"] summary { font-size: 1rem; }
 
 /* --- Landing: eyebrow + rotating headline + bar, centred ----------------- */
 .st-key-tw_landing {
@@ -56,7 +67,7 @@ body { -webkit-font-smoothing: antialiased; }
 .tw-eyebrow {
   text-align: center;
   color: #6B6B66;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
@@ -65,7 +76,7 @@ body { -webkit-font-smoothing: antialiased; }
   text-align: center;
   color: #1A1A1A;
   font-weight: 700;
-  font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+  font-size: clamp(2.15rem, 4vw, 3rem);
   letter-spacing: -0.02em;
   line-height: 1.14;
   margin: 0 0 1.75rem 0;
@@ -116,10 +127,10 @@ body { -webkit-font-smoothing: antialiased; }
 .st-key-tw_searchbar_compact [data-baseweb="input"] input {
   color: #1A1A1A !important;
   -webkit-text-fill-color: #1A1A1A !important;
-  font-size: 1.15rem !important;
+  font-size: 1.35rem !important;
   padding: 4px 52px 4px 2px !important;
 }
-.st-key-tw_searchbar_compact [data-baseweb="input"] input { font-size: 1.05rem !important; }
+.st-key-tw_searchbar_compact [data-baseweb="input"] input { font-size: 1.18rem !important; }
 .st-key-tw_searchbar_hero [data-baseweb="input"] input::placeholder,
 .st-key-tw_searchbar_compact [data-baseweb="input"] input::placeholder {
   color: #9A968C !important;
@@ -190,7 +201,7 @@ body { -webkit-font-smoothing: antialiased; }
   display: inline-block;
   padding: 2px 11px;
   margin: 0 6px 6px 0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #3A3A36;
   border: 1px solid #E0DBCF;
   border-radius: 999px;
@@ -208,7 +219,7 @@ body { -webkit-font-smoothing: antialiased; }
   padding: 9px 12px;
   border-radius: 10px;
   font-weight: 500;
-  font-size: 0.98rem;
+  font-size: 1.02rem;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button:hover:not(:disabled) {
   background: #ECE8DE;
