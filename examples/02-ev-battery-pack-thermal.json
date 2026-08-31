@@ -9,7 +9,7 @@
   "tools": [
     {
       "catalogue_id": "cellthermo",
-      "name": "CellThermo",
+      "name": "Simulink Simscape Battery",
       "rationale": "Lumped electro-thermal model for cylindrical and pouch cells; parameterised from datasheet + a short characterisation test.",
       "development_status": "actively maintained",
       "access_type": "commercial",
@@ -46,7 +46,7 @@
     },
     {
       "catalogue_id": "coolflow-sur",
-      "name": "CoolFlow Surrogate",
+      "name": "Ansys Fluent (ROM)",
       "rationale": "Reduced-order surrogate of a coolant-loop CFD model; trained offline, runs in real time for pack-level control studies.",
       "development_status": "actively maintained",
       "access_type": "commercial",
@@ -155,7 +155,7 @@
       {
         "id": "etherm",
         "type": "model",
-        "label": "CellThermo",
+        "label": "Simulink Simscape Battery",
         "inputs": [
           "signals",
           "params"
@@ -168,7 +168,7 @@
       {
         "id": "cfd",
         "type": "model",
-        "label": "CoolFlow Surrogate",
+        "label": "Ansys Fluent (ROM)",
         "inputs": [
           "signals"
         ],
@@ -222,7 +222,7 @@
       {
         "id": "dash",
         "type": "output",
-        "label": "Pack dashboard",
+        "label": "Omniverse pack view",
         "inputs": [
           "hold"
         ],

@@ -9,7 +9,7 @@
   "tools": [
     {
       "catalogue_id": "presstwin-ro",
-      "name": "PressTwin RO",
+      "name": "Ansys Twin Builder",
       "rationale": "Reduced-order structural model of hydraulic presses; pairs well with a degradation estimator for predictive maintenance.",
       "development_status": "actively maintained",
       "access_type": "commercial",
@@ -50,7 +50,7 @@
     },
     {
       "catalogue_id": "driftguard",
-      "name": "DriftGuard",
+      "name": "Simulink degradation model",
       "rationale": "Online degradation estimator; learns the residual between the physics model and measured behaviour and flags drift before failure.",
       "development_status": "actively maintained",
       "access_type": "open-core",
@@ -142,7 +142,7 @@
       {
         "id": "rom",
         "type": "model",
-        "label": "PressTwin RO",
+        "label": "Ansys Twin Builder",
         "inputs": [
           "features",
           "records"
@@ -155,7 +155,7 @@
       {
         "id": "ml",
         "type": "model",
-        "label": "DriftGuard",
+        "label": "Simulink degradation model",
         "inputs": [
           "features"
         ],

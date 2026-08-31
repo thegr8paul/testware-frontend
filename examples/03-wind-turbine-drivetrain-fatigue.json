@@ -9,7 +9,7 @@
   "tools": [
     {
       "catalogue_id": "aerodrive",
-      "name": "AeroDrive",
+      "name": "Simcenter 3D drivetrain",
       "rationale": "Coupled aeroelastic + multibody drivetrain model; produces component-level load time series from wind and operating state.",
       "development_status": "actively maintained",
       "access_type": "commercial",
@@ -101,7 +101,7 @@
       {
         "id": "scada",
         "type": "input",
-        "label": "SCADA operating state",
+        "label": "OPC-UA SCADA feed",
         "inputs": [],
         "outputs": [
           "state"
@@ -131,7 +131,7 @@
       {
         "id": "aero",
         "type": "model",
-        "label": "AeroDrive",
+        "label": "Simcenter 3D drivetrain",
         "inputs": [
           "clean"
         ],
