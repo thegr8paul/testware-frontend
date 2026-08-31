@@ -173,8 +173,10 @@
   .drawflow .connection { display: none !important; }
   .drawflow .drawflow-node .input,
   .drawflow .drawflow-node .output { display: none !important; }
+  /* Above the nodes so the fat transparent `.hit` twins and the delete
+     handles are clickable; the SVG itself stays pointer-transparent. */
   #wires {
-    position: absolute; inset: 0; z-index: 0;
+    position: absolute; inset: 0; z-index: 6;
     pointer-events: none; overflow: visible;
   }
   #wires path.wire { fill: none; stroke: rgba(17, 17, 17, 0.32); stroke-width: 1.25px; }
@@ -227,10 +229,11 @@
     var builtSig = null;      // graph a build() has completed for
     var heldSig = null;       // content-sig of the graph we currently hold (build OR user edit)
     var selEdge = -1;         // index into edgeList of the selected wire (-1 = none)
-    var pending = null;       // in-progress connection: {a: srcIntId, op: portNo, x, y}
+    var pending = null;       // in-progress connection: {side, intId, port, x, y, want}
     var panelRO = null;       // live ResizeObserver on #panel
     var settleUntil = 0;      // rAF wire-redraw deadline after a build
     var wheelBound = false;    // our smooth wheel handler is installed once
+    var wiringBound = false;   // our connection-editing handlers are installed once
 
     function panel() { return document.getElementById("panel"); }
     function sized() {
@@ -334,13 +337,16 @@
         }
       });
       if (pending) {
-        var ps = anchorAt("a-out-" + pending.a + "-" + pending.op, pending.a, "out");
+        var ps = anchorAt("a-" + pending.side + "-" + pending.intId + "-" + pending.port,
+                          pending.intId, pending.side);
         if (ps) {
           var px1 = ps.x - wr.left, py1 = ps.y - wr.top;
           var px2 = pending.x - wr.left, py2 = pending.y - wr.top;
           var pdx = Math.max(30, Math.abs(px2 - px1) * 0.5);
+          var c1x = pending.side === "out" ? px1 + pdx : px1 - pdx;
+          var c2x = pending.side === "out" ? px2 - pdx : px2 + pdx;
           parts.push('<path class="pending" d="M ' + px1 + ' ' + py1 + ' C ' +
-            (px1 + pdx) + ' ' + py1 + ' ' + (px2 - pdx) + ' ' + py2 + ' ' + px2 + ' ' + py2 + '"/>');
+            c1x + ' ' + py1 + ' ' + c2x + ' ' + py2 + ' ' + px2 + ' ' + py2 + '"/>');
         }
       }
       svg.innerHTML = parts.join("");
@@ -410,6 +416,94 @@
         heldSig = graphSig(g);          // so the echo is recognised, no rebuild
         setValue({ kind: "edit", workflow: g, ts: Date.now() });
       }, 140);
+    }
+
+    // --- connection editing -----------------------------------------------
+    // Drag from a port dot to another port dot to wire nodes; drag an input's
+    // existing wire off to reroute or delete it; click a wire then its x to
+    // remove it. Every change re-emits the graph via emitEdit().
+    function dotInfo(el) {
+      var m = el && el.id && el.id.match(/^a-(out|in)-(\d+)-(\d+)$/);
+      return m ? { side: m[1], intId: parseInt(m[2], 10), port: parseInt(m[3], 10) } : null;
+    }
+    function dropEdgesIntoInput(b, ip) {   // an input port holds one wire
+      for (var i = edgeList.length - 1; i >= 0; i--) {
+        if (edgeList[i].b === b && edgeList[i].ip === ip) edgeList.splice(i, 1);
+      }
+    }
+    function installWiring() {
+      if (wiringBound) return;
+      wiringBound = true;
+      var pnl = panel();
+
+      // start a connection -- capture phase so Drawflow's node drag never begins
+      pnl.addEventListener("pointerdown", function (e) {
+        var dot = e.target.closest && e.target.closest(".dot");
+        if (dot) {
+          var info = dotInfo(dot);
+          if (!info) return;
+          e.preventDefault();
+          e.stopPropagation();
+          selEdge = -1;
+          if (info.side === "in") {
+            var ex = edgeList.filter(function (x) { return x.b === info.intId && x.ip === info.port; })[0];
+            if (ex) {                       // pick up the existing wire (reroute / detach)
+              edgeList.splice(edgeList.indexOf(ex), 1);
+              pending = { side: "out", intId: ex.a, port: ex.op, x: e.clientX, y: e.clientY, want: "in" };
+            } else {
+              pending = { side: "in", intId: info.intId, port: info.port, x: e.clientX, y: e.clientY, want: "out" };
+            }
+          } else {
+            pending = { side: "out", intId: info.intId, port: info.port, x: e.clientX, y: e.clientY, want: "in" };
+          }
+          drawWires();
+          return;
+        }
+        // click on empty canvas -> drop wire selection
+        if (selEdge !== -1 && !(e.target.closest && (e.target.closest(".hit") || e.target.closest(".del")))) {
+          selEdge = -1; drawWires();
+        }
+      }, true);
+
+      window.addEventListener("pointermove", function (e) {
+        if (!pending) return;
+        pending.x = e.clientX; pending.y = e.clientY;
+        drawWires();
+      }, { passive: true });
+
+      window.addEventListener("pointerup", function (e) {
+        if (!pending) return;
+        var p = pending; pending = null;
+        var over = document.elementFromPoint(e.clientX, e.clientY);
+        var dot = over && over.closest && over.closest(".dot");
+        var info = dot && dotInfo(dot);
+        if (info && info.side === p.want && info.intId !== p.intId) {
+          var a, b, op, ip;
+          if (p.side === "out") { a = p.intId; op = p.port; b = info.intId; ip = info.port; }
+          else                  { a = info.intId; op = info.port; b = p.intId; ip = p.port; }
+          dropEdgesIntoInput(b, ip);
+          if (!edgeExists(a, b, op, ip)) edgeList.push({ a: a, b: b, op: op, ip: ip });
+        }
+        drawWires();
+        emitEdit();                         // covers create, reroute, and detach-to-delete
+      }, { passive: true });
+
+      // select / delete a wire (the .hit twin and .del handle sit in #wires)
+      var svg = document.getElementById("wires");
+      svg.addEventListener("click", function (e) {
+        var del = e.target.closest && e.target.closest(".del");
+        if (del) {
+          var di = parseInt(del.getAttribute("data-ei"), 10);
+          if (di >= 0 && di < edgeList.length) { edgeList.splice(di, 1); selEdge = -1; drawWires(); emitEdit(); }
+          return;
+        }
+        var hit = e.target.closest && e.target.closest(".hit");
+        if (hit) {
+          var hi = parseInt(hit.getAttribute("data-ei"), 10);
+          selEdge = (selEdge === hi) ? -1 : hi;
+          drawWires();
+        }
+      });
     }
 
     // Frame ALL nodes: measure their real bounding box, add a slight margin
@@ -515,6 +609,7 @@
       editor.zoom_max = 1.8;
       editor.start();
       installWheel();             // replace Drawflow's jumpy fixed-step wheel zoom
+      installWiring();            // drag-a-port-dot connection editing
       dfToNode = {};
       edgeList = [];
 
@@ -585,15 +680,15 @@
       setTimeout(autoFit, 60);         // ...again once layout / fonts settle
       setTimeout(autoFit, 260);
 
-      // "edit" -> node cards can be dragged around. New wiring is impossible
-      // anyway: Drawflow's own port dots are display:none (we render #wires
-      // ourselves), so there is nothing to grab to start a connection.
+      // "edit" -> node cards can be dragged around; connection editing is
+      // handled by installWiring() (Drawflow's own port dots stay hidden --
+      // we drive the drag from our .dot anchors and render #wires ourselves).
       editor.editor_mode = "edit";
       // redraw our wires whenever Drawflow pans or zooms
       editor.on("translate", drawWires);
       editor.on("zoom", drawWires);
-      // ...and live, while a node is being dragged (Drawflow sets .drag/.node_dragged)
-      editor.on("nodeMoved", drawWires);
+      // ...and live, while a node is being dragged; persist the new position
+      editor.on("nodeMoved", function () { drawWires(); emitEdit(); });
       var pnl = panel();
       ["mousemove", "touchmove"].forEach(function (ev) {
         pnl.addEventListener(ev, function () {
@@ -633,6 +728,7 @@
       requestAnimationFrame(settleTick);
 
       builtSig = lastSig;
+      heldSig = graphSig(wf);   // recognise our own post-edit echo, don't rebuild
     }
 
     function schedule(args) {
@@ -672,6 +768,14 @@
       setHeight(FIXED_HEIGHT);
       var s = sig(args);
       if (s === builtSig) {  // same graph -> just re-settle the wires
+        settleUntil = Date.now() + 600;
+        requestAnimationFrame(settleTick);
+        return;
+      }
+      // our own edit coming back from Streamlit (edge count changed, so `sig`
+      // differs) -- adopt it without a disruptive rebuild / re-fit
+      if (heldSig && graphSig(args.workflow) === heldSig) {
+        builtSig = s;
         settleUntil = Date.now() + 600;
         requestAnimationFrame(settleTick);
         return;
