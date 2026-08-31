@@ -30,8 +30,13 @@ _WF_DIR = Path(__file__).with_name("components") / "workflow"
 workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
 # Read Me / demo-day deck -- renders presentation.md as animated slides.
+# Guarded: if the component assets are ever missing on a deploy, Read Me
+# falls back to plain Markdown instead of taking down the whole app.
 _DECK_DIR = Path(__file__).with_name("components") / "deck"
-deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
+try:
+    deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
+except Exception:  # noqa: BLE001
+    deck_view = None
 
 # Search-bar facets (curated -- see facets.json "_provenance"). Loaded once.
 _FACETS = json.loads(Path(__file__).with_name("facets.json").read_text())
@@ -332,11 +337,13 @@ with st.sidebar:
 # slides in presentation.md (next to this file) -- Markdown, split by `---`;
 # see the header comment in that file. Push and Streamlit Cloud redeploys.
 if st.session_state.get("show_readme"):
+    _pres = Path(__file__).with_name("presentation.md")
+    _md = _pres.read_text() if _pres.exists() else "# Read Me\n\n_presentation.md not found._"
     with st.container(key="tw_readme"):
-        deck_view(
-            markdown=Path(__file__).with_name("presentation.md").read_text(),
-            key="tw_deck",
-        )
+        if deck_view is not None:
+            deck_view(markdown=_md, key="tw_deck")
+        else:
+            st.markdown(_md)  # fallback: deck component unavailable
     st.stop()
 
 
