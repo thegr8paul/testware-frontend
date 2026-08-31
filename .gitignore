@@ -6,6 +6,7 @@ venv/
 .env
 .streamlit/secrets.toml
 mock_response.json
+saved_workflows.json
 .DS_Store
 .agents/
 .claude/
