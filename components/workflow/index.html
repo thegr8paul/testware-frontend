@@ -154,13 +154,13 @@
   .drawflow-node.t-decision { border-radius: 14px 2px 14px 2px; }  /* offset corners -- a branch */
   .drawflow-node.t-model    { border-radius: 6px; }                /* gently rounded -- a tool   */
   .drawflow-node.t-output   { border-radius: 3px 3px 18px 18px; }  /* footed card -- a result    */
-  /* database -- cylinder: horizontal radius ~= half the width makes the
-     whole top and bottom edge one shallow arc; the 9px vertical radius
-     keeps the sides straight. Extra top/bottom padding clears the arcs. */
+  /* database -- cylinder: horizontal radius = half the width makes the
+     whole top and bottom edge one arc; the vertical radius sets how deep
+     that arc bows. Extra top/bottom padding clears the curve. */
   .drawflow-node.t-database {
-    border-radius: 50% / 9px;
-    padding-top: 11px;
-    padding-bottom: 11px;
+    border-radius: 50% / 20px;
+    padding-top: 22px;
+    padding-bottom: 22px;
   }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
