@@ -284,7 +284,11 @@ def render_search_bar(mode: str):
 
         status_slot = btn_cols[3].empty()
 
-    if submitted and query_text.strip():
+    # Submit on the Search button OR on Enter. Pressing Enter in the text
+    # field commits `query_input` and reruns, so a non-empty value that
+    # differs from the last executed query means the user hit Enter -- run it.
+    typed = query_text.strip()
+    if typed and (submitted or query_text != (st.session_state.get("query") or "")):
         st.session_state.query = query_text
         st.session_state.categories = _current_categories()
         st.rerun()
