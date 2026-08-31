@@ -8,7 +8,21 @@ import requests
 import streamlit as st  # Streamlit for the whole UI
 import streamlit.components.v1 as components  # raw HTML/JS embeds (the "thinking" cue) + the workflow component
 
-DEFAULT_API_URL = os.environ.get("API_URL", "http://localhost:8000")
+def _resolve_api_url() -> str:
+    """Backend base URL. Precedence: API_URL env var -> [API_URL] in
+    Streamlit secrets (how you set it on Streamlit Community Cloud) ->
+    localhost for local dev against `make mock` / a local FastAPI."""
+    if os.environ.get("API_URL"):
+        return os.environ["API_URL"]
+    try:
+        if "API_URL" in st.secrets:
+            return str(st.secrets["API_URL"])
+    except Exception:  # no secrets.toml at all -- fine, fall through
+        pass
+    return "http://localhost:8000"
+
+
+DEFAULT_API_URL = _resolve_api_url()
 
 # Section 3's node canvas -- a bidirectional component (Drawflow, vendored).
 # Returns {node, catalogue_id, ts} when a node is clicked, else None.

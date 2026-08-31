@@ -1,4 +1,5 @@
-streamlit
+streamlit>=1.39        # .st-key-<key> wrappers, st.popover(icon=), column gap/vertical_alignment
+requests>=2.31         # app.py -> POST /query on the RAG backend
 
 # Not needed yet — uncomment once retrieval is wired up to the real
 # ChromaDB/LangChain backend (kept out for now so the mockup stays light):
