@@ -120,7 +120,7 @@
       {
         "id": "clean",
         "type": "process",
-        "label": "Clean & resample",
+        "label": "MATLAB clean & resample",
         "inputs": [
           "telemetry"
         ],
@@ -191,7 +191,7 @@
       {
         "id": "store",
         "type": "database",
-        "label": "Time-series store",
+        "label": "AWS Timestream store",
         "inputs": [
           "reading"
         ],

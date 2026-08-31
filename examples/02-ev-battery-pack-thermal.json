@@ -143,7 +143,7 @@
       {
         "id": "resample",
         "type": "process",
-        "label": "Align & resample",
+        "label": "AWS Glue align & resample",
         "inputs": [
           "current",
           "ambient"
@@ -204,7 +204,7 @@
       {
         "id": "hist",
         "type": "database",
-        "label": "Charge-session log",
+        "label": "Azure Data Lake log",
         "inputs": [
           "record"
         ],

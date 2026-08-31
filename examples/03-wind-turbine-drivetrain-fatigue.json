@@ -51,7 +51,7 @@
     },
     {
       "catalogue_id": "fatigue-kit",
-      "name": "FatigueKit",
+      "name": "Ansys nCode DesignLife",
       "rationale": "Rainflow counting and Palmgren-Miner life accumulation with S-N curves per material and stress-concentration factors.",
       "development_status": "actively maintained",
       "access_type": "open-core",
@@ -119,7 +119,7 @@
       {
         "id": "qc",
         "type": "process",
-        "label": "Gap-fill & QC",
+        "label": "MATLAB gap-fill & QC",
         "inputs": [
           "wind",
           "state"
@@ -143,7 +143,7 @@
       {
         "id": "rainflow",
         "type": "process",
-        "label": "Rainflow counting",
+        "label": "Simcenter rainflow counting",
         "inputs": [
           "loads"
         ],
@@ -154,7 +154,7 @@
       {
         "id": "life",
         "type": "model",
-        "label": "FatigueKit",
+        "label": "Ansys nCode DesignLife",
         "inputs": [
           "cycles",
           "sncurve"
