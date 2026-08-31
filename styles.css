@@ -228,32 +228,19 @@ body { -webkit-font-smoothing: antialiased; }
   background: rgba(17, 17, 17, 0.03);
 }
 
-/* --- Read Me / demo-day presentation view (sidebar -> Read Me) ----------- */
-/* Renders presentation.md full-page in a calm, narrow reading column --
-   same warm palette and restraint as the rest of the app. */
-.st-key-tw_readme { max-width: 760px; margin: 0 auto; padding-top: 0.5rem; }
-.st-key-tw_readme [data-testid="stHeading"] h1 {
-  font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 1.25rem;
+/* --- Read Me / demo-day deck (sidebar -> Read Me) ----------------------- */
+/* The deck is a full-bleed component (components/deck/, renders
+   presentation.md as animated slides). Break it out of the padded,
+   max-width content column so it spans the viewport. */
+.st-key-tw_readme {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
 }
-.st-key-tw_readme [data-testid="stHeading"] h2 {
-  margin-top: 2.75rem; padding-top: 1.5rem; border-top: 1px solid #E7E3DA;
-  letter-spacing: -0.02em;
+.st-key-tw_readme iframe,
+.st-key-tw_readme [data-testid="stIFrame"],
+.st-key-tw_readme [data-testid="stCustomComponentV1"] {
+  width: 100vw !important;
+  max-width: none !important;
 }
-.st-key-tw_readme [data-testid="stHeading"] h3 {
-  margin-top: 1.9rem; color: #3A3A36;
-}
-.st-key-tw_readme [data-testid="stMarkdownContainer"] p { font-size: 1.05rem; }
-.st-key-tw_readme [data-testid="stMarkdownContainer"] li { margin: 0.25rem 0; }
-.st-key-tw_readme blockquote {
-  border-left: 3px solid #111111;
-  background: #F1EFE9;
-  margin: 1.25rem 0;
-  padding: 0.8rem 1.15rem;
-  border-radius: 0 10px 10px 0;
-  font-size: 1.15rem;
-  color: #1A1A1A;
-}
-.st-key-tw_readme blockquote p { margin: 0; }
-.st-key-tw_readme hr { margin: 2.5rem 0; border-color: #E7E3DA; }
-.st-key-tw_readme table { font-size: 0.98rem; }
 .st-key-sb_readme button { font-weight: 600 !important; color: #111111 !important; }

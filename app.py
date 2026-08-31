@@ -29,6 +29,10 @@ DEFAULT_API_URL = _resolve_api_url()
 _WF_DIR = Path(__file__).with_name("components") / "workflow"
 workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
+# Read Me / demo-day deck -- renders presentation.md as animated slides.
+_DECK_DIR = Path(__file__).with_name("components") / "deck"
+deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
+
 # Search-bar facets (curated -- see facets.json "_provenance"). Loaded once.
 _FACETS = json.loads(Path(__file__).with_name("facets.json").read_text())
 INDUSTRY_TAXONOMY = _FACETS["industries"]
@@ -322,14 +326,17 @@ with st.sidebar:
               use_container_width=True, disabled=True)
 
 
-# --- READ ME (project overview / demo-day presentation) -------------------
+# --- READ ME (project overview / demo-day deck) --------------------------
 # Full-page: replaces the main area; the sidebar (rendered above) stays.
-# Content is plain Markdown in presentation.md (next to this file) -- edit it
-# there and push; Streamlit Cloud redeploys. Styled via `.st-key-tw_readme`
-# in styles.css. No unsafe_allow_html -> keep it Markdown, not raw HTML.
+# The deck component renders presentation.md as animated slides. Edit the
+# slides in presentation.md (next to this file) -- Markdown, split by `---`;
+# see the header comment in that file. Push and Streamlit Cloud redeploys.
 if st.session_state.get("show_readme"):
     with st.container(key="tw_readme"):
-        st.markdown(Path(__file__).with_name("presentation.md").read_text())
+        deck_view(
+            markdown=Path(__file__).with_name("presentation.md").read_text(),
+            key="tw_deck",
+        )
     st.stop()
 
 

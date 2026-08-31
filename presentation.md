@@ -1,114 +1,91 @@
-# testware.dev
+<!--
+  This file IS the demo-day deck. It renders as animated slides in the app
+  under sidebar -> Read Me (component: components/deck/).
 
-> **One-Stop Webshop for Digital Twin–Based Everything, Everywhere, All at Once.**
+  HOW SLIDES WORK
+  - Separate every slide with a line of three dashes:  ---
+  - #### text        eyebrow / kicker (small caps line above the title)
+  - ## text          slide title  (use *asterisks* for the accent colour, e.g. testware*.dev*)
+  - ### text         a supporting sub-line
+  - - item           bullet  (**bold** and [links](https://…) work)
+  - > text           a quote / pull-out
+  - ![Caption](placeholder-a.svg)   an image. Drop real files in components/deck/
+                                    and reference them by name, or paste a full https:// URL.
+  - To force a layout, start the slide with an HTML comment whose text is
+    "layout: NAME", where NAME is one of: title, section, content, media,
+    split, quote. Otherwise the layout is inferred (slide 1 = title,
+    heading-only = section, has an image = media, has a quote = quote,
+    else content). See the slides below for live examples.
 
-An expert-curated catalogue of digital-twin models and tools, with an AI search
-engine that turns *"I need to model this"* into a concrete workflow — methods,
-tools, standards, budget, and timeline.
+  Everything below is placeholder copy in the app's one colour theme — edit freely.
+-->
 
----
+#### Demo Day · 2026
+## testware*.dev*
+### One-stop webshop for digital twins — everything, everywhere, all at once.
 
-## Why now
-
-Digital twins are moving from R&D novelty to industrial necessity.
-
-- **Every vertical is in flux** — automotive, aerospace, energy, infrastructure,
-  manufacturing, agriculture, life sciences. Electrification, automation and
-  digitalisation everywhere: more sensors, more code, more data in the wild.
-- **Plants are software-defined** — vehicles, grids, batteries, robots, medical
-  devices are now systems under electronic control, and their complexity is
-  compounding.
-- **Market pressure is two-sided** — ship faster *and* meet tightening regulation
-  (ISO 26262, DO-178C, IEC 62304). The answer is left-shifted, test-driven
-  development against a virtual plant.
-- **The prize** — a €50B digital-twin market in the EU alone by 2030.
-
----
-
-## How digital twins actually work
-
-Strip the buzzword and a digital twin is a **realistic model running on a
-real-time simulator**, wired to the real asset.
-
-### Models — right fidelity for the right problem
-
-Multi-physics and multi-scale: computational mechanics (atomic → continuum),
-systems biology, geophysical and climate, controls and systems engineering,
-statistical and machine-learning, reduced-order, topological (CAD, point clouds).
-
-### Simulators — the hardware that makes it real
-
-Real-time targets with IoT sensors (light, audio, temperature, pressure),
-industrial protocols (CAN bus, ARINC, FlexRay), power electronics (amplifiers,
-breakout panels) and FPGAs — connected to the device under test and the rest of
-the plant.
-
-### Workflows
-
-X-in-the-loop (model, software, processor, hardware, human), rapid control
-prototyping, predictive maintenance, virtual commissioning, restbus simulation,
-controller bypassing.
+An AI catalogue that turns *"I need to model this"* into a concrete workflow: methods, tools, standards, budget, timeline.
 
 ---
 
-## In practice
+<!-- layout: section -->
 
-- **Automotive & aerospace X-in-the-loop** — simulated vehicle plants for unit,
-  component and integration testing of ECUs such as brakes or propulsion.
-- **Emulated batteries & grid** — simulators driving power amplifiers to emulate
-  rated current and voltage, testing broken wires, shorts, over-current and
-  blackouts.
-- **Virtual patients** — organ-level human twins to develop and verify medical
-  devices, e.g. ventilator software tested against a virtual lung.
+#### Part one
+## Why digital twins, why now
 
 ---
 
-## The gap
+#### Why now · 01
+## Every vertical is going software-defined
 
-- **Know-how is niche** — no easy way to get started without deep expertise.
-- **Tools are inaccessible** — obscure, proprietary, or expensive; few open
-  options.
-- **Integration is hard** — real applications combine twins from several
-  verticals, and nothing maps how they fit together.
-
----
-
-## testware.dev
-
-**Vision** — the one-stop shop for digital-twin–based work of any kind.
-
-**Mission** — a first-of-its-kind ontological database spanning modelling tool
-type, application, provenance, and fidelity.
-
-**Today (demo MVP)** — an expert-curated model catalogue with an AI/RAG search
-engine. An engineering manager or lead scientist describes a use case; the engine
-returns a digital-twin workflow: which methods and tools (open-source or
-commercial), which certification guidelines apply, and an estimated budget and
-timeline.
+- Electrification, automation, digitalisation — auto, aero, energy, infrastructure, manufacturing, life sciences
+- Vehicles, grids, batteries, robots, medical devices are now systems under electronic control
+- More sensors, more code, more data in the wild
 
 ---
 
-## Product — now & next
+#### Why now · 02
+## Ship faster — and prove it's safe
 
-| | |
-|---|---|
-| **Now** | Curated catalogue + RAG search → recommended methods, tools, standards, budget and timeline for your use case. |
-| **Next** | **Simulation Target Builder** — a build-a-computer service for your modelling requirements, with price comparisons across key suppliers. |
-| **Next** | **Model Agent** — AI that writes modelling code from scratch or integrates existing tools, with verification against known formulae. |
+![How the pieces connect](placeholder-a.svg)
 
----
-
-## Business model
-
-- **Qualified-lead marketplace** — model-selection responses become
-  sales-qualified leads that partners bid for.
-- **Freemium** — free tier for engineering managers, paid access to premium
-  catalogue entries, discounted pricing for referrals.
-- **Community** — open-source building, workshops, and consultancy.
+- Tightening regulation: ISO 26262 · DO-178C · IEC 62304
+- Left-shifted, test-driven development against a virtual plant
+- **€50B** EU digital-twin market by 2030
 
 ---
 
-## The ask
+<!-- layout: split -->
 
-Pilot users, integration partners, and catalogue contributors — tell us the
-digital twin you're trying to build.
+## Right fidelity for the right problem
+
+- Multi-physics & multi-scale
+- Computational mechanics, systems biology, controls
+- Machine learning, reduced-order, topological
+- Real-time targets: CAN bus · ARINC · FlexRay · FPGAs
+
+---
+
+<!-- layout: quote -->
+
+> The map from "what I need to model" to "how to build it" doesn't exist yet. We're drawing it.
+
+— testware.dev
+
+---
+
+<!-- layout: media -->
+
+#### The solution
+## An ontology for digital-twin work
+
+![The catalogue graph](placeholder-b.svg)
+
+Tool type · application · provenance · fidelity — one queryable database. Today: a curated model catalogue with **AI search** → methods, tools, certification guidelines, estimated budget and timeline.
+
+---
+
+<!-- layout: section -->
+
+#### The ask
+## Tell us the digital twin you're trying to build

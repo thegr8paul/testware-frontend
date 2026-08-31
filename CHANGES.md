@@ -62,6 +62,31 @@ Backend note (not in this PR): the RAG service already emits this exact
 graphs the levers are its prompt (`rag/prompts/workflow.py`, currently
 zero-shot) and a validation pass — no frontend change needed.
 
+## Read Me / demo-day deck (`components/deck/`)
+
+Sidebar → **Read Me** opens a full-page animated slide deck (`show_readme`
+flag in `app.py`; `deck_view` custom component). The deck renders
+**`presentation.md`** — no code needed to edit it:
+
+- Slides are separated by a line of `---`.
+- `####` eyebrow · `##` title (`*asterisks*` = accent colour) · `###` sub-line
+  · `-` bullet · `>` quote · `![caption](file)` image.
+- Images: drop files in `components/deck/` and reference by name, or use a
+  full `https://` URL. `placeholder-a.svg` / `placeholder-b.svg` are stand-ins.
+- Layout per slide is inferred (slide 1 = title, heading-only = section, has
+  an image = media, has a quote = quote, else content). Force it with an HTML
+  comment whose text is `layout: NAME` (title | section | content | media |
+  split | quote).
+
+One colour theme only — the app's warm-cream / Source Sans 3 — plus a faint
+connecting-node canvas and staged slide entrances. The parser lives in
+`components/deck/index.html` (`parse()` / `infer()` / `blockEl()`); it is a
+deliberately tiny Markdown subset, not a full renderer.
+
+For presenting outside the app there is also a standalone six-direction
+design-exploration deck (Claude artifact) — the in-app deck is the "Signal"
+direction from it, locked to the app theme.
+
 ## Gotchas
 
 - `styles.css` targets Streamlit-private hooks (`[data-testid=…]`,

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Image placeholder">
+  <rect width="800" height="500" fill="#F1EFE9"/>
+  <rect x="0.5" y="0.5" width="799" height="499" fill="none" stroke="#E7E3DA"/>
+  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
+    <path d="M180 340 L300 210 L430 300 L560 170 L640 260"/>
+    <path d="M300 210 L360 350 M430 300 L470 200 M560 170 L520 320"/>
+  </g>
+  <g fill="#FFFFFF" stroke-width="2">
+    <circle cx="180" cy="340" r="7" stroke="rgba(26,26,26,0.30)"/>
+    <circle cx="300" cy="210" r="7" stroke="#3F7D78"/>
+    <circle cx="430" cy="300" r="7" stroke="#A9822F"/>
+    <circle cx="560" cy="170" r="7" stroke="#3F7D55"/>
+    <circle cx="640" cy="260" r="7" stroke="#54628A"/>
+    <circle cx="360" cy="350" r="7" stroke="rgba(26,26,26,0.30)"/>
+    <circle cx="470" cy="200" r="7" stroke="rgba(26,26,26,0.30)"/>
+    <circle cx="520" cy="320" r="7" stroke="rgba(26,26,26,0.30)"/>
+  </g>
+  <text x="400" y="430" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="20" letter-spacing="2" fill="#9A968C">IMAGE &#8212; REPLACE IN presentation.md</text>
+</svg>
