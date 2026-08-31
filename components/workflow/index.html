@@ -89,10 +89,10 @@
     content: ""; position: absolute; inset: -7px; border-radius: 50%;
   }
   .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
-  /* colour-group nodes carry a tinted port dot; texture-group keep the neutral one */
-  .drawflow-node.t-model .twn-port .dot    { border-color: rgba(63,125,120,0.85); }
-  .drawflow-node.t-output .twn-port .dot   { border-color: rgba(63,125,85,0.85); }
-  .drawflow-node.t-database .twn-port .dot { border-color: rgba(84,98,138,0.85); }
+  /* colour-group nodes carry an accent-coloured port dot; texture-group keep the neutral one */
+  .drawflow-node.t-model .twn-port .dot    { border-color: #2C6E68; }
+  .drawflow-node.t-output .twn-port .dot   { border-color: #2E6E4C; }
+  .drawflow-node.t-database .twn-port .dot { border-color: #414F86; }
 
   /* --- per-category encoding: EITHER colour OR texture, never both --------
      Class is "t-<type>" (backend node type). Two groups:
@@ -120,13 +120,29 @@
     background-image: repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 9px);
   }
 
-  .drawflow-node.t-model  { background: rgba(63, 125, 120, 0.20); border-color: rgba(63,125,120,0.60); }
-  .drawflow-node.t-output { background: rgba(63, 125, 85, 0.20);  border-color: rgba(63,125,85,0.60); }
+  /* substance nodes: NO fill -- the same neutral card as everything else.
+     Category reads from a crisp, muted accent instead of a wash: a solid
+     border, a small legend swatch by the title, and matching port dots. */
+  .drawflow-node.t-model,
+  .drawflow-node.t-output,
   .drawflow-node.t-database {
-    background: rgba(84, 98, 138, 0.18);
-    border-color: rgba(84, 98, 138, 0.60);
-    border-radius: 10px / 26px;   /* cylinder silhouette = identity, not decoration */
+    background-color: rgba(255, 255, 255, 0.55);
+    border-width: 1.5px;
   }
+  .drawflow-node.t-model    { border-color: #2C6E68; }  /* teal   */
+  .drawflow-node.t-output   { border-color: #2E6E4C; }  /* green  */
+  .drawflow-node.t-database { border-color: #414F86; border-radius: 10px / 26px; }  /* indigo + cylinder */
+
+  .drawflow-node.t-model .twn-title::before,
+  .drawflow-node.t-output .twn-title::before,
+  .drawflow-node.t-database .twn-title::before {
+    content: ""; display: inline-block;
+    width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px;
+    border-radius: 2px;
+  }
+  .drawflow-node.t-model .twn-title::before    { background: #2C6E68; }
+  .drawflow-node.t-output .twn-title::before   { background: #2E6E4C; }
+  .drawflow-node.t-database .twn-title::before { background: #414F86; }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
   .drawflow-node.is-suggested { outline: 1.5px solid rgba(17, 17, 17, 0.55); outline-offset: 1px; }
