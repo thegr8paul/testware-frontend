@@ -23,6 +23,23 @@ make install_requirements
 make streamlit
 ```
 
+## Deploy (Streamlit Community Cloud)
+
+- **Entrypoint**: `app.py`. **Python**: 3.11–3.12. Deps come from `requirements.txt`.
+- Point the app at a reachable backend by adding this to the app's **Secrets**
+  (Settings → Secrets), since Cloud has no `localhost`:
+
+  ```toml
+  API_URL = "https://your-rag-backend.example.com"
+  ```
+
+  Resolution order is `API_URL` env var → `st.secrets["API_URL"]` → `http://localhost:8000`.
+- `mock_api.py` is **local-only** — Cloud runs `app.py` and nothing else. With no
+  backend reachable the landing page still loads; a search then shows the
+  "Couldn't reach the RAG API" state.
+- `saved_workflows.json` is written to the app's ephemeral filesystem and is
+  **not** persisted across Cloud restarts.
+
 ## Local UI development (offline, no real backend)
 
 `mock_api.py` is a standard-library stub of the RAG backend so you can
