@@ -1,0 +1,15 @@
+[server]
+# Re-run the app automatically when app.py is saved, so local UI iteration
+# doesn't need a manual browser refresh.
+runOnSave = true
+
+[theme]
+# Perplexity-inspired: warm off-white/cream ground, near-black text, black
+# accent. Colour is used ONLY on tags / canvas nodes (literal hex in their
+# own CSS) "for understanding" -- never on chrome. Typeface unchanged.
+base = "light"
+primaryColor = "#111111"
+backgroundColor = "#FBFAF7"
+secondaryBackgroundColor = "#F1EFE9"
+textColor = "#1A1A1A"
+font = "sans serif"

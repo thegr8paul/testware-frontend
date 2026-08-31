@@ -1,91 +1,130 @@
+import json
 import os
+import random
+from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 import streamlit as st  # Streamlit for the whole UI
-import streamlit.components.v1 as components  # needed to embed raw HTML/JS (mermaid.js) since Streamlit has no native mermaid renderer
+import streamlit.components.v1 as components  # raw HTML/JS embeds (the "thinking" cue) + the workflow component
 
-DEFAULT_API_URL = os.environ.get("API_URL", "http://localhost:8000")
+def _resolve_api_url() -> str:
+    """Backend base URL. Precedence: API_URL env var -> [API_URL] in
+    Streamlit secrets (how you set it on Streamlit Community Cloud) ->
+    localhost for local dev against `make mock` / a local FastAPI."""
+    if os.environ.get("API_URL"):
+        return os.environ["API_URL"]
+    try:
+        if "API_URL" in st.secrets:
+            return str(st.secrets["API_URL"])
+    except Exception:  # no secrets.toml at all -- fine, fall through
+        pass
+    return "http://localhost:8000"
 
-INDUSTRY_TAXONOMY = {
-    "Manufacturing": ["Predictive maintenance", "Process optimisation", "Quality inspection"],
-    "Energy": ["Grid simulation", "Renewable asset monitoring", "Plant performance modelling"],
-    "Aerospace": ["Structural health monitoring", "Flight system simulation", "Fleet lifecycle management"],
-    "Automotive": ["Vehicle dynamics simulation", "Battery/powertrain modelling", "Production line twin"],
-    "Healthcare": ["Patient-specific modelling", "Medical device simulation", "Hospital operations twin"],
-    "Other / not listed": ["General / unspecified"],
-}
-NATURE_OPTIONS = ["OEM commercial", "Private hobby", "Research", "Market analysis"]
 
-# --- PAGE CONFIG -------------------------------------------------------------
-st.set_page_config(page_title="Digital Twin Model Selector V1", layout="wide")  # wide layout gives room for tool cards side by side
+DEFAULT_API_URL = _resolve_api_url()
 
-with st.sidebar:
-    st.header("Settings")
-    api_url = st.text_input(
-        "RAG API URL",
-        value=DEFAULT_API_URL,
-        help="Points at rag/api.py — local FastAPI or a cloudflared tunnel URL.",
-    ).rstrip("/")
+# Section 3's node canvas -- a bidirectional component (Drawflow, vendored).
+# Returns {node, catalogue_id, ts} when a node is clicked, else None.
+_WF_DIR = Path(__file__).with_name("components") / "workflow"
+workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
-st.title("Digital Twin Model Selection")  # main page title
+# Search-bar facets (curated -- see facets.json "_provenance"). Loaded once.
+_FACETS = json.loads(Path(__file__).with_name("facets.json").read_text())
+INDUSTRY_TAXONOMY = _FACETS["industries"]
+NATURE_OPTIONS = _FACETS["nature_options"]
 
-# --- CASCADING CATEGORY DROPDOWNS ---------------------------------------------
-# These live OUTSIDE the st.form below on purpose: a form only reruns the app
-# on submit, so if Industry lived inside the form, picking a new Industry
-# wouldn't refresh the Application list until Search was clicked. Keeping
-# them here means each dropdown updates immediately as you make a choice.
-# All three are optional -- a user can still search on free text alone.
-st.caption("Optionally narrow your search (all fields optional):")
-col_industry, col_application, col_nature = st.columns(3)
+INDUSTRY_ICON = ":material/factory:"
+APPLICATION_ICON = ":material/tune:"
+NATURE_ICON = ":material/science:"
 
-with col_industry:
-    industry = st.selectbox(
-        "Industry",
-        options=["(Any)"] + list(INDUSTRY_TAXONOMY.keys()),
-    )  # top of the cascade; "(Any)" means no filter applied
+# Landing headline -- one is picked at random per session (re-rolls on
+# "New workflow"). Professional but with some energy.
+HEADLINES = [
+    "Let's twin.",
+    "What are we twinning today?",
+    "Describe the system. Get its twin.",
+    "What do you want to model?",
+    "Let's build your digital twin.",
+    "What should we clone today?",
+    "From description to digital twin.",
+    "Point me at a system.",
+    "What are we simulating today?",
+    "Spin up a twin.",
+]
 
-with col_application:
-    # Application options depend on the selected Industry. When Industry is
-    # "(Any)", fall back to the full de-duplicated list across all industries
-    # so the field still offers something useful.
-    if industry == "(Any)":
-        application_options = ["(Any)"] + sorted({app for apps in INDUSTRY_TAXONOMY.values() for app in apps})
-    else:
-        application_options = ["(Any)"] + INDUSTRY_TAXONOMY[industry]
-    application = st.selectbox("Application", options=application_options)
+# "Liquid glass" panel recipe. Duplicated across three documents (styles.css
+# search bar, the "thinking" cue, and components/workflow/index.html) since
+# each has its own <style>. Keep them visually in sync.
+GLASS_PANEL_CSS = """
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.28)),
+    rgba(220, 225, 235, 0.30);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+"""
 
-with col_nature:
-    nature = st.selectbox("Nature of project", options=["(Any)"] + NATURE_OPTIONS)
+# Workflow node types the backend emits and the canvas component styles.
+WORKFLOW_NODE_TYPES = ("input", "process", "model", "decision", "merge", "output", "database")
 
-# Bundle selections into one dict so run_query() gets clean structured fields
-# rather than having to re-parse them out of the free-text query later. Your
-# backend's "enhanced prompt" step can decide how to fold these in.
-selected_categories = {
-    "industry": None if industry == "(Any)" else industry,
-    "application": None if application == "(Any)" else application,
-    "nature_of_project": None if nature == "(Any)" else nature,
-}
+# Loading cue: a grey shimmer sweep over the whole compact search bar. Rendered
+# into `status_slot` while run_query() blocks; status_slot.empty() removes this
+# <style> node so the sweep stops. No text.
+_BAR_LOADING_CSS = (
+    "<style>"
+    "@keyframes tw-bar-sweep{0%{background-position:220% 0}100%{background-position:-220% 0}}"
+    ".st-key-tw_searchbar_compact::after{content:'';position:absolute;inset:0;"
+    "border-radius:inherit;pointer-events:none;z-index:6;"
+    "background:linear-gradient(100deg,transparent 38%,rgba(17,17,17,0.10) 50%,transparent 62%);"
+    "background-size:220% 100%;animation:tw-bar-sweep 2.5s linear infinite;}"
+    "</style>"
+)
 
-# --- SEARCH BAR --------------------------------------------------------------
-# This is the real entry point of your architecture (question input -> enhance
-# prompt -> query embedding -> similarity search). run_query() below calls the
-# real backend.
+# --- PAGE CONFIG -----------------------------------------------------------
+st.set_page_config(page_title="Digital Twin Model Selector", layout="wide")  # wide layout gives room for tool cards side by side
 
-if "query" not in st.session_state:  # session_state persists values across reruns
-    st.session_state.query = None  # None means "nothing submitted yet" -> hide results
-if "categories" not in st.session_state:
-    st.session_state.categories = {}  # persists the submitted dropdown selections alongside the query
 
-with st.form(key="search_form"):  # form batches the text input + button into one submit action
-    user_query = st.text_input(
-        "Describe your digital twin problem",
-        placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
-    )  # free-text prompt input from the user
-    submitted = st.form_submit_button("Search")  # triggers a rerun only on click, not on every keystroke
+def load_css():
+    """Inject styles.css once. Kept in a separate file so visual tweaks are a
+    save-and-reload loop with no Python change (see README)."""
+    css = Path(__file__).with_name("styles.css").read_text()
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
-if submitted and user_query.strip():  # only proceed if the button was pressed and the field isn't blank
-    st.session_state.query = user_query  # store the submitted query so it survives the rerun
-    st.session_state.categories = selected_categories  # store the dropdown selections alongside it
+
+load_css()
+
+# Fixed backend URL -- override with the API_URL env var. (Used to be a
+# sidebar text input; the sidebar is now a nav rail.)
+api_url = DEFAULT_API_URL.rstrip("/")
+
+# --- STATE ---------------------------------------------------------------------
+# session_state persists across the reruns that every widget interaction
+# triggers. `query` is None until the first search -> that gates the whole
+# results block and the landing-vs-compact layout switch.
+st.session_state.setdefault("query", None)
+st.session_state.setdefault("industry", "(Any)")
+st.session_state.setdefault("application", "(Any)")
+st.session_state.setdefault("nature", "(Any)")
+st.session_state.setdefault("categories", {})
+st.session_state.setdefault("focus_tool", None)  # catalogue_id of the node clicked in Section 3
+st.session_state.setdefault("headline", random.choice(HEADLINES))
+
+
+def _current_categories() -> dict:
+    """The three picker values as structured fields -- "(Any)" dropped. Only
+    ever folded into the query text and shown as chips."""
+    picks = {
+        "industry": st.session_state.industry,
+        "application": st.session_state.application,
+        "nature_of_project": st.session_state.nature,
+    }
+    return {k: v for k, v in picks.items() if v != "(Any)"}
+
 
 def build_enhanced_query(raw_query: str, categories: dict) -> str:
     """Fold the selected dropdown tags into the query text sent to the backend.
@@ -95,15 +134,30 @@ def build_enhanced_query(raw_query: str, categories: dict) -> str:
     The backend embeds this same string for retrieval and reuses it for
     generation, so the tags inform both.
     """
-    labels = {
-        "industry": "Industry",
-        "application": "Application",
-        "nature_of_project": "Nature of project",
-    }
-    parts = [f"{labels[key]}: {value}" for key, value in categories.items() if value]
+    labels = {"industry": "Industry", "application": "Application", "nature_of_project": "Nature of project"}
+    parts = [f"{labels.get(key, key)}: {value}" for key, value in categories.items() if value]
     if not parts:
         return raw_query
     return f"{raw_query}\n\nContext — " + "; ".join(parts)
+
+
+SAVED_WORKFLOWS_PATH = Path(__file__).with_name("saved_workflows.json")
+
+
+def _save_workflow(result: dict | None) -> bool:
+    """Append the on-screen result (query + categories + workflow + tools +
+    description) to saved_workflows.json. No-op if there is no workflow yet."""
+    if not result or not (result.get("workflow") or {}).get("nodes"):
+        return False
+    try:
+        existing = json.loads(SAVED_WORKFLOWS_PATH.read_text()) if SAVED_WORKFLOWS_PATH.exists() else []
+        if not isinstance(existing, list):
+            existing = []
+    except (json.JSONDecodeError, OSError):
+        existing = []
+    existing.append({**result, "saved_at": datetime.now(timezone.utc).isoformat()})
+    SAVED_WORKFLOWS_PATH.write_text(json.dumps(existing, indent=2))
+    return True
 
 
 def run_query(query: str, categories: dict):
@@ -122,41 +176,226 @@ def run_query(query: str, categories: dict):
         data = resp.json()
         description = data["answer"]
         tools = data["tools"]
-        pipeline_diagram = data["pipeline_diagram"]
-        architecture_diagram = data["architecture_diagram"]
+        workflow = data.get("workflow") or {"nodes": [], "edges": []}
     except requests.RequestException as exc:
         description = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
         tools = []
-        pipeline_diagram = ""
-        architecture_diagram = ""
+        workflow = {"nodes": [], "edges": []}
 
-    return description, tools, pipeline_diagram, architecture_diagram
+    return description, tools, workflow
 
-# --- RESULTS (only shown after a query has been submitted) -------------------
-if st.session_state.query:  # gate everything below on having a real submitted query
-    st.caption(f"Query: *{st.session_state.query}*")  # shows what was asked, italicized for visual distinction
 
-    # show which category filters (if any) were applied, for transparency
+def _pop_label(field_name: str, value: str) -> str:
+    """Popover label: the picked value, or the field name when unset -- so
+    active filters are visible on the closed bar."""
+    return field_name if value == "(Any)" else value
+
+
+def render_search_bar(mode: str):
+    """The one search bar. `mode` is "hero" (big, centered -- landing) or
+    "compact" (slim, top -- results view). Three in-bar pickers: Industry,
+    Application (cascades within Industry), Nature of project -- all from
+    facets.json. Returns the status slot the caller uses to trigger the
+    loading shimmer while run_query() blocks.
+    """
+    # In the results view, show the executed query inside the input field
+    # (seed the widget state once if a fresh session lost it).
+    if mode == "compact" and "query_input" not in st.session_state and st.session_state.get("query"):
+        st.session_state.query_input = st.session_state.query
+
+    with st.container(key=f"tw_searchbar_{mode}"):
+        # Row 1: the text field. The Search icon-button is rendered right
+        # after it and then CSS-positioned to sit *inside* the field on the
+        # right (Streamlit can't put a widget inside st.text_input directly).
+        query_text = st.text_input(
+            "Describe your digital twin problem",  # kept for a11y; hidden below
+            key="query_input",
+            label_visibility="collapsed",
+            placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
+        )
+        submitted = st.button(
+            "",
+            icon=":material/search:",
+            type="primary",
+            key="tw_search_btn",
+            help="Search",
+        )
+
+        # Row 2: Industry / Application / Nature-of-project icon popovers, plus the
+        # empty area the caller uses to trigger the loading shimmer
+        # while run_query() blocks.
+        btn_cols = st.columns([1, 1, 1, 7], gap="small", vertical_alignment="center")
+
+        with btn_cols[0]:
+            with st.popover(
+                "",
+                icon=INDUSTRY_ICON,
+                use_container_width=True,
+                help=_pop_label("Industry", st.session_state.industry),
+            ):
+                st.selectbox(
+                    "Industry",
+                    options=["(Any)"] + list(INDUSTRY_TAXONOMY.keys()),
+                    key="industry",
+                )
+
+        with btn_cols[1]:
+            # Application options cascade from the picked Industry; "(Any)"
+            # -> the de-duplicated union across all industries.
+            if st.session_state.industry == "(Any)":
+                application_options = ["(Any)"] + sorted(
+                    {app for apps in INDUSTRY_TAXONOMY.values() for app in apps}
+                )
+            else:
+                application_options = ["(Any)"] + INDUSTRY_TAXONOMY[st.session_state.industry]
+            # Drop a stale Application pick before the selectbox renders.
+            if st.session_state.application not in application_options:
+                st.session_state.application = "(Any)"
+            with st.popover(
+                "",
+                icon=APPLICATION_ICON,
+                use_container_width=True,
+                help=_pop_label("Application", st.session_state.application),
+            ):
+                st.selectbox("Application", options=application_options, key="application")
+
+        with btn_cols[2]:
+            with st.popover(
+                "",
+                icon=NATURE_ICON,
+                use_container_width=True,
+                help=_pop_label("Nature of project", st.session_state.nature),
+            ):
+                st.selectbox(
+                    "Nature of project",
+                    options=["(Any)"] + list(NATURE_OPTIONS),
+                    key="nature",
+                )
+
+        status_slot = btn_cols[3].empty()
+
+    if submitted and query_text.strip():
+        st.session_state.query = query_text
+        st.session_state.categories = _current_categories()
+        st.rerun()
+
+    return status_slot
+
+
+# --- SIDEBAR (nav rail) ---------------------------------------------------
+with st.sidebar:
+    if st.button(
+        "New workflow",
+        icon=":material/add:",
+        key="sb_new_workflow",
+        use_container_width=True,
+        help="Save the current workflow and start a new one",
+    ):
+        # Save what's on screen, then reset to a clean landing (pop every
+        # stored widget value -- setdefault() re-seeds next run).
+        if _save_workflow(st.session_state.get("last_result")):
+            st.toast("Workflow saved", icon=":material/check:")
+        for _k in ("query", "query_input", "industry", "application", "nature",
+                   "categories", "focus_tool", "last_result", "results", "headline"):
+            st.session_state.pop(_k, None)
+        st.rerun()
+
+    # Placeholders -- no function yet.
+    st.button("Saved workflows", icon=":material/bookmark:", key="sb_saved",
+              use_container_width=True, disabled=True)
+    st.button("Settings", icon=":material/settings:", key="sb_settings",
+              use_container_width=True, disabled=True)
+    st.button("Help", icon=":material/help:", key="sb_help",
+              use_container_width=True, disabled=True)
+
+
+# --- LAYOUT -----------------------------------------------------------------
+if st.session_state.query:
+    # Results view: slim bar at the top, everything below it.
+    status_slot = render_search_bar("compact")  # the executed query shows in its input field
+
+    # applied category filters as chips, for transparency
     applied = [f"{k.replace('_', ' ').title()}: {v}" for k, v in st.session_state.categories.items() if v]
     if applied:
-        st.caption("Filters: " + "  ·  ".join(applied))
+        chips = "".join(f"<span class='tw-chip'>{a}</span>" for a in applied)
+        st.markdown(f"<div class='tw-chips'>{chips}</div>", unsafe_allow_html=True)
 
-    description, tools, pipeline_diagram, architecture_diagram = run_query(
-        st.session_state.query, st.session_state.categories
-    )  # fetch results for the current query + category selections
+    # Cache the fetch for the current (query, categories). Reruns triggered by
+    # UI churn -- clicking a workflow node, opening a popover -- then reuse the
+    # result instead of re-POSTing (which, being LLM-backed, would return a
+    # different graph and rebuild the canvas, losing any dragged node positions).
+    _cache_key = (st.session_state.query,
+                  json.dumps(st.session_state.categories, sort_keys=True))
+    _cache = st.session_state.get("results")
+    if not (_cache and _cache.get("key") == _cache_key):
+        with status_slot:
+            st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
+        description, tools, workflow = run_query(
+            st.session_state.query, st.session_state.categories
+        )
+        status_slot.empty()  # remove the <style> -> shimmer stops once results (or error) are in
+        _cache = {"key": _cache_key, "description": description,
+                  "tools": tools, "workflow": workflow}
+        st.session_state.results = _cache
 
-    # --- SECTION 1: DESCRIPTION ---------------------------------------------
-    st.header("1. Workflow Description V1")  # fixed section per your spec
+    description = _cache["description"]
+    tools = _cache["tools"]
+    workflow = _cache["workflow"]
+
+    # Stash the current result so the "New workflow" button can save it.
+    st.session_state.last_result = {
+        "query": st.session_state.query,
+        "categories": dict(st.session_state.categories),
+        "description": description,
+        "tools": tools,
+        "workflow": workflow,
+    }
+
+    # --- SECTION: DESCRIPTION ---------------------------------------------
+    st.header("Workflow Description")
     st.write(description)  # plain prose explanation of the digital twin workflow
 
-    # --- SECTION 2: TOOL SUGGESTIONS ------------------------------------------
-    st.header("2. Suggested Tools")  # fixed section per your spec
+    # --- SECTION: WORKFLOW CANVAS ---------------------------------------------
+    st.header("Workflow")
+    st.caption(
+        "Suggested pipeline. Nodes tagged **DB** map to a catalogue entry; an "
+        "accent ring marks tools also in the list below. Click a node to focus "
+        "its card. Drag a node to move it; drag an output dot to an input dot to "
+        "wire; click a wire then Delete (or its ×) to remove it. Drag canvas to "
+        "pan, wheel to zoom."
+    )
+    _wf_suggested = [t["catalogue_id"] for t in tools if t.get("catalogue_id")]
+    if workflow.get("nodes"):
+        _sel = workflow_canvas(
+            workflow=workflow, suggested=_wf_suggested, key="tw_wf", default=None
+        )
+        if isinstance(_sel, dict):
+            if _sel.get("kind") == "edit" and _sel.get("workflow"):
+                # User re-wired / moved nodes on the canvas -- make that the new
+                # truth for this query. The component recognises its own echo
+                # (matching heldSig) so this doesn't trigger a canvas rebuild.
+                st.session_state.results["workflow"] = _sel["workflow"]
+                st.session_state.last_result["workflow"] = _sel["workflow"]
+            elif _sel.get("catalogue_id"):
+                if st.session_state.get("focus_tool") != _sel["catalogue_id"]:
+                    st.session_state.focus_tool = _sel["catalogue_id"]
+                    st.rerun()
+    else:
+        st.caption("No workflow available for this query.")
+
+    # --- SECTION: TOOL SUGGESTIONS ------------------------------------------
+    st.header("Suggested Tools")
 
     if not tools:
         st.caption("No matching tools found in the catalogue for this query.")
 
+    _focus = st.session_state.get("focus_tool")
     for tool in tools:  # loop over each ranked tool result
-        with st.container(border=True):  # bordered box makes each tool visually distinct
+        focused = bool(tool.get("catalogue_id")) and tool["catalogue_id"] == _focus
+        card = st.container(border=True, key="tw_focus_card") if focused else st.container(border=True)
+        with card:  # bordered box makes each tool visually distinct
+            if focused:
+                st.caption("🔎 Selected in the workflow")
             st.subheader(tool["name"])  # tool name as subheading
             st.write(tool["rationale"])  # why this tool was suggested (explainability)
 
@@ -184,7 +423,7 @@ if st.session_state.query:  # gate everything below on having a real submitted q
             with col4:
                 st.write(f"**Validation:** {tool['validation_level'] or '—'}")
 
-            with st.expander("Details"):  # full schema dump, collapsed by default
+            with st.expander("Details", expanded=focused):  # full schema dump, collapsed by default
                 st.markdown("**Inputs**")
                 for i in tool["inputs"]:
                     st.write(f"- {i}")
@@ -197,39 +436,12 @@ if st.session_state.query:  # gate everything below on having a real submitted q
                         st.write(f"- {f}")
                 if tool.get("docs_url"):
                     st.markdown(f"[Reference]({tool['docs_url']})")  # traceability link
-
-    # --- SECTION 3: WORKFLOW DIAGRAMS -------------------------------------------
-    st.header("3. Workflow Diagram")  # fixed section per your spec
-
-    def render_mermaid(diagram: str, height: int = 320):
-        """Shared helper so both tabs embed mermaid the same way instead of
-        duplicating the components.html block."""
-        mermaid_html = f"""
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
-        <div class="mermaid">{diagram}</div>
-        <script>mermaid.initialize({{ startOnLoad: true }});</script>
-        """  # wraps the mermaid syntax in the JS needed to render it in a browser
-        # TODO: components.html is deprecated (removal after 2026-06-01, Streamlit
-        # suggests st.iframe — but that expects a URL, not raw HTML, so it's not a
-        # drop-in swap). Revisit before the removal date, e.g. via streamlit-mermaid.
-        components.html(mermaid_html, height=height)  # embeds the mermaid diagram inline in the Streamlit page
-
-    tab_pipeline, tab_architecture = st.tabs(["Pipeline", "Architecture"])  # two views of the same workflow
-    with tab_pipeline:
-        st.caption("Sequence of steps: what happens, in what order, when the system runs.")
-        if pipeline_diagram:
-            render_mermaid(pipeline_diagram)
-        else:
-            st.caption("No diagram available for this query.")
-    with tab_architecture:
-        st.caption("Static structure: the components and how they relate.")
-        if architecture_diagram:
-            render_mermaid(architecture_diagram)
-        else:
-            st.caption("No diagram available for this query.")
-
-    # --- SECTION 4: EXPORT -------------------------------------------------------
-    st.header("4. Export")  # placeholder tying UI to your planned LaTeX output step
-    st.button("Export report as LaTeX/PDF (not yet wired up)")
 else:
-    st.info("Enter a digital twin problem above and hit Search to see suggestions.")  # empty state before first search
+    # Landing view: eyebrow + rotating headline + the one big search bar,
+    # vertically & horizontally centred (styled in styles.css).
+    with st.container(key="tw_landing"):
+        st.markdown(
+            f"<h1 class='tw-hero-title'>{st.session_state.headline}</h1>",
+            unsafe_allow_html=True,
+        )
+        render_search_bar("hero")

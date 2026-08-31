@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="drawflow.min.css" />
+<style>
+  html, body {
+    margin: 0; height: 100%; min-height: 520px; overflow: hidden; background: transparent;
+    font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, sans-serif;
+    color: #111111;
+  }
+  /* No panel chrome -- the canvas sits directly on the page's beige ground.
+     min-height so the panel is measurable on the FIRST render (before
+     Streamlit has resized the iframe) -> build() runs immediately, no delay. */
+  #panel {
+    position: absolute; inset: 0; min-height: 520px;
+    background: transparent;
+    overflow: visible;
+  }
+  #canvas { position: absolute; inset: 0; overflow: hidden; }
+  /* CRITICAL: Drawflow's connection math divides by precanvas.clientWidth/
+     Height; if .parent-drawflow has no height it is 0 and every line
+     collapses to the corner. Drawflow's own CSS sizes .drawflow but NOT
+     .parent-drawflow -- force it here. */
+  .parent-drawflow, .drawflow { width: 100%; height: 100%; }
+  .drawflow { background: transparent; transform-origin: 0 0 !important; }
+
+  /* auto-fit button, top-right of the canvas */
+  #tw-fit {
+    position: absolute; top: 10px; right: 12px; z-index: 20;
+    width: 32px; height: 32px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #E7E3DA; border-radius: 8px;
+    background: #ffffff; color: #333333; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+  }
+  #tw-fit:hover { background: #F1EFE9; color: #111111; border-color: #D6CFC0; }
+  .parent-drawflow { cursor: grab; }
+  .parent-drawflow:active { cursor: grabbing; }
+
+  /* --- node card --------------------------------------------------------
+     The visible card IS the .drawflow-node element, so Drawflow anchors the
+     ports exactly on this box's edges. Keep box-sizing:border-box and use
+     `outline` (not an inflating box-shadow) for the suggested ring so the
+     box never changes size. */
+  .drawflow .drawflow-node {
+    box-sizing: border-box;
+    width: 200px;
+    border: 1px solid rgba(120, 120, 120, 0.55);
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  }
+  /* draggable affordance only -- no colour / outline change while grabbed
+     (Drawflow's own .selected{background:red} is neutralised in drawflow.min.css) */
+  .drawflow .drawflow-node { cursor: grab; }
+  .drawflow .drawflow-node.selected { cursor: grabbing; }
+
+  .drawflow-node .twn-title { font-weight: 600; line-height: 1.2; }
+  .drawflow-node .twn-badge {
+    position: absolute; top: -8px; right: -8px;
+    background: #111; color: #fff; font-size: 9px; font-weight: 700;
+    letter-spacing: .5px; padding: 2px 5px; border-radius: 6px;
+  }
+
+  /* Port rows. The body is pulled out to the card's border so each port's
+     .dot sits ON the left (inputs) or right (outputs) edge -- that .dot is
+     the anchor the wire connects to. */
+  .drawflow-node .twn-body { margin: 5px -10px 0; display: flex; }
+  .drawflow-node .twn-col { flex: 1 1 0; min-width: 0; }
+  .drawflow-node .twn-port {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: #555; line-height: 1.7; padding: 0 3px;
+  }
+  .drawflow-node .twn-col.out .twn-port { flex-direction: row-reverse; }
+  .drawflow-node .twn-port span {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .drawflow-node .twn-port .dot {
+    position: relative;
+    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    background: #fff; border: 1.6px solid #6a6a6a;
+    cursor: crosshair;
+  }
+  /* invisible ~20px grab target around each port dot */
+  .drawflow-node .twn-port .dot::before {
+    content: ""; position: absolute; inset: -7px; border-radius: 50%;
+  }
+  .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
+  .drawflow-node.t-model .twn-port .dot    { border-color: rgba(63,125,120,0.85); }
+  .drawflow-node.t-decision .twn-port .dot { border-color: rgba(169,130,47,0.85); }
+  .drawflow-node.t-output .twn-port .dot,
+  .drawflow-node.t-database .twn-port .dot { border-color: rgba(84,98,138,0.85); }
+
+  /* per-type tint + texture. Class is "t-<type>" (backend node type:
+     input | process | model | decision | merge | output | database). */
+  .drawflow-node.t-input    { background: rgba(255,255,255,0.55); }
+  .drawflow-node.t-process  { background:
+      radial-gradient(rgba(17,17,17,0.10) 0.9px, transparent 0.9px) 0 0 / 10px 10px,
+      rgba(255,255,255,0.55); }
+  .drawflow-node.t-merge    { background:
+      linear-gradient(rgba(17,17,17,0.07) 1px, transparent 1px) 0 0 / 100% 10px,
+      rgba(255,255,255,0.55); }
+  .drawflow-node.t-model    { background:
+      repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 8px),
+      rgba(63,125,120,0.22);
+      border-color: rgba(63,125,120,0.60); }
+  .drawflow-node.t-decision { background:
+      repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
+      repeating-linear-gradient(90deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
+      rgba(169,130,47,0.22);
+      border-color: rgba(169,130,47,0.60); }
+  .drawflow-node.t-output   { background: rgba(63,125,85,0.22); border-color: rgba(63,125,85,0.60); }
+
+  /* database -- indigo/slate tint, elliptical top+bottom edges (cylinder
+     silhouette) and a faint DB-cylinder glyph watermark in the corner. */
+  .drawflow-node.t-database {
+    border-color: rgba(84,98,138,0.60);
+    border-radius: 10px / 26px;
+    background:
+      no-repeat right -6px bottom -8px / 42px
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="rgba(17,17,17,0.16)" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 1.66 3.13 3 7 3s7-1.34 7-3V5"/><path d="M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3"/></svg>'),
+      rgba(84,98,138,0.20);
+  }
+
+  /* suggested: outline does NOT change the box size, so ports stay put */
+  .drawflow-node.is-suggested { outline: 1.5px solid rgba(17, 17, 17, 0.55); outline-offset: 1px; }
+
+  /* Drawflow's own connection renderer AND its floating port dots are
+     unreliable inside a scaled, iframe-hosted canvas. Hide both; we draw the
+     edges (and their endpoint dots) ourselves in #wires, anchored to the
+     visible node-box edges, recomputed on every pan / zoom / resize. */
+  .drawflow .connection { display: none !important; }
+  .drawflow .drawflow-node .input,
+  .drawflow .drawflow-node .output { display: none !important; }
+  #wires {
+    position: absolute; inset: 0; z-index: 0;
+    pointer-events: none; overflow: visible;
+  }
+  #wires path.wire { fill: none; stroke: rgba(17, 17, 17, 0.32); stroke-width: 1.25px; }
+  #wires path.wire.sel { stroke: rgba(17, 17, 17, 0.8); stroke-width: 2px; }
+  #wires path.pending {
+    fill: none; stroke: rgba(17, 17, 17, 0.55);
+    stroke-width: 1.5px; stroke-dasharray: 3 3;
+  }
+  /* transparent fat twin -- the only clickable part of a wire */
+  #wires path.hit {
+    fill: none; stroke: transparent; stroke-width: 14px;
+    pointer-events: stroke; cursor: pointer;
+  }
+  #wires g.del { pointer-events: all; cursor: pointer; }
+  #wires g.del circle { fill: #fff; stroke: rgba(17, 17, 17, 0.55); stroke-width: 1.2px; }
+  #wires g.del path { stroke: rgba(17, 17, 17, 0.75); stroke-width: 1.6px; }
+</style>
+</head>
+<body>
+  <div id="panel">
+    <svg id="wires"></svg>
+    <div id="canvas"></div>
+    <button id="tw-fit" type="button" title="Fit to nodes" aria-label="Fit to nodes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>
+      </svg>
+    </button>
+  </div>
+  <script src="drawflow.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    // ---- raw Streamlit component protocol (no streamlit-component-lib) ----
+    function send(type, extra) {
+      window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, extra || {}), "*");
+    }
+    function setValue(value) {
+      send("streamlit:setComponentValue", { value: value, dataType: "json" });
+    }
+    function setHeight(h) { send("streamlit:setFrameHeight", { height: h }); }
+
+    var SVGNS = "http://www.w3.org/2000/svg";
+    var FIXED_HEIGHT = 520;
+    var editor = null;
+    var dfToNode = {};        // drawflow int id -> our node object
+    var edgeList = [];        // [{a: srcIntId, b: tgtIntId, op, ip}] for our own wire renderer
+    var lastSig = null;       // graph currently drawn
+    var builtSig = null;      // graph a build() has completed for
+    var heldSig = null;       // content-sig of the graph we currently hold (build OR user edit)
+    var selEdge = -1;         // index into edgeList of the selected wire (-1 = none)
+    var pending = null;       // in-progress connection: {a: srcIntId, op: portNo, x, y}
+    var panelRO = null;       // live ResizeObserver on #panel
+    var settleUntil = 0;      // rAF wire-redraw deadline after a build
+    var wheelBound = false;    // our smooth wheel handler is installed once
+
+    function panel() { return document.getElementById("panel"); }
+    function sized() {
+      var p = panel();
+      return p && p.clientWidth > 40 && p.clientHeight > 40;
+    }
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
+
+    // content only -- the styling class lives on the .drawflow-node element.
+    // Every port row carries an anchor <i class="dot" id="a-in|out-<intId>-<k>">
+    // sitting on the card edge; drawWires() connects lines to those.
+    function nodeContent(n, intId) {
+      var badge = n.catalogue_id ? '<div class="twn-badge">DB</div>' : "";
+      var ins = (n.inputs || []).map(function (p, k) {
+        return '<div class="twn-port"><i class="dot" id="a-in-' + intId + '-' + (k + 1) +
+               '"></i><span>' + esc(p) + "</span></div>";
+      }).join("");
+      var outs = (n.outputs || []).map(function (p, k) {
+        return '<div class="twn-port"><i class="dot" id="a-out-' + intId + '-' + (k + 1) +
+               '"></i><span>' + esc(p) + "</span></div>";
+      }).join("");
+      var body = (ins || outs)
+        ? '<div class="twn-body"><div class="twn-col in">' + ins +
+          '</div><div class="twn-col out">' + outs + "</div></div>"
+        : "";
+      return badge + '<div class="twn-title">' + esc(n.label || n.id) + "</div>" + body;
+    }
+
+    // longest-path rank per node id
+    function ranks(nodes, edges) {
+      var out = {}, adj = {}, indeg = {};
+      nodes.forEach(function (n) { adj[n.id] = []; indeg[n.id] = 0; });
+      edges.forEach(function (e) {
+        if (adj[e.source] && (e.target in indeg)) { adj[e.source].push(e.target); indeg[e.target]++; }
+      });
+      var q = nodes.filter(function (n) { return indeg[n.id] === 0; }).map(function (n) { return n.id; });
+      q.forEach(function (id) { out[id] = 0; });
+      var guard = 0;
+      while (q.length && guard++ < 10000) {
+        var id = q.shift();
+        adj[id].forEach(function (t) {
+          out[t] = Math.max(out[t] == null ? 0 : out[t], out[id] + 1);
+          if (--indeg[t] === 0) q.push(t);
+        });
+      }
+      nodes.forEach(function (n) { if (out[n.id] == null) out[n.id] = 0; });
+      return out;
+    }
+
+    // --- our own wire renderer (screen space) --------------------------------
+    // Each wire connects the OUTPUT dot of the source port to the INPUT dot of
+    // the target port (the <i class="dot" id="a-out|in-..."> anchors rendered
+    // inside the card). Falls back to the node edge if an anchor is missing.
+    // Recomputed on every pan / zoom / resize.
+    function anchorAt(id, intId, side) {
+      var el = document.getElementById(id);
+      if (el) {
+        var r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }
+      var node = document.getElementById("node-" + intId);
+      if (!node) return null;
+      var nr = node.getBoundingClientRect();
+      return { x: side === "out" ? nr.right : nr.left, y: nr.top + nr.height / 2 };
+    }
+
+    function drawWires() {
+      var svg = document.getElementById("wires");
+      if (!svg) return;
+      var p = panel();
+      if (p) {
+        svg.setAttribute("width", p.clientWidth);
+        svg.setAttribute("height", p.clientHeight);
+        svg.setAttribute("viewBox", "0 0 " + p.clientWidth + " " + p.clientHeight);
+      }
+      var wr = svg.getBoundingClientRect();
+      var parts = [];
+      edgeList.forEach(function (e, i) {
+        var s = anchorAt("a-out-" + e.a + "-" + e.op, e.a, "out");
+        var t = anchorAt("a-in-" + e.b + "-" + e.ip, e.b, "in");
+        if (!s || !t) return;
+        var x1 = s.x - wr.left, y1 = s.y - wr.top;
+        var x2 = t.x - wr.left, y2 = t.y - wr.top;
+        var dx = Math.max(30, Math.abs(x2 - x1) * 0.5);
+        var d = "M " + x1 + " " + y1 + " C " + (x1 + dx) + " " + y1 + " " +
+                (x2 - dx) + " " + y2 + " " + x2 + " " + y2;
+        parts.push('<path class="hit" data-ei="' + i + '" d="' + d + '"/>');
+        parts.push('<path class="wire' + (i === selEdge ? " sel" : "") + '" d="' + d + '"/>');
+        if (i === selEdge) {
+          var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+          parts.push(
+            '<g class="del" data-ei="' + i + '" transform="translate(' + mx + ',' + my + ')">' +
+            '<circle r="9"/>' +
+            '<path d="M -3.5 -3.5 L 3.5 3.5 M 3.5 -3.5 L -3.5 3.5"/></g>'
+          );
+        }
+      });
+      if (pending) {
+        var ps = anchorAt("a-out-" + pending.a + "-" + pending.op, pending.a, "out");
+        if (ps) {
+          var px1 = ps.x - wr.left, py1 = ps.y - wr.top;
+          var px2 = pending.x - wr.left, py2 = pending.y - wr.top;
+          var pdx = Math.max(30, Math.abs(px2 - px1) * 0.5);
+          parts.push('<path class="pending" d="M ' + px1 + ' ' + py1 + ' C ' +
+            (px1 + pdx) + ' ' + py1 + ' ' + (px2 - pdx) + ' ' + py2 + ' ' + px2 + ' ' + py2 + '"/>');
+        }
+      }
+      svg.innerHTML = parts.join("");
+    }
+
+    function settleTick() {
+      drawWires();
+      if (Date.now() < settleUntil) requestAnimationFrame(settleTick);
+    }
+
+    // --- editable graph: serialise, sign, emit ------------------------------
+    // The component is the source of truth once the user wires/moves anything.
+    // currentGraph() -> the same {nodes, edges} shape the backend produces,
+    // plus cosmetic x/y per node so positions survive a later rebuild.
+    function currentGraph() {
+      var store = (editor && editor.drawflow && editor.drawflow.drawflow.Home.data) || {};
+      var nodes = Object.keys(dfToNode).map(function (k) {
+        var n = dfToNode[k], s = store[k] || {};
+        return {
+          id: n.id, type: n.type || "process", label: n.label || n.id,
+          inputs: n.inputs || [], outputs: n.outputs || [],
+          catalogue_id: n.catalogue_id || null,
+          catalogue_title: n.catalogue_title || null,
+          x: typeof s.pos_x === "number" ? s.pos_x : null,
+          y: typeof s.pos_y === "number" ? s.pos_y : null
+        };
+      });
+      var edges = edgeList.map(function (e) {
+        return {
+          source: dfToNode[e.a] ? dfToNode[e.a].id : null,
+          target: dfToNode[e.b] ? dfToNode[e.b].id : null,
+          source_port: e.op - 1, target_port: e.ip - 1,
+          label: e.label || null
+        };
+      }).filter(function (e) { return e.source && e.target; });
+      return { nodes: nodes, edges: edges };
+    }
+
+    // content signature -- node identity + ports + wiring, NOT positions.
+    // Used to recognise our own echo coming back from Streamlit.
+    function graphSig(g) {
+      try {
+        g = g || {};
+        var ns = (g.nodes || []).map(function (n) {
+          return [n.id, n.type, n.label,
+                  (n.inputs || []).join(""),
+                  (n.outputs || []).join("")];
+        });
+        var es = (g.edges || []).map(function (e) {
+          return [e.source, e.target, e.source_port | 0, e.target_port | 0].join("");
+        }).sort();
+        return JSON.stringify([ns, es]);
+      } catch (e) { return String(Math.random()); }
+    }
+
+    function edgeExists(a, b, op, ip) {
+      return edgeList.some(function (e) {
+        return e.a == a && e.b == b && e.op == op && e.ip == ip;
+      });
+    }
+
+    var _emitT = 0;
+    function emitEdit() {
+      clearTimeout(_emitT);
+      _emitT = setTimeout(function () {
+        var g = currentGraph();
+        heldSig = graphSig(g);          // so the echo is recognised, no rebuild
+        setValue({ kind: "edit", workflow: g, ts: Date.now() });
+      }, 140);
+    }
+
+    // Frame ALL nodes: measure their real bounding box, add a slight margin
+    // (the "rectangle around the nodes"), then zoom + pan so that padded box
+    // is centred in the panel. Used on first render AND by the #tw-fit button.
+    var FIT_MARGIN = 70;   // canvas-unit padding around the node bbox
+    function autoFit() {
+      if (!editor) return;
+      try {
+        var nodes = document.querySelectorAll(".drawflow .drawflow-node");
+        if (!nodes.length) return;
+        var pr = editor.precanvas.getBoundingClientRect();
+        var z0 = editor.zoom || 1;
+        var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        nodes.forEach(function (n) {
+          var r = n.getBoundingClientRect();
+          x0 = Math.min(x0, (r.left  - pr.left) / z0);
+          y0 = Math.min(y0, (r.top   - pr.top ) / z0);
+          x1 = Math.max(x1, (r.right - pr.left) / z0);
+          y1 = Math.max(y1, (r.bottom - pr.top) / z0);
+        });
+        if (!isFinite(x0)) return;
+        var bw = (x1 - x0) + 2 * FIT_MARGIN;
+        var bh = (y1 - y0) + 2 * FIT_MARGIN;
+        var p = panel();
+        var cw = (p && p.clientWidth) || 800, ch = (p && p.clientHeight) || FIXED_HEIGHT;
+        var z = Math.max(0.12, Math.min(1.4, Math.min(cw / bw, ch / bh)));
+        var boxX = x0 - FIT_MARGIN, boxY = y0 - FIT_MARGIN;   // padded box top-left, canvas coords
+        var dx = (cw - bw * z) / 2 - boxX * z;
+        var dy = (ch - bh * z) / 2 - boxY * z;
+        editor.zoom = z;
+        editor.zoom_last_value = z;
+        editor.canvas_x = dx;   // Drawflow applies translate(canvas_x px, canvas_y px) verbatim
+        editor.canvas_y = dy;
+        editor.precanvas.style.transformOrigin = "0 0";
+        editor.precanvas.style.transform =
+          "translate(" + dx + "px, " + dy + "px) scale(" + z + ")";
+      } catch (e) { /* leave view as-is */ }
+      drawWires();
+    }
+
+    // --- smooth, cursor-anchored wheel zoom + two-finger-scroll pan ---------
+    // Drawflow's built-in wheel zoom (zoom_enter) steps a FIXED amount per
+    // wheel event and always zooms toward the origin. A mac trackpad emits a
+    // torrent of wheel events per pinch -> the zoom runs away and jumps. We
+    // intercept the wheel on #panel in the capture phase (before Drawflow's
+    // own listener on #canvas, which stopImmediatePropagation then blocks) and
+    // drive the transform ourselves:
+    //   pinch  (e.ctrlKey on macOS, or Ctrl/Cmd + wheel) -> zoom scaled by the
+    //           wheel delta, anchored on the point under the cursor
+    //   plain wheel / two-finger scroll -> NOT consumed: it bubbles to the
+    //           Streamlit page so the user can scroll past the canvas. Panning
+    //           is done by dragging the canvas background instead.
+    // Installed once; it reads the live module-level `editor` on every event,
+    // so it keeps working across rebuilds.
+    function installWheel() {
+      if (wheelBound) return;
+      wheelBound = true;
+      panel().addEventListener("wheel", function (e) {
+        if (!editor) return;
+        if (!(e.ctrlKey || e.metaKey)) return;   // let the page scroll
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        var rect = panel().getBoundingClientRect();
+        var px = e.clientX - rect.left, py = e.clientY - rect.top;
+        var z = editor.zoom || 1;
+        var cx = editor.canvas_x || 0, cy = editor.canvas_y || 0;
+
+        // clamp the per-event delta so a chunky mouse notch (|deltaY|~100)
+        // and a fine trackpad pinch (|deltaY|~1-8) both feel gentle
+        var dd = Math.max(-40, Math.min(40, e.deltaY));
+        var nz = z * Math.exp(-dd * 0.006);
+        nz = Math.max(editor.zoom_min, Math.min(editor.zoom_max, nz));
+        var ax = (px - cx) / z, ay = (py - cy) / z;   // canvas pt under cursor
+        cx = px - ax * nz;
+        cy = py - ay * nz;                              // keep it fixed
+        z = nz;
+
+        editor.zoom = z;
+        editor.zoom_last_value = z;
+        editor.canvas_x = cx;
+        editor.canvas_y = cy;
+        editor.precanvas.style.transformOrigin = "0 0";
+        editor.precanvas.style.transform =
+          "translate(" + cx + "px, " + cy + "px) scale(" + z + ")";
+        drawWires();
+      }, { passive: false, capture: true });
+    }
+
+    function build(args) {
+      var wf = args.workflow || {};
+      var nodes = wf.nodes || [];
+      var edges = wf.edges || [];
+      var suggested = args.suggested || [];
+
+      var host = document.getElementById("canvas");
+      host.innerHTML = "";
+      editor = new Drawflow(host);
+      editor.reroute = false;
+      editor.zoom_value = 0.04;   // fallback step for zoom_in/out (we override wheel below)
+      editor.zoom_min = 0.3;
+      editor.zoom_max = 1.8;
+      editor.start();
+      installWheel();             // replace Drawflow's jumpy fixed-step wheel zoom
+      dfToNode = {};
+      edgeList = [];
+
+      var rk = ranks(nodes, edges);
+      var byRank = {};
+      nodes.forEach(function (n) { (byRank[rk[n.id]] = byRank[rk[n.id]] || []).push(n); });
+
+      var COLW = 260, ROWH = 140;
+
+      // --- assemble the Drawflow import object -------------------------------
+      // import() runs load() -> addNodeImport for all, then
+      // updateConnectionNodes("node-"+id) for every node in one pass. Far more
+      // reliable than imperative addNode/addConnection + manual refresh.
+      var data = { drawflow: { Home: { data: {} } } };
+      var store = data.drawflow.Home.data;
+      var idMap = {};   // our node id -> integer drawflow id
+      var next = 1;
+
+      function ports(prefix, count) {
+        var m = {};
+        for (var k = 1; k <= Math.max(1, count); k++) m[prefix + "_" + k] = { connections: [] };
+        return m;
+      }
+
+      Object.keys(byRank).forEach(function (r) {
+        var col = byRank[r];
+        col.forEach(function (n, i) {
+          var intId = next++;
+          idMap[n.id] = intId;
+          dfToNode[intId] = n;
+          var isSug = !!n.catalogue_id && suggested.indexOf(n.catalogue_id) !== -1;
+          store[intId] = {
+            id: intId,
+            name: n.id,
+            data: {},
+            class: "t-" + (n.type || "process") + (isSug ? " is-suggested" : ""),
+            html: nodeContent(n, intId),
+            typenode: false,
+            pos_x: (typeof n.x === "number" && isFinite(n.x))
+              ? n.x : (40 + Number(r) * COLW),
+            pos_y: (typeof n.y === "number" && isFinite(n.y))
+              ? n.y : (40 + (i - (col.length - 1) / 2) * ROWH + 240),
+            inputs: ports("input", (n.inputs || []).length),
+            outputs: ports("output", (n.outputs || []).length),
+          };
+        });
+      });
+
+      var wired = 0;
+      edges.forEach(function (e) {
+        var a = idMap[e.source], b = idMap[e.target];
+        if (a == null || b == null || !store[a] || !store[b]) return;
+        var na = dfToNode[a], nb = dfToNode[b];
+        var outN = Object.keys(store[a].outputs).length;
+        var inN = Object.keys(store[b].inputs).length;
+        var op = Math.min(Math.max(e.source_port || 0, 0), outN - 1) + 1;
+        var ip = Math.min(Math.max(e.target_port || 0, 0), inN - 1) + 1;
+        store[a].outputs["output_" + op].connections.push({ node: String(b), output: "input_" + ip });
+        store[b].inputs["input_" + ip].connections.push({ node: String(a), input: "output_" + op });
+        edgeList.push({ a: a, b: b, op: op, ip: ip });
+        wired++;
+      });
+      if (edges.length && wired === 0) console.warn("workflow: no connections wired");
+
+      editor.import(data);
+
+      autoFit();                       // frame all nodes on first render
+      setTimeout(autoFit, 60);         // ...again once layout / fonts settle
+      setTimeout(autoFit, 260);
+
+      // "edit" -> node cards can be dragged around. New wiring is impossible
+      // anyway: Drawflow's own port dots are display:none (we render #wires
+      // ourselves), so there is nothing to grab to start a connection.
+      editor.editor_mode = "edit";
+      // redraw our wires whenever Drawflow pans or zooms
+      editor.on("translate", drawWires);
+      editor.on("zoom", drawWires);
+      // ...and live, while a node is being dragged (Drawflow sets .drag/.node_dragged)
+      editor.on("nodeMoved", drawWires);
+      var pnl = panel();
+      ["mousemove", "touchmove"].forEach(function (ev) {
+        pnl.addEventListener(ev, function () {
+          if (editor && (editor.drag || editor.node_dragged)) drawWires();
+        }, { passive: true });
+      });
+
+      // Click vs. drag. Drawflow fires nodeSelected on the mousedown that
+      // *starts* a drag, so we can't use it to emit the focus value -- every
+      // drag would post a new value and rerun Streamlit. Detect a real click
+      // (same node, pointer barely moved) here instead.
+      var _downId = null, _downX = 0, _downY = 0;
+      pnl.addEventListener("mousedown", function (e) {
+        var el = e.target.closest && e.target.closest(".drawflow-node");
+        _downId = el ? el.id.replace("node-", "") : null;
+        _downX = e.clientX; _downY = e.clientY;
+      });
+      pnl.addEventListener("mouseup", function (e) {
+        if (_downId == null) return;
+        var el = e.target.closest && e.target.closest(".drawflow-node");
+        var upId = el ? el.id.replace("node-", "") : null;
+        var moved = Math.abs(e.clientX - _downX) + Math.abs(e.clientY - _downY);
+        if (upId === _downId && moved < 5) {   // a click, not a drag
+          var n = dfToNode[_downId] || dfToNode[parseInt(_downId, 10)];
+          if (n) setValue({ node: n.id, catalogue_id: n.catalogue_id || null, ts: Date.now() });
+        }
+        _downId = null;
+      });
+
+      // keep wires glued through later layout changes (tab shown, resize)
+      if (panelRO) { panelRO.disconnect(); }
+      panelRO = new ResizeObserver(function () { drawWires(); });
+      panelRO.observe(panel());
+
+      // and follow the layout as it settles for ~1.2s after the build
+      settleUntil = Date.now() + 1200;
+      requestAnimationFrame(settleTick);
+
+      builtSig = lastSig;
+    }
+
+    function schedule(args) {
+      if (sized()) { build(args); return; }
+      // panel not laid out yet (hidden tab / iframe not sized) -- wait for it
+      var done = false;
+      function run() {
+        if (done || builtSig === lastSig) return;
+        if (!sized()) return;
+        done = true;
+        if (ro) ro.disconnect();
+        build(args);
+      }
+      var ro = new ResizeObserver(run);
+      ro.observe(panel());
+      requestAnimationFrame(run);
+      setTimeout(run, 100);
+      setTimeout(run, 400);
+      setTimeout(run, 1000);
+    }
+
+    function sig(args) {
+      try {
+        var wf = args.workflow || {};
+        return JSON.stringify([(wf.nodes || []).map(function (n) { return n.id; }),
+                               (wf.edges || []).length, args.suggested || []]);
+      } catch (e) { return Math.random().toString(); }
+    }
+
+    var fitBtn = document.getElementById("tw-fit");
+    if (fitBtn) fitBtn.addEventListener("click", autoFit);
+
+    window.addEventListener("message", function (event) {
+      var d = event.data || {};
+      if (d.type !== "streamlit:render") return;
+      var args = d.args || {};
+      setHeight(FIXED_HEIGHT);
+      var s = sig(args);
+      if (s === builtSig) {  // same graph -> just re-settle the wires
+        settleUntil = Date.now() + 600;
+        requestAnimationFrame(settleTick);
+        return;
+      }
+      lastSig = s;
+      try { schedule(args); } catch (err) { console.error("workflow build failed", err); }
+    });
+
+    send("streamlit:componentReady", { apiVersion: 1 });
+    setHeight(FIXED_HEIGHT);
+  })();
+  </script>
+</body>
+</html>
