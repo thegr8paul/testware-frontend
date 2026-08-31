@@ -750,11 +750,17 @@
       setTimeout(run, 1000);
     }
 
+    // Rebuild gate -- node identity + suggestion set ONLY, deliberately NOT
+    // the edges. Once the canvas is up, edgeList is the source of truth for
+    // wiring; a render that carries the same nodes (an edit echo, a focus
+    // rerun, the pre-edit graph coming back a beat late) must NOT rebuild or
+    // it re-fits the view and throws away the user's zoom/pan and edits.
+    // A genuinely new graph (new query) brings new node ids -> rebuild.
     function sig(args) {
       try {
         var wf = args.workflow || {};
         return JSON.stringify([(wf.nodes || []).map(function (n) { return n.id; }),
-                               (wf.edges || []).length, args.suggested || []]);
+                               args.suggested || []]);
       } catch (e) { return Math.random().toString(); }
     }
 
