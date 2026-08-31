@@ -324,6 +324,9 @@ with st.sidebar:
 
 # --- READ ME (project overview / demo-day presentation) -------------------
 # Full-page: replaces the main area; the sidebar (rendered above) stays.
+# Content is plain Markdown in presentation.md (next to this file) -- edit it
+# there and push; Streamlit Cloud redeploys. Styled via `.st-key-tw_readme`
+# in styles.css. No unsafe_allow_html -> keep it Markdown, not raw HTML.
 if st.session_state.get("show_readme"):
     with st.container(key="tw_readme"):
         st.markdown(Path(__file__).with_name("presentation.md").read_text())
