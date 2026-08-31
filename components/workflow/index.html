@@ -59,6 +59,10 @@
   .drawflow .drawflow-node.selected { cursor: grabbing; }
 
   .drawflow-node .twn-title { font-weight: 600; line-height: 1.2; text-align: center; }
+  /* product logo (keyword-matched from the node label) -- the ONLY colour on
+     a node. Small, centred above the title; absent when nothing matched. */
+  .drawflow-node .twn-logo { display: flex; justify-content: center; margin: 0 0 4px; }
+  .drawflow-node .twn-logo img { width: 20px; height: 20px; display: block; border-radius: 4px; }
   .drawflow-node .twn-badge {
     position: absolute; top: -8px; right: -8px;
     background: #111; color: #fff; font-size: 9px; font-weight: 700;
@@ -89,17 +93,11 @@
     content: ""; position: absolute; inset: -7px; border-radius: 50%;
   }
   .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
-  /* colour-group nodes carry an accent-coloured port dot; texture-group keep the neutral one */
-  .drawflow-node.t-model .twn-port .dot    { border-color: #2C6E68; }
-  .drawflow-node.t-output .twn-port .dot   { border-color: #2E6E4C; }
-  .drawflow-node.t-database .twn-port .dot { border-color: #414F86; }
 
-  /* --- per-category encoding: EITHER colour OR texture, never both --------
-     Class is "t-<type>" (backend node type). Two groups:
-       flow / scaffold  (input, process, merge, decision)  -> one neutral
-         card, told apart by TEXTURE only (no tint).
-       substance        (model, output, database)          -> a flat colour
-         tint, no texture; database also keeps its cylinder silhouette. */
+  /* --- per-category encoding: shape + texture, NO colour ------------------
+     Class is "t-<type>" (backend node type). Category is told apart by
+     TEXTURE (flow/scaffold nodes) and SILHOUETTE (all nodes) only. Colour on
+     a node is reserved for a product logo (see .twn-logo / logoFor()). */
 
   .drawflow-node.t-input,
   .drawflow-node.t-process,
@@ -119,30 +117,6 @@
   .drawflow-node.t-decision {
     background-image: repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 9px);
   }
-
-  /* substance nodes: NO fill -- the same neutral card as everything else.
-     Category reads from a crisp, muted accent instead of a wash: a solid
-     border, a small legend swatch by the title, and matching port dots. */
-  .drawflow-node.t-model,
-  .drawflow-node.t-output,
-  .drawflow-node.t-database {
-    background-color: rgba(255, 255, 255, 0.55);
-    border-width: 1.5px;
-  }
-  .drawflow-node.t-model    { border-color: #2C6E68; }  /* teal   */
-  .drawflow-node.t-output   { border-color: #2E6E4C; }  /* green  */
-  .drawflow-node.t-database { border-color: #414F86; }  /* indigo */
-
-  .drawflow-node.t-model .twn-title::before,
-  .drawflow-node.t-output .twn-title::before,
-  .drawflow-node.t-database .twn-title::before {
-    content: ""; display: inline-block;
-    width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px;
-    border-radius: 2px;
-  }
-  .drawflow-node.t-model .twn-title::before    { background: #2C6E68; }
-  .drawflow-node.t-output .twn-title::before   { background: #2E6E4C; }
-  .drawflow-node.t-database .twn-title::before { background: #414F86; }
 
   /* --- per-category silhouette -----------------------------------------
      Shape as a third, orthogonal cue. The bounding box stays rectangular
@@ -247,11 +221,56 @@
       });
     }
 
+    // --- product logos ----------------------------------------------------
+    // A node that names a real tool gets that tool's mark -- the only colour
+    // on a node. Matched by substring against "<label> <catalogue_id>"
+    // (lower-cased). Marks are simplified, nominative glyphs (not the exact
+    // trademarked artwork) -- fine for an internal demo. Add more below.
+    var LOGO_SVG = {
+      nvidia: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#76B900'/><path d='M11 20c3.6-6.4 13.8-6.4 17.4 0-3.6 6.4-13.8 6.4-17.4 0z' fill='none' stroke='#fff' stroke-width='2.6'/><circle cx='20' cy='20' r='3.2' fill='#fff'/></svg>",
+      ansys: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#FFB71B'/><path d='M11 28l9-17 9 17M15.5 22.5h9' fill='none' stroke='#1a1a1a' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      simulink: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0076A8'/><path d='M6 25c6.5 0 6.5-11 13.5-11S26 25 34 25' fill='none' stroke='#FF8C00' stroke-width='2.8' stroke-linecap='round'/><rect x='4.5' y='23.5' width='4' height='4' fill='#fff'/><rect x='31.5' y='12' width='4' height='4' fill='#fff'/></svg>",
+      siemens: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#00819B'/><text x='20' y='27' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='17' fill='#fff'>S</text></svg>",
+      comsol: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#D6001C'/><circle cx='20' cy='20' r='8.5' fill='none' stroke='#fff' stroke-width='3'/></svg>",
+      dassault: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0033A0'/><text x='20' y='26' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='13' fill='#fff'>3DS</text></svg>",
+      aws: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#232F3E'/><path d='M10 24c6 3.4 14 3.4 20 0' fill='none' stroke='#FF9900' stroke-width='2.6' stroke-linecap='round'/><path d='M26 22.5l4 1.5-1.6 3.8' fill='none' stroke='#FF9900' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      azure: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0089D6'/><path d='M19 9l10 22H9z' fill='#fff'/></svg>",
+      kafka: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#1a1a1a'/><g fill='#fff'><circle cx='14' cy='20' r='3'/><circle cx='27' cy='12' r='3'/><circle cx='27' cy='28' r='3'/></g><g stroke='#fff' stroke-width='2'><path d='M16.5 18.5l8-5M16.5 21.5l8 5'/></g></svg>",
+      modelica: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#B5231F'/><text x='20' y='27' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='17' fill='#fff'>M</text></svg>",
+      comms: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#3A3A36'/><g fill='none' stroke='#fff' stroke-width='2.4' stroke-linecap='round'><circle cx='20' cy='20' r='2.6' fill='#fff' stroke='none'/><path d='M14.5 25.5a8 8 0 010-11M25.5 14.5a8 8 0 010 11M11 29a13 13 0 010-18M29 11a13 13 0 010 18'/></g></svg>"
+    };
+    var LOGO_KEYS = [
+      ["omniverse", "nvidia"], ["nvidia", "nvidia"],
+      ["ansys", "ansys"], ["fluent", "ansys"], ["twin builder", "ansys"],
+      ["simulink", "simulink"], ["matlab", "simulink"], ["mathworks", "simulink"],
+      ["siemens", "siemens"], ["simcenter", "siemens"], ["amesim", "siemens"], ["star-ccm", "siemens"],
+      ["comsol", "comsol"],
+      ["dassault", "dassault"], ["3dexperience", "dassault"], ["catia", "dassault"],
+        ["simulia", "dassault"], ["abaqus", "dassault"], ["solidworks", "dassault"],
+      ["aws", "aws"], ["sagemaker", "aws"], ["s3 ", "aws"],
+      ["azure", "azure"],
+      ["kafka", "kafka"],
+      ["modelica", "modelica"], ["dymola", "modelica"], ["openmodelica", "modelica"],
+      ["mqtt", "comms"], ["opc-ua", "comms"], ["opcua", "comms"], ["broker", "comms"],
+        ["telemetry", "comms"], ["message bus", "comms"], ["data bus", "comms"], ["sensor stream", "comms"]
+    ];
+    function logoFor(n) {
+      var hay = ((n.label || "") + " " + (n.catalogue_id || "")).toLowerCase();
+      for (var i = 0; i < LOGO_KEYS.length; i++) {
+        if (hay.indexOf(LOGO_KEYS[i][0]) !== -1) {
+          return "data:image/svg+xml," + encodeURIComponent(LOGO_SVG[LOGO_KEYS[i][1]]);
+        }
+      }
+      return null;
+    }
+
     // content only -- the styling class lives on the .drawflow-node element.
     // Every port row carries an anchor <i class="dot" id="a-in|out-<intId>-<k>">
     // sitting on the card edge; drawWires() connects lines to those.
     function nodeContent(n, intId) {
       var badge = n.catalogue_id ? '<div class="twn-badge">DB</div>' : "";
+      var lg = logoFor(n);
+      var logo = lg ? '<div class="twn-logo"><img alt="" src="' + lg + '"></div>' : "";
       var ins = (n.inputs || []).map(function (p, k) {
         return '<div class="twn-port"><i class="dot" id="a-in-' + intId + '-' + (k + 1) +
                '"></i><span>' + esc(p) + "</span></div>";
@@ -264,7 +283,7 @@
         ? '<div class="twn-body"><div class="twn-col in">' + ins +
           '</div><div class="twn-col out">' + outs + "</div></div>"
         : "";
-      return badge + '<div class="twn-title">' + esc(n.label || n.id) + "</div>" + body;
+      return badge + logo + '<div class="twn-title">' + esc(n.label || n.id) + "</div>" + body;
     }
 
     // longest-path rank per node id
