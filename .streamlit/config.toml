@@ -4,13 +4,12 @@
 runOnSave = true
 
 [theme]
-# Black & white by design. The one accent (Streamlit red) is reserved for
-# "important" things: widget labels, focus ring, the primary Search button,
-# selected-filter chips. Everything else is differentiated by border / weight
-# / spacing, not colour.
+# Perplexity-inspired: warm off-white/cream ground, near-black text, black
+# accent. Colour is used ONLY on tags / canvas nodes (literal hex in their
+# own CSS) "for understanding" -- never on chrome. Typeface unchanged.
 base = "light"
-primaryColor = "#FF4B4B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F5F5"
-textColor = "#111111"
+primaryColor = "#111111"
+backgroundColor = "#FBFAF7"
+secondaryBackgroundColor = "#F1EFE9"
+textColor = "#1A1A1A"
 font = "sans serif"
