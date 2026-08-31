@@ -131,7 +131,7 @@
   }
   .drawflow-node.t-model    { border-color: #2C6E68; }  /* teal   */
   .drawflow-node.t-output   { border-color: #2E6E4C; }  /* green  */
-  .drawflow-node.t-database { border-color: #414F86; border-radius: 10px / 26px; }  /* indigo + cylinder */
+  .drawflow-node.t-database { border-color: #414F86; }  /* indigo */
 
   .drawflow-node.t-model .twn-title::before,
   .drawflow-node.t-output .twn-title::before,
@@ -143,6 +143,25 @@
   .drawflow-node.t-model .twn-title::before    { background: #2C6E68; }
   .drawflow-node.t-output .twn-title::before   { background: #2E6E4C; }
   .drawflow-node.t-database .twn-title::before { background: #414F86; }
+
+  /* --- per-category silhouette -----------------------------------------
+     Shape as a third, orthogonal cue. The bounding box stays rectangular
+     (border-radius only, no clip-path) so wires keep anchoring to the port
+     dots on the card edges. */
+  .drawflow-node.t-input    { border-radius: 999px; }              /* pill  -- the entry point   */
+  .drawflow-node.t-process  { border-radius: 2px; }                /* sharp box -- an operation  */
+  .drawflow-node.t-merge    { border-radius: 14px; }               /* soft box -- a join         */
+  .drawflow-node.t-decision { border-radius: 14px 2px 14px 2px; }  /* offset corners -- a branch */
+  .drawflow-node.t-model    { border-radius: 6px; }                /* gently rounded -- a tool   */
+  .drawflow-node.t-output   { border-radius: 3px 3px 18px 18px; }  /* footed card -- a result    */
+  /* database -- cylinder: horizontal radius ~= half the width makes the
+     whole top and bottom edge one shallow arc; the 9px vertical radius
+     keeps the sides straight. Extra top/bottom padding clears the arcs. */
+  .drawflow-node.t-database {
+    border-radius: 50% / 9px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
   .drawflow-node.is-suggested { outline: 1.5px solid rgba(17, 17, 17, 0.55); outline-offset: 1px; }
