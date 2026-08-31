@@ -195,6 +195,37 @@ def _load_examples() -> list[dict]:
     return out
 
 
+def _open_example(ex: dict) -> None:
+    """Load a curated example into session as if it were a query result:
+    pre-seed st.session_state.results with a cache key that matches the LAYOUT
+    block's, so it's reused instead of POSTing to the backend. Mutates state
+    only -- the caller reruns (or Streamlit auto-reruns after an on_change)."""
+    cats = dict(ex.get("categories") or {})
+    st.session_state.query = ex["query"]
+    st.session_state.query_input = ex["query"]          # compact search field
+    st.session_state.categories = cats
+    st.session_state.industry = cats.get("industry") or "(Any)"
+    st.session_state.application = cats.get("application") or "(Any)"
+    st.session_state.nature = cats.get("nature_of_project") or "(Any)"
+    st.session_state.results = {
+        "key": (ex["query"], json.dumps(cats, sort_keys=True)),
+        "description": ex.get("description", ""),
+        "tools": ex.get("tools", []),
+        "workflow": ex["workflow"],
+    }
+    st.session_state.focus_tool = None
+    st.session_state.show_examples = False
+    st.session_state.show_readme = False
+
+
+def _jump_example() -> None:
+    """on_change for the sidebar 'jump to example' selectbox."""
+    pick = st.session_state.get("sb_example_pick")
+    by_q = {e["query"]: e for e in _load_examples()}
+    if pick in by_q:
+        _open_example(by_q[pick])
+
+
 def run_query(query: str, categories: dict):
     """
     The selected `categories` are folded into the query text via
@@ -360,6 +391,24 @@ with st.sidebar:
         st.session_state.show_readme = False
         st.rerun()
 
+    # Quick switch between example workflows from anywhere in the app. Keep the
+    # selection in sync with whatever's actually on screen (a real query, or
+    # "New workflow", resets it to the placeholder).
+    _ex_by_query = {e["query"]: e for e in _load_examples()}
+    if _ex_by_query:
+        if st.session_state.get("query") in _ex_by_query:
+            st.session_state.sb_example_pick = st.session_state.query
+        elif st.session_state.get("sb_example_pick") not in (None, "— example —"):
+            st.session_state.sb_example_pick = "— example —"
+        st.selectbox(
+            "Jump to example",
+            options=["— example —"] + list(_ex_by_query),
+            key="sb_example_pick",
+            on_change=_jump_example,
+            label_visibility="collapsed",
+            help="Load a curated example workflow (no backend call)",
+        )
+
     # Placeholders -- no function yet.
     st.button("Settings", icon=":material/settings:", key="sb_settings",
               use_container_width=True, disabled=True)
@@ -414,24 +463,7 @@ if st.session_state.get("show_examples"):
                 st.caption(f"{_nodes} nodes · {_edges} connections · {len(_ex.get('tools') or [])} tools")
                 if st.button("Open workflow", key=f"ex_open_{_ex['_slug']}",
                              icon=":material/open_in_new:"):
-                    st.session_state.query = _ex["query"]
-                    st.session_state.query_input = _ex["query"]  # sync the compact search field
-                    st.session_state.categories = dict(_ex.get("categories") or {})
-                    # Sync the in-bar pickers too (widget keys differ from the
-                    # categories dict; nature_of_project -> "nature").
-                    st.session_state.industry = _cats.get("industry") or "(Any)"
-                    st.session_state.application = _cats.get("application") or "(Any)"
-                    st.session_state.nature = _cats.get("nature_of_project") or "(Any)"
-                    _key = (st.session_state.query,
-                            json.dumps(st.session_state.categories, sort_keys=True))
-                    st.session_state.results = {
-                        "key": _key,
-                        "description": _ex.get("description", ""),
-                        "tools": _ex.get("tools", []),
-                        "workflow": _ex["workflow"],
-                    }
-                    st.session_state.focus_tool = None
-                    st.session_state.show_examples = False
+                    _open_example(_ex)
                     st.rerun()
     st.stop()
 

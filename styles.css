@@ -265,3 +265,5 @@ body { -webkit-font-smoothing: antialiased; }
   padding: 0.35rem 0.25rem;
 }
 .st-key-sb_saved button { font-weight: 600 !important; color: #111111 !important; }
+/* "jump to example" selectbox sits just under the Examples button */
+.st-key-sb_example_pick { margin-top: -0.35rem; }
