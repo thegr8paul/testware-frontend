@@ -2,6 +2,7 @@ import json
 import os
 import random
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -260,29 +261,67 @@ def _write_example(name: str, result: dict | None) -> Path:
     return path
 
 
-def run_query(query: str, categories: dict):
-    """
-    The selected `categories` are folded into the query text via
-    build_enhanced_query() before it's sent -- the API has no separate
-    categories field.
+def _iter_ndjson(resp):
+    for raw in resp.iter_lines(decode_unicode=True):
+        if raw:
+            yield json.loads(raw)
+
+
+def run_query_stream(query: str, categories: dict, status_slot):
+    """Streaming replacement for run_query(). Same contract — returns
+    (description, tools, workflow) — but renders the description
+    progressively via st.write_stream() instead of blocking on the whole
+    response, and clears the search-bar shimmer as soon as real content
+    starts arriving instead of only once everything is done.
     """
     try:
         resp = requests.post(
-            f"{api_url}/query",
+            f"{api_url}/query/stream",
             json={"query": build_enhanced_query(query, categories)},
+            stream=True,
             timeout=300,
         )
         resp.raise_for_status()
-        data = resp.json()
-        description = data["answer"]
-        tools = data["tools"]
-        workflow = data.get("workflow") or {"nodes": [], "edges": []}
-    except requests.RequestException as exc:
-        description = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
-        tools = []
-        workflow = {"nodes": [], "edges": []}
+        chunks = _iter_ndjson(resp)
 
-    return description, tools, workflow
+        def _answer_tokens():
+            for chunk in chunks:
+                if chunk["stage"] == "answer_chunk":
+                    for word in re.finditer(r"\S+\s*", chunk["text"]):
+                        yield word.group()
+                        time.sleep(0.05)   # ~50 words/sec — tune to taste
+                elif chunk["stage"] == "answer_done":
+                    return
+
+        status_slot.empty()  # stop the shimmer now that real content is arriving
+        description = st.write_stream(_answer_tokens())
+
+        tools: list = []
+        workflow: dict = {"nodes": [], "edges": []}
+
+        st.write("")  # spacing so these read as separate from the answer above
+        tools_status = st.status("Building tool suggestions…")
+        workflow_status = st.status("Building workflow diagram…")
+
+        for chunk in chunks:
+            if chunk["stage"] == "tools":
+                tools = chunk["tools"]
+                if chunk.get("error"):
+                    st.caption(chunk["error"])
+                tools_status.update(label="Tool suggestions ready", state="complete")
+            elif chunk["stage"] == "workflow":
+                workflow = chunk.get("workflow") or {"nodes": [], "edges": []}
+                if chunk.get("error"):
+                    st.caption(chunk["error"])
+                workflow_status.update(label="Workflow diagram ready", state="complete")
+
+        return description, tools, workflow
+
+    except requests.RequestException as exc:
+        status_slot.empty()
+        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
+        st.write(msg)
+        return msg, [], {"nodes": [], "edges": []}
 
 
 def _pop_label(field_name: str, value: str) -> str:
@@ -412,16 +451,20 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
         if status_slot is not None:
             with status_slot:
                 st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
-        description, tools, workflow = run_query(
-            st.session_state.query, st.session_state.categories
+        st.header("Workflow Description")
+        description, tools, workflow = run_query_stream(
+            st.session_state.query, st.session_state.categories, status_slot
         )
-        if status_slot is not None:
-            status_slot.empty()  # remove the <style> -> shimmer stops once results are in
         _cache = {"key": _cache_key, "description": description,
                   "tools": tools, "workflow": workflow}
         st.session_state.results = _cache
+    else:
+        # Cache hit -- nothing was fetched this rerun, so there's nothing left
+        # to stream. Render the description plainly from the cached value.
+        description = _cache["description"]
+        st.header("Workflow Description")
+        st.write(description)
 
-    description = _cache["description"]
     tools = _cache["tools"]
     workflow = _cache["workflow"]
 
@@ -433,10 +476,6 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
         "tools": tools,
         "workflow": workflow,
     }
-
-    # --- SECTION: DESCRIPTION ---------------------------------------------
-    st.header("Workflow Description")
-    st.write(description)  # plain prose explanation of the digital twin workflow
 
     # --- SECTION: WORKFLOW CANVAS ---------------------------------------------
     st.header("Workflow")

@@ -32,14 +32,12 @@ body { -webkit-font-smoothing: antialiased; }
 /* Workflow canvas: full-bleed horizontally (no side boundary) -- break out
    of the padded, max-width content column; only top/bottom stay in flow. */
 .st-key-tw_wf {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
 }
 .st-key-tw_wf iframe,
 .st-key-tw_wf [data-testid="stIFrame"],
 .st-key-tw_wf [data-testid="stCustomComponentV1"] {
-  width: 100vw !important;
+  width: 100% !important;
   max-width: none !important;
 }
 
