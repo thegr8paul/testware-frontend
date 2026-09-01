@@ -1,8 +1,6 @@
 import json
 import os
 import random
-import re
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,9 +29,9 @@ DEFAULT_API_URL = _resolve_api_url()
 _WF_DIR = Path(__file__).with_name("components") / "workflow"
 workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
-# Read Me / demo-day deck -- renders presentation.md as animated slides.
-# Guarded: if the component assets are ever missing on a deploy, Read Me
-# falls back to plain Markdown instead of taking down the whole app.
+# Homepage dashboard -- renders presentation.md as a scrollable page.
+# Guarded: if the component assets are ever missing on a deploy, the
+# dashboard falls back to plain Markdown instead of taking down the whole app.
 _DECK_DIR = Path(__file__).with_name("components") / "deck"
 try:
     deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
@@ -124,11 +122,7 @@ st.session_state.setdefault("nature", "(Any)")
 st.session_state.setdefault("categories", {})
 st.session_state.setdefault("focus_tool", None)  # catalogue_id of the node clicked in Section 3
 st.session_state.setdefault("headline", random.choice(HEADLINES))
-# The app has three top-level areas, chosen in the sidebar:
-#   "chat"          -> the query interface + its workflow output
-#   "presentation"  -> the demo-day deck (presentation.md)
-#   "examples"      -> the curated mock workflows (examples/*.json)
-st.session_state.setdefault("area", "chat")
+st.session_state.setdefault("in_app", False)  # False = dashboard (home); True = the search app
 
 
 def _current_categories() -> dict:
@@ -176,152 +170,45 @@ def _save_workflow(result: dict | None) -> bool:
     return True
 
 
-EXAMPLES_DIR = Path(__file__).with_name("examples")
+def _reset_workspace():
+    """Pop every widget/result key so the next rerun starts at a clean
+    landing. Used by "New workflow" and by the "Try testware" dashboard CTA
+    -- neither one touches `in_app` itself, the caller sets that."""
+    for _k in ("query", "query_input", "industry", "application", "nature",
+               "categories", "focus_tool", "last_result", "results", "headline"):
+        st.session_state.pop(_k, None)
 
 
-@st.cache_data(show_spinner=False)
-def _load_examples() -> list[dict]:
-    """Curated example workflows shipped with the app (examples/*.json), each a
-    single saved-result payload: {query, categories, description, tools,
-    workflow}. Sorted by filename so 01-, 02-, ... controls display order.
-    These are read-only seeds -- opening one drops straight into the results
-    view with no backend call (see the gallery block below)."""
-    out: list[dict] = []
-    if not EXAMPLES_DIR.is_dir():
-        return out
-    for path in sorted(EXAMPLES_DIR.glob("*.json")):
-        try:
-            ex = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
-            continue
-        if ex.get("query") and (ex.get("workflow") or {}).get("nodes"):
-            ex["_slug"] = path.stem
-            out.append(ex)
-    return out
-
-
-def _open_example(ex: dict) -> None:
-    """Load a curated example into session as if it were a query result:
-    pre-seed st.session_state.results with a cache key that matches the LAYOUT
-    block's, so it's reused instead of POSTing to the backend. Mutates state
-    only -- the caller reruns (or Streamlit auto-reruns after an on_change)."""
-    cats = dict(ex.get("categories") or {})
-    st.session_state.query = ex["query"]
-    st.session_state.query_input = ex["query"]          # compact search field
-    st.session_state.categories = cats
-    st.session_state.industry = cats.get("industry") or "(Any)"
-    st.session_state.application = cats.get("application") or "(Any)"
-    st.session_state.nature = cats.get("nature_of_project") or "(Any)"
-    st.session_state.results = {
-        "key": (ex["query"], json.dumps(cats, sort_keys=True)),
-        "description": ex.get("description", ""),
-        "tools": ex.get("tools", []),
-        "workflow": ex["workflow"],
-    }
-    st.session_state.focus_tool = None
-    st.session_state.area = "examples"
-
-
-def _example_short(ex: dict) -> str:
-    """A compact label for the sidebar example picker, e.g.
-    '02-ev-battery-pack-thermal' -> 'EV battery pack thermal'."""
-    stem = re.sub(r"^\d+[-_]?", "", ex.get("_slug", "") or "")
-    words = stem.replace("_", "-").split("-")
-    _acronyms = {"ev", "ai", "ml", "cfd", "hpc", "iot"}
-    out = " ".join(w.upper() if w in _acronyms else w for w in words if w).strip()
-    return (out[:1].upper() + out[1:]) if out else ex.get("query", "example")
-
-
-def _example_payload(result: dict | None) -> dict:
-    """A live result narrowed to the examples/*.json shape (runtime-only keys
-    like the result-cache 'key' and '_slug' dropped)."""
-    result = result or {}
-    return {
-        "query": result.get("query", ""),
-        "categories": result.get("categories", {}) or {},
-        "description": result.get("description", ""),
-        "tools": result.get("tools", []) or [],
-        "workflow": result.get("workflow") or {"nodes": [], "edges": []},
-    }
-
-
-def _write_example(name: str, result: dict | None) -> Path:
-    """Persist the on-screen workflow as examples/NN-<slug>.json so it ships
-    with the app as a permanent pitch example. NN auto-increments. Only useful
-    where the disk survives (local dev / an always-on host); on Streamlit
-    Community Cloud copy the JSON into a new repo file instead."""
-    slug = re.sub(r"[^a-z0-9]+", "-", (name or "").lower()).strip("-") or "workflow"
-    nums = [int(m.group(1)) for p in EXAMPLES_DIR.glob("*.json")
-            if (m := re.match(r"(\d+)-", p.name))]
-    nn = f"{(max(nums) + 1) if nums else 1:02d}"
-    EXAMPLES_DIR.mkdir(exist_ok=True)
-    path = EXAMPLES_DIR / f"{nn}-{slug}.json"
-    path.write_text(json.dumps(_example_payload(result), indent=2) + "\n")
-    _load_examples.clear()  # bust the cache -> the new example shows without a restart
-    return path
-
-
-def _iter_ndjson(resp):
-    for raw in resp.iter_lines(decode_unicode=True):
-        if raw:
-            yield json.loads(raw)
-
-
-def run_query_stream(query: str, categories: dict, status_slot):
-    """Streaming replacement for run_query(). Same contract — returns
-    (description, tools, workflow) — but renders the description
-    progressively via st.write_stream() instead of blocking on the whole
-    response, and clears the search-bar shimmer as soon as real content
-    starts arriving instead of only once everything is done.
+def run_query(query: str, categories: dict):
+    """
+    The selected `categories` are folded into the query text via
+    build_enhanced_query() before it's sent -- the API has no separate
+    categories field.
     """
     try:
         resp = requests.post(
-            f"{api_url}/query/stream",
+            f"{api_url}/query",
             json={"query": build_enhanced_query(query, categories)},
-            stream=True,
             timeout=300,
         )
         resp.raise_for_status()
-        chunks = _iter_ndjson(resp)
-
-        def _answer_tokens():
-            for chunk in chunks:
-                if chunk["stage"] == "answer_chunk":
-                    for word in re.finditer(r"\S+\s*", chunk["text"]):
-                        yield word.group()
-                        time.sleep(0.05)   # ~50 words/sec — tune to taste
-                elif chunk["stage"] == "answer_done":
-                    return
-
-        status_slot.empty()  # stop the shimmer now that real content is arriving
-        description = st.write_stream(_answer_tokens())
-
-        tools: list = []
-        workflow: dict = {"nodes": [], "edges": []}
-
-        st.write("")  # spacing so these read as separate from the answer above
-        tools_status = st.status("Building tool suggestions…")
-        workflow_status = st.status("Building workflow diagram…")
-
-        for chunk in chunks:
-            if chunk["stage"] == "tools":
-                tools = chunk["tools"]
-                if chunk.get("error"):
-                    st.caption(chunk["error"])
-                tools_status.update(label="Tool suggestions ready", state="complete")
-            elif chunk["stage"] == "workflow":
-                workflow = chunk.get("workflow") or {"nodes": [], "edges": []}
-                if chunk.get("error"):
-                    st.caption(chunk["error"])
-                workflow_status.update(label="Workflow diagram ready", state="complete")
-
-        return description, tools, workflow
-
+        data = resp.json()
+        description = data["answer"]
+        tools = data["tools"]
+        workflow = data.get("workflow") or {"nodes": [], "edges": []}
     except requests.RequestException as exc:
-        status_slot.empty()
-        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
-        st.write(msg)
-        return msg, [], {"nodes": [], "edges": []}
+        description = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
+        tools = []
+        workflow = {"nodes": [], "edges": []}
+    except (ValueError, KeyError) as exc:
+        # ValueError covers resp.json()'s JSONDecodeError -- a 200 response
+        # that isn't valid JSON or is missing "answer"/"tools" shouldn't
+        # crash the page, just surface as a friendly answer.
+        description = f"Got an unexpected response from the RAG API at {api_url} ({exc})"
+        tools = []
+        workflow = {"nodes": [], "edges": []}
+
+    return description, tools, workflow
 
 
 def _pop_label(field_name: str, value: str) -> str:
@@ -413,11 +300,7 @@ def render_search_bar(mode: str):
 
         status_slot = btn_cols[3].empty()
 
-    # Submit on the Search button OR on Enter. Pressing Enter in the text
-    # field commits `query_input` and reruns, so a non-empty value that
-    # differs from the last executed query means the user hit Enter -- run it.
-    typed = query_text.strip()
-    if typed and (submitted or query_text != (st.session_state.get("query") or "")):
+    if submitted and query_text.strip():
         st.session_state.query = query_text
         st.session_state.categories = _current_categories()
         st.rerun()
@@ -425,16 +308,70 @@ def render_search_bar(mode: str):
     return status_slot
 
 
-def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
-    """The workflow output: description + editable canvas + tool cards. Shared
-    by the Chat area (allow_search/allow_save on -- live query, can be saved as
-    an example) and the Examples area (both off -- a curated, pre-seeded
-    result, never a backend call)."""
-    status_slot = render_search_bar("compact") if allow_search else None
+# --- DASHBOARD (site homepage) --------------------------------------------
+# Default view for every fresh session. Full-bleed presentation.md, no
+# sidebar (hidden below), just a "Try testware" CTA that opts into the app.
+# Push and Streamlit Cloud redeploys pick up presentation.md edits.
+if not st.session_state.get("in_app", False):
+    st.markdown(
+        "<style>[data-testid='stSidebar']{display:none !important;}</style>",
+        unsafe_allow_html=True,
+    )
+    _pres = Path(__file__).with_name("presentation.md")
+    _md = _pres.read_text() if _pres.exists() else "# testware.dev\n\n_presentation.md not found._"
+    with st.container(key="tw_dashboard"):
+        if st.button("Try testware", key="tw_try_cta"):
+            _reset_workspace()
+            st.session_state.in_app = True
+            st.rerun()
+        if deck_view is not None:
+            deck_view(markdown=_md, key="tw_deck")
+        else:
+            st.markdown(_md)  # fallback: deck component unavailable
+    st.stop()
+
+
+# --- SIDEBAR (nav rail; only reachable once in_app) -----------------------
+with st.sidebar:
+    if st.button(
+        "Home",
+        icon=":material/home:",
+        key="sb_home",
+        use_container_width=True,
+        help="Back to the testware.dev homepage",
+    ):
+        st.session_state.in_app = False
+        st.rerun()
+
+    if st.button(
+        "New workflow",
+        icon=":material/add:",
+        key="sb_new_workflow",
+        use_container_width=True,
+        help="Save the current workflow and start a new one",
+    ):
+        # Save what's on screen, then reset to a clean landing.
+        if _save_workflow(st.session_state.get("last_result")):
+            st.toast("Workflow saved", icon=":material/check:")
+        _reset_workspace()
+        st.rerun()
+
+    # Placeholders -- no function yet.
+    st.button("Saved workflows", icon=":material/bookmark:", key="sb_saved",
+              use_container_width=True, disabled=True)
+    st.button("Settings", icon=":material/settings:", key="sb_settings",
+              use_container_width=True, disabled=True)
+    st.button("Help", icon=":material/help:", key="sb_help",
+              use_container_width=True, disabled=True)
+
+
+# --- LAYOUT -----------------------------------------------------------------
+if st.session_state.query:
+    # Results view: slim bar at the top, everything below it.
+    status_slot = render_search_bar("compact")  # the executed query shows in its input field
 
     # applied category filters as chips, for transparency
-    applied = [f"{k.replace('_', ' ').title()}: {v}"
-               for k, v in st.session_state.categories.items() if v]
+    applied = [f"{k.replace('_', ' ').title()}: {v}" for k, v in st.session_state.categories.items() if v]
     if applied:
         chips = "".join(f"<span class='tw-chip'>{a}</span>" for a in applied)
         st.markdown(f"<div class='tw-chips'>{chips}</div>", unsafe_allow_html=True)
@@ -443,32 +380,25 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
     # UI churn -- clicking a workflow node, opening a popover -- then reuse the
     # result instead of re-POSTing (which, being LLM-backed, would return a
     # different graph and rebuild the canvas, losing any dragged node positions).
-    # Examples pre-seed `results` with a matching key, so this never fetches.
     _cache_key = (st.session_state.query,
                   json.dumps(st.session_state.categories, sort_keys=True))
     _cache = st.session_state.get("results")
     if not (_cache and _cache.get("key") == _cache_key):
-        if status_slot is not None:
-            with status_slot:
-                st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
-        st.header("Workflow Description")
-        description, tools, workflow = run_query_stream(
-            st.session_state.query, st.session_state.categories, status_slot
+        with status_slot:
+            st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
+        description, tools, workflow = run_query(
+            st.session_state.query, st.session_state.categories
         )
+        status_slot.empty()  # remove the <style> -> shimmer stops once results (or error) are in
         _cache = {"key": _cache_key, "description": description,
                   "tools": tools, "workflow": workflow}
         st.session_state.results = _cache
-    else:
-        # Cache hit -- nothing was fetched this rerun, so there's nothing left
-        # to stream. Render the description plainly from the cached value.
-        description = _cache["description"]
-        st.header("Workflow Description")
-        st.write(description)
 
+    description = _cache["description"]
     tools = _cache["tools"]
     workflow = _cache["workflow"]
 
-    # Stash the current result so "New workflow" / "Save as example" can use it.
+    # Stash the current result so the "New workflow" button can save it.
     st.session_state.last_result = {
         "query": st.session_state.query,
         "categories": dict(st.session_state.categories),
@@ -476,6 +406,10 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
         "tools": tools,
         "workflow": workflow,
     }
+
+    # --- SECTION: DESCRIPTION ---------------------------------------------
+    st.header("Workflow Description")
+    st.write(description)  # plain prose explanation of the digital twin workflow
 
     # --- SECTION: WORKFLOW CANVAS ---------------------------------------------
     st.header("Workflow")
@@ -504,41 +438,6 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
                     st.rerun()
     else:
         st.caption("No workflow available for this query.")
-
-    # --- SECTION: SAVE AS PITCH EXAMPLE (Chat area only) ------------------
-    # Capture what's on screen -- query + categories + description + tools +
-    # the graph INCLUDING any canvas edits -- as examples/NN-<slug>.json, so a
-    # good workflow can be kept and reused as a demo example. Writing to disk
-    # only sticks where the disk persists (local dev / always-on host); on
-    # Streamlit Community Cloud, copy the JSON into a new repo file instead.
-    if allow_save and workflow.get("nodes"):
-        with st.expander("Save this workflow as a pitch example"):
-            _ex_name = st.text_input(
-                "Example name",
-                value=(st.session_state.query or "")[:60],
-                key="tw_ex_name",
-                help="Becomes the filename: examples/NN-<name>.json",
-            )
-            _save_col, _hint_col = st.columns([1, 3], vertical_alignment="center")
-            with _save_col:
-                if st.button("Save to examples/", key="tw_ex_save",
-                             icon=":material/bookmark_add:", use_container_width=True):
-                    try:
-                        _p = _write_example(_ex_name, st.session_state.last_result)
-                        st.success(f"Wrote `examples/{_p.name}` — `git add` + commit it to keep it.")
-                    except OSError as _e:
-                        st.error(f"Couldn't write the file: {_e}")
-            with _hint_col:
-                st.caption(
-                    "Commit & push the file and it shows up in the sidebar "
-                    "**Examples** list for everyone. On Streamlit Cloud the disk "
-                    "resets on redeploy — use the JSON below instead: copy it "
-                    "into a new `examples/NN-name.json` in the repo."
-                )
-            st.code(
-                json.dumps(_example_payload(st.session_state.last_result), indent=2),
-                language="json",
-            )
 
     # --- SECTION: TOOL SUGGESTIONS ------------------------------------------
     st.header("Suggested Tools")
@@ -593,119 +492,6 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
                         st.write(f"- {f}")
                 if tool.get("docs_url"):
                     st.markdown(f"[Reference]({tool['docs_url']})")  # traceability link
-
-
-# --- SIDEBAR (three-area nav) -------------------------------------------------
-# One switch for the whole app: Chat / Presentation / Examples. Anything
-# area-specific (start a new chat, pick which example) sits right under it so
-# each area stays self-contained.
-_AREAS = {"Chat": "chat", "Presentation": "presentation", "Examples": "examples"}
-
-with st.sidebar:
-    _prev_area = st.session_state.get("area", "chat")
-    _area_label = st.radio(
-        "Area",
-        list(_AREAS),
-        index=list(_AREAS.values()).index(_prev_area),
-        key="sb_area",
-        label_visibility="collapsed",
-    )
-    area = _AREAS[_area_label]
-    st.session_state.area = area
-    # Leaving Examples for Chat: don't drag the loaded example into the chat
-    # space -- reset to a clean landing and rerun so setdefault() re-seeds
-    # `query` before the main area reads it.
-    if _prev_area == "examples" and area == "chat" and \
-            st.session_state.get("query") in {e["query"] for e in _load_examples()}:
-        for _k in ("query", "query_input", "industry", "application", "nature",
-                   "categories", "focus_tool", "last_result", "results"):
-            st.session_state.pop(_k, None)
-        st.rerun()
-
-    st.divider()
-
-    if area == "chat":
-        if st.button(
-            "New workflow",
-            icon=":material/add:",
-            key="sb_new_workflow",
-            use_container_width=True,
-            help="Save the current workflow and start a new one",
-        ):
-            if _save_workflow(st.session_state.get("last_result")):
-                st.toast("Workflow saved", icon=":material/check:")
-            for _k in ("query", "query_input", "industry", "application", "nature",
-                       "categories", "focus_tool", "last_result", "results", "headline"):
-                st.session_state.pop(_k, None)
-            st.rerun()
-
-    elif area == "examples":
-        _exs = _load_examples()
-        if not _exs:
-            st.caption("No examples found (examples/*.json).")
-        else:
-            _by_q = {e["query"]: e for e in _exs}
-            _loaded = st.session_state.get("query") if st.session_state.get("query") in _by_q \
-                else _exs[0]["query"]
-            _pick = st.radio(
-                "Example",
-                list(_by_q),
-                index=list(_by_q).index(_loaded),
-                format_func=lambda q: _example_short(_by_q[q]),
-                key="sb_example_pick",
-                label_visibility="collapsed",
-            )
-            if st.session_state.get("query") != _pick:
-                _open_example(_by_q[_pick])
-                st.rerun()
-
-    # area == "presentation": nothing to configure
-
-    st.divider()
-    st.button("Settings", icon=":material/settings:", key="sb_settings",
-              use_container_width=True, disabled=True)
-    st.button("Help", icon=":material/help:", key="sb_help",
-              use_container_width=True, disabled=True)
-
-
-# --- MAIN AREA -------------------------------------------------------------
-# Dispatch on the sidebar's `area`. Presentation and Examples fully replace
-# the main pane (st.stop()); Chat is the default.
-
-if area == "presentation":
-    # The demo-day deck: presentation.md rendered as animated slides. Edit the
-    # slides in presentation.md (next to this file) -- Markdown, split by `---`;
-    # see the header comment in that file. Push and Streamlit Cloud redeploys.
-    _pres = Path(__file__).with_name("presentation.md")
-    _md = _pres.read_text() if _pres.exists() else "# Presentation\n\n_presentation.md not found._"
-    with st.container(key="tw_readme"):
-        if deck_view is not None:
-            deck_view(markdown=_md, key="tw_deck")
-        else:
-            st.markdown(_md)  # fallback: deck component unavailable
-    st.stop()
-
-if area == "examples":
-    # Curated mock workflows. The sidebar radio keeps exactly one loaded via
-    # _open_example(), which pre-seeds st.session_state.results with a matching
-    # cache key -- so _render_workflow_result() never calls the backend here.
-    _exs = _load_examples()
-    if not _exs:
-        st.info("No example workflows found (examples/*.json).")
-        st.stop()
-    if st.session_state.get("query") not in {e["query"] for e in _exs}:
-        _open_example(_exs[0])  # first render of the area -- load one
-        st.rerun()
-    st.caption(
-        "Example workflow — curated, no backend call. Switch examples in the sidebar."
-    )
-    _render_workflow_result(allow_search=False, allow_save=False)
-    st.stop()
-
-
-# --- CHAT AREA -----------------------------------------------------------------
-if st.session_state.query:
-    _render_workflow_result(allow_search=True, allow_save=True)
 else:
     # Landing view: eyebrow + rotating headline + the one big search bar,
     # vertically & horizontally centred (styled in styles.css).
