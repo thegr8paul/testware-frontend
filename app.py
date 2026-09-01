@@ -268,11 +268,13 @@ def _iter_ndjson(resp):
 
 
 def run_query_stream(query: str, categories: dict, status_slot):
-    """Streaming replacement for run_query(). Same contract — returns
-    (description, tools, workflow) — but renders the description
+    """Streaming replacement for run_query(). Returns
+    (description, tools, workflow, ok) -- renders the description
     progressively via st.write_stream() instead of blocking on the whole
     response, and clears the search-bar shimmer as soon as real content
-    starts arriving instead of only once everything is done.
+    starts arriving instead of only once everything is done. `ok` is False
+    whenever the connection dropped at any point, so the caller knows this
+    result is degraded rather than a clean, cacheable success.
     """
     try:
         resp = requests.post(
@@ -295,33 +297,48 @@ def run_query_stream(query: str, categories: dict, status_slot):
 
         status_slot.empty()  # stop the shimmer now that real content is arriving
         description = st.write_stream(_answer_tokens())
+    except requests.RequestException as exc:
+        # Nothing streamed yet -- the connection itself never came up.
+        status_slot.empty()
+        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
+        st.write(msg)
+        return msg, [], {"nodes": [], "edges": []}, False
 
-        tools: list = []
-        workflow: dict = {"nodes": [], "edges": []}
+    tools: list = []
+    workflow: dict = {"nodes": [], "edges": []}
 
-        st.write("")  # spacing so these read as separate from the answer above
-        tools_status = st.status("Building tool suggestions…")
-        workflow_status = st.status("Building workflow diagram…")
+    st.write("")  # spacing so these read as separate from the answer above
+    tools_status = st.status("Building tool suggestions…")
+    workflow_status = st.status("Building workflow diagram…")
 
+    tools_done = False
+    workflow_done = False
+    try:
         for chunk in chunks:
             if chunk["stage"] == "tools":
                 tools = chunk["tools"]
                 if chunk.get("error"):
                     st.caption(chunk["error"])
                 tools_status.update(label="Tool suggestions ready", state="complete")
+                tools_done = True
             elif chunk["stage"] == "workflow":
                 workflow = chunk.get("workflow") or {"nodes": [], "edges": []}
                 if chunk.get("error"):
                     st.caption(chunk["error"])
                 workflow_status.update(label="Workflow diagram ready", state="complete")
+                workflow_done = True
+    except requests.RequestException:
+        # The answer already streamed fine -- keep it, don't discard it for a
+        # generic connection-error message. Only tools/workflow are lost, so
+        # finalize whichever status is still spinning instead of leaving it
+        # stuck, and tell the caller this run shouldn't be treated as done.
+        if not tools_done:
+            tools_status.update(label="Tool suggestions unavailable — connection dropped", state="error")
+        if not workflow_done:
+            workflow_status.update(label="Workflow diagram unavailable — connection dropped", state="error")
+        return description, tools, workflow, False
 
-        return description, tools, workflow
-
-    except requests.RequestException as exc:
-        status_slot.empty()
-        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
-        st.write(msg)
-        return msg, [], {"nodes": [], "edges": []}
+    return description, tools, workflow, True
 
 
 def _pop_label(field_name: str, value: str) -> str:
@@ -452,11 +469,11 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
             with status_slot:
                 st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
         st.header("Workflow Description")
-        description, tools, workflow = run_query_stream(
+        description, tools, workflow, ok = run_query_stream(
             st.session_state.query, st.session_state.categories, status_slot
         )
         _cache = {"key": _cache_key, "description": description,
-                  "tools": tools, "workflow": workflow}
+                  "tools": tools, "workflow": workflow, "ok": ok}
         st.session_state.results = _cache
     else:
         # Cache hit -- nothing was fetched this rerun, so there's nothing left
@@ -464,6 +481,12 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
         description = _cache["description"]
         st.header("Workflow Description")
         st.write(description)
+        # A previous fetch dropped mid-stream -- offer an explicit retry
+        # instead of forcing a full page refresh to try again.
+        if allow_search and _cache.get("ok") is False:
+            if st.button("Retry", icon=":material/refresh:", key="tw_retry"):
+                st.session_state.pop("results", None)
+                st.rerun()
 
     tools = _cache["tools"]
     workflow = _cache["workflow"]
