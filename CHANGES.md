@@ -53,6 +53,14 @@ and `git log 9c2589a..feat/frontend-refresh` for the commits.
   shows at once. Commit + push to keep it. The expander also prints the JSON
   for copy/paste — on Streamlit Cloud (ephemeral disk) paste it into a new
   repo file rather than relying on the disk write.
+- `build_enhanced_query(raw, categories)` — composes the **one** string the
+  backend accepts (`rag/schemas.py` `QueryRequest`: 3–1000 chars, reused for
+  retrieval embedding *and* every generation prompt). Layout: raw prompt
+  verbatim → `Context:` block of the set categories → `_OUTPUT_STEER` (one
+  tunable sentence). Stays ≤ `_QUERY_MAX`; only the raw prompt is ellipsised
+  if the budget is tight. Tune the module constants (`_OUTPUT_STEER`,
+  `_CATEGORY_LABELS`), not the f-string; `_OUTPUT_STEER = ""` sends just
+  query + context.
 - Result caching — `run_query()` is only called when
   `(query, json.dumps(categories, sort_keys=True))` changes; otherwise the
   cached `description / tools / workflow` is reused. **Why:** the backend
