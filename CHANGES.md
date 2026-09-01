@@ -27,6 +27,16 @@ and `git log 9c2589a..feat/frontend-refresh` for the commits.
   fetch finishes.
 - `_save_workflow(result)` — appends the on-screen result to
   `saved_workflows.json` (git-ignored, ephemeral).
+- `_load_examples()` / `_open_example()` — `examples/*.json` are curated,
+  committed, read-only seed workflows. Sidebar **Examples** opens a full-page
+  gallery; the sidebar **"jump to example"** selectbox switches between them
+  from anywhere. Either way `_open_example()` pre-seeds
+  `st.session_state.results` with a matching cache key and drops into the
+  results view **with no backend call** (so examples work offline / with the
+  RAG API down). The picker re-syncs to whatever's on screen — a real query
+  or "New workflow" resets it. Add an example by dropping a `NN-name.json`
+  file (shape: one `_save_workflow` payload — `{query, categories,
+  description, tools, workflow}`) in `examples/`; `NN-` sets the order.
 - Result caching — `run_query()` is only called when
   `(query, json.dumps(categories, sort_keys=True))` changes; otherwise the
   cached `description / tools / workflow` is reused. **Why:** the backend

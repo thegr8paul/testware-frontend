@@ -1,0 +1,271 @@
+{
+  "query": "Drivetrain fatigue digital twin for an offshore wind turbine",
+  "categories": {
+    "industry": "Energy & Utilities",
+    "application": "Renewable asset monitoring",
+    "nature_of_project": "Regulatory / certification"
+  },
+  "description": "A certification-grade drivetrain twin drives an aeroelastic turbine model with measured wind and SCADA data to reconstruct gearbox and main-bearing loads, then runs rainflow counting and a Palmgren-Miner accumulation to track consumed fatigue life. A threshold check raises an inspection recommendation; all load histories are archived for the certifying body.\n\nBecause outputs feed certification, budget for an independent validation campaign: USD 40-90k and 4-6 months including sign-off.",
+  "tools": [
+    {
+      "catalogue_id": "aerodrive",
+      "name": "Simcenter 3D drivetrain",
+      "rationale": "Coupled aeroelastic + multibody drivetrain model; produces component-level load time series from wind and operating state.",
+      "development_status": "actively maintained",
+      "access_type": "commercial",
+      "fidelity_tier": "high-fidelity multibody",
+      "spatial_scale": "~10 mm - ~120 m",
+      "temporal_scale": "~1 ms - ~10 min",
+      "validation_level": "validated in a certification campaign",
+      "pricing": {
+        "estimate_low": 300.0,
+        "estimate_high": 800.0,
+        "currency": "USD",
+        "unit": "per seat/month",
+        "notes": "Model estimate -- catalogue has no pricing field.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Slow: not real-time without a surrogate",
+        "Gear mesh model assumes no tooth damage"
+      ],
+      "inputs": [
+        "Wind field",
+        "Rotor speed",
+        "Pitch & yaw"
+      ],
+      "outputs": [
+        "Bearing loads",
+        "Gear tooth loads"
+      ],
+      "standards": [
+        "IEC 61400-1",
+        "IEC 61400-4",
+        "DNVGL-ST-0361"
+      ],
+      "docs_url": "https://example.com/aerodrive",
+      "alternatives": [
+        "OpenFAST + custom drivetrain",
+        "vendor gearbox model"
+      ]
+    },
+    {
+      "catalogue_id": "fatigue-kit",
+      "name": "Ansys nCode DesignLife",
+      "rationale": "Rainflow counting and Palmgren-Miner life accumulation with S-N curves per material and stress-concentration factors.",
+      "development_status": "actively maintained",
+      "access_type": "open-core",
+      "fidelity_tier": "post-processing",
+      "spatial_scale": "~1 mm - ~3 m",
+      "temporal_scale": "~1 ms - ~1 h",
+      "validation_level": "verified against standard test cases",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 400.0,
+        "currency": "USD",
+        "unit": "per seat/month",
+        "notes": "Open core; paid GUI/support.",
+        "estimated": true
+      },
+      "known_fail_modes": [],
+      "inputs": [
+        "Load time series",
+        "S-N curve"
+      ],
+      "outputs": [
+        "Damage per bin",
+        "Consumed life fraction"
+      ],
+      "standards": [
+        "DNVGL-RP-C203",
+        "IEC 61400-4"
+      ],
+      "docs_url": "https://example.com/fatiguekit",
+      "alternatives": [
+        "nCode DesignLife",
+        "custom rainflow script"
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      {
+        "id": "wind",
+        "type": "input",
+        "label": "Met-mast & LiDAR wind",
+        "inputs": [],
+        "outputs": [
+          "wind"
+        ]
+      },
+      {
+        "id": "scada",
+        "type": "input",
+        "label": "OPC-UA SCADA feed",
+        "inputs": [],
+        "outputs": [
+          "state"
+        ]
+      },
+      {
+        "id": "matdb",
+        "type": "database",
+        "label": "Material S-N library",
+        "inputs": [],
+        "outputs": [
+          "sncurve"
+        ]
+      },
+      {
+        "id": "qc",
+        "type": "process",
+        "label": "MATLAB gap-fill & QC",
+        "inputs": [
+          "wind",
+          "state"
+        ],
+        "outputs": [
+          "clean"
+        ]
+      },
+      {
+        "id": "aero",
+        "type": "model",
+        "label": "Simcenter 3D drivetrain",
+        "inputs": [
+          "clean"
+        ],
+        "outputs": [
+          "loads"
+        ],
+        "catalogue_id": "aerodrive"
+      },
+      {
+        "id": "rainflow",
+        "type": "process",
+        "label": "Simcenter rainflow counting",
+        "inputs": [
+          "loads"
+        ],
+        "outputs": [
+          "cycles"
+        ]
+      },
+      {
+        "id": "life",
+        "type": "model",
+        "label": "Ansys nCode DesignLife",
+        "inputs": [
+          "cycles",
+          "sncurve"
+        ],
+        "outputs": [
+          "damage"
+        ],
+        "catalogue_id": "fatigue-kit"
+      },
+      {
+        "id": "accum",
+        "type": "merge",
+        "label": "Accumulate damage",
+        "inputs": [
+          "damage"
+        ],
+        "outputs": [
+          "consumed"
+        ]
+      },
+      {
+        "id": "check",
+        "type": "decision",
+        "label": "Consumed life > 80%?",
+        "inputs": [
+          "consumed"
+        ],
+        "outputs": [
+          "flag",
+          "ok"
+        ]
+      },
+      {
+        "id": "archive",
+        "type": "database",
+        "label": "Certification archive",
+        "inputs": [
+          "history"
+        ],
+        "outputs": []
+      },
+      {
+        "id": "inspect",
+        "type": "output",
+        "label": "Inspection recommendation",
+        "inputs": [
+          "flag"
+        ],
+        "outputs": []
+      },
+      {
+        "id": "report",
+        "type": "output",
+        "label": "Fatigue-life report",
+        "inputs": [
+          "ok"
+        ],
+        "outputs": []
+      }
+    ],
+    "edges": [
+      {
+        "source": "wind",
+        "target": "qc"
+      },
+      {
+        "source": "scada",
+        "target": "qc"
+      },
+      {
+        "source": "qc",
+        "target": "aero"
+      },
+      {
+        "source": "aero",
+        "target": "rainflow"
+      },
+      {
+        "source": "aero",
+        "target": "archive"
+      },
+      {
+        "source": "rainflow",
+        "target": "life",
+        "target_port": 0
+      },
+      {
+        "source": "matdb",
+        "target": "life",
+        "target_port": 1
+      },
+      {
+        "source": "life",
+        "target": "accum"
+      },
+      {
+        "source": "accum",
+        "target": "check"
+      },
+      {
+        "source": "check",
+        "target": "inspect",
+        "source_port": 0,
+        "label": "flag"
+      },
+      {
+        "source": "check",
+        "target": "report",
+        "source_port": 1,
+        "label": "ok"
+      }
+    ]
+  }
+}

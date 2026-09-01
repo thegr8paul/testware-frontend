@@ -1,0 +1,274 @@
+{
+  "query": "Predictive-maintenance digital twin for a 400-tonne hydraulic press",
+  "categories": {
+    "industry": "Manufacturing & Industrial",
+    "application": "Predictive maintenance",
+    "nature_of_project": "Consulting / services"
+  },
+  "description": "For a hydraulic-press digital twin aimed at predictive maintenance you combine a physics-based, reduced-order press model with a data-driven degradation estimator, both fed by pressure, stroke and temperature telemetry. The physics model gives you a stress field and fatigue index; the data model tracks drift the physics can't see. Fuse the two into a single risk score, gate maintenance alerts on it, and keep every reading in a time-series store for retraining.\n\nBudget roughly USD 15-40k for the first integration plus tool seats; expect 8-12 weeks to a working twin against historian data.",
+  "tools": [
+    {
+      "catalogue_id": "presstwin-ro",
+      "name": "Ansys Twin Builder",
+      "rationale": "Reduced-order structural model of hydraulic presses; pairs well with a degradation estimator for predictive maintenance.",
+      "development_status": "actively maintained",
+      "access_type": "commercial",
+      "fidelity_tier": "reduced-order",
+      "spatial_scale": "~1 mm - ~3 m",
+      "temporal_scale": "~1 ms - ~1 h",
+      "validation_level": "validated against rig data",
+      "pricing": {
+        "estimate_low": 400.0,
+        "estimate_high": 900.0,
+        "currency": "USD",
+        "unit": "per seat/month",
+        "notes": "Model estimate.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Extrapolates poorly outside the calibrated load range",
+        "Assumes rigid tooling"
+      ],
+      "inputs": [
+        "Ram force",
+        "Stroke position",
+        "Oil temperature"
+      ],
+      "outputs": [
+        "Frame stress field",
+        "Fatigue index"
+      ],
+      "standards": [
+        "FMI 2.0",
+        "ISO 10303"
+      ],
+      "docs_url": "https://example.com/presstwin",
+      "alternatives": [
+        "OpenPress",
+        "FEMPress"
+      ]
+    },
+    {
+      "catalogue_id": "driftguard",
+      "name": "Simulink degradation model",
+      "rationale": "Online degradation estimator; learns the residual between the physics model and measured behaviour and flags drift before failure.",
+      "development_status": "actively maintained",
+      "access_type": "open-core",
+      "fidelity_tier": "data-driven",
+      "spatial_scale": "~1 mm - ~3 m",
+      "temporal_scale": "~1 ms - ~1 h",
+      "validation_level": "benchmarked on public bearing datasets",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 250.0,
+        "currency": "USD",
+        "unit": "per seat/month",
+        "notes": "Open core; paid support tier.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Needs 6+ months of history to stabilise",
+        "Sensitive to unlogged maintenance events"
+      ],
+      "inputs": [
+        "Model residual",
+        "Operating regime"
+      ],
+      "outputs": [
+        "Degradation index",
+        "Confidence"
+      ],
+      "standards": [
+        "ISO 13374"
+      ],
+      "docs_url": "https://example.com/driftguard",
+      "alternatives": [
+        "custom LSTM",
+        "PdM cloud service"
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      {
+        "id": "sens",
+        "type": "input",
+        "label": "Sensor stream",
+        "inputs": [],
+        "outputs": [
+          "telemetry"
+        ]
+      },
+      {
+        "id": "cfg",
+        "type": "input",
+        "label": "Press config",
+        "inputs": [],
+        "outputs": [
+          "params"
+        ]
+      },
+      {
+        "id": "catalog",
+        "type": "database",
+        "label": "Model catalogue",
+        "inputs": [],
+        "outputs": [
+          "records"
+        ]
+      },
+      {
+        "id": "clean",
+        "type": "process",
+        "label": "MATLAB clean & resample",
+        "inputs": [
+          "telemetry"
+        ],
+        "outputs": [
+          "clean"
+        ]
+      },
+      {
+        "id": "feat",
+        "type": "process",
+        "label": "Feature extract",
+        "inputs": [
+          "clean"
+        ],
+        "outputs": [
+          "features"
+        ]
+      },
+      {
+        "id": "rom",
+        "type": "model",
+        "label": "Ansys Twin Builder",
+        "inputs": [
+          "features",
+          "records"
+        ],
+        "outputs": [
+          "stress"
+        ],
+        "catalogue_id": "presstwin-ro"
+      },
+      {
+        "id": "ml",
+        "type": "model",
+        "label": "Simulink degradation model",
+        "inputs": [
+          "features"
+        ],
+        "outputs": [
+          "degradation"
+        ],
+        "catalogue_id": "driftguard"
+      },
+      {
+        "id": "fuse",
+        "type": "merge",
+        "label": "Fuse estimates",
+        "inputs": [
+          "stress",
+          "degradation"
+        ],
+        "outputs": [
+          "risk"
+        ]
+      },
+      {
+        "id": "risk",
+        "type": "decision",
+        "label": "Risk over limit?",
+        "inputs": [
+          "risk"
+        ],
+        "outputs": [
+          "yes",
+          "no"
+        ]
+      },
+      {
+        "id": "store",
+        "type": "database",
+        "label": "AWS Timestream store",
+        "inputs": [
+          "reading"
+        ],
+        "outputs": []
+      },
+      {
+        "id": "alert",
+        "type": "output",
+        "label": "Maintenance alert",
+        "inputs": [
+          "trigger"
+        ],
+        "outputs": []
+      },
+      {
+        "id": "log",
+        "type": "output",
+        "label": "Log & continue",
+        "inputs": [
+          "entry"
+        ],
+        "outputs": []
+      }
+    ],
+    "edges": [
+      {
+        "source": "sens",
+        "target": "clean"
+      },
+      {
+        "source": "sens",
+        "target": "store"
+      },
+      {
+        "source": "clean",
+        "target": "feat"
+      },
+      {
+        "source": "catalog",
+        "target": "rom",
+        "target_port": 1
+      },
+      {
+        "source": "feat",
+        "target": "rom",
+        "target_port": 0
+      },
+      {
+        "source": "feat",
+        "target": "ml"
+      },
+      {
+        "source": "rom",
+        "target": "fuse",
+        "target_port": 0
+      },
+      {
+        "source": "ml",
+        "target": "fuse",
+        "target_port": 1
+      },
+      {
+        "source": "fuse",
+        "target": "risk"
+      },
+      {
+        "source": "risk",
+        "target": "alert",
+        "source_port": 0,
+        "label": "yes"
+      },
+      {
+        "source": "risk",
+        "target": "log",
+        "source_port": 1,
+        "label": "no"
+      }
+    ]
+  }
+}

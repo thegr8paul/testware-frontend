@@ -123,6 +123,7 @@ st.session_state.setdefault("categories", {})
 st.session_state.setdefault("focus_tool", None)  # catalogue_id of the node clicked in Section 3
 st.session_state.setdefault("headline", random.choice(HEADLINES))
 st.session_state.setdefault("show_readme", False)  # sidebar "Read Me" -> full-page presentation.md
+st.session_state.setdefault("show_examples", False)  # sidebar "Examples" -> curated workflow gallery
 
 
 def _current_categories() -> dict:
@@ -168,6 +169,61 @@ def _save_workflow(result: dict | None) -> bool:
     existing.append({**result, "saved_at": datetime.now(timezone.utc).isoformat()})
     SAVED_WORKFLOWS_PATH.write_text(json.dumps(existing, indent=2))
     return True
+
+
+EXAMPLES_DIR = Path(__file__).with_name("examples")
+
+
+@st.cache_data(show_spinner=False)
+def _load_examples() -> list[dict]:
+    """Curated example workflows shipped with the app (examples/*.json), each a
+    single saved-result payload: {query, categories, description, tools,
+    workflow}. Sorted by filename so 01-, 02-, ... controls display order.
+    These are read-only seeds -- opening one drops straight into the results
+    view with no backend call (see the gallery block below)."""
+    out: list[dict] = []
+    if not EXAMPLES_DIR.is_dir():
+        return out
+    for path in sorted(EXAMPLES_DIR.glob("*.json")):
+        try:
+            ex = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if ex.get("query") and (ex.get("workflow") or {}).get("nodes"):
+            ex["_slug"] = path.stem
+            out.append(ex)
+    return out
+
+
+def _open_example(ex: dict) -> None:
+    """Load a curated example into session as if it were a query result:
+    pre-seed st.session_state.results with a cache key that matches the LAYOUT
+    block's, so it's reused instead of POSTing to the backend. Mutates state
+    only -- the caller reruns (or Streamlit auto-reruns after an on_change)."""
+    cats = dict(ex.get("categories") or {})
+    st.session_state.query = ex["query"]
+    st.session_state.query_input = ex["query"]          # compact search field
+    st.session_state.categories = cats
+    st.session_state.industry = cats.get("industry") or "(Any)"
+    st.session_state.application = cats.get("application") or "(Any)"
+    st.session_state.nature = cats.get("nature_of_project") or "(Any)"
+    st.session_state.results = {
+        "key": (ex["query"], json.dumps(cats, sort_keys=True)),
+        "description": ex.get("description", ""),
+        "tools": ex.get("tools", []),
+        "workflow": ex["workflow"],
+    }
+    st.session_state.focus_tool = None
+    st.session_state.show_examples = False
+    st.session_state.show_readme = False
+
+
+def _jump_example() -> None:
+    """on_change for the sidebar 'jump to example' selectbox."""
+    pick = st.session_state.get("sb_example_pick")
+    by_q = {e["query"]: e for e in _load_examples()}
+    if pick in by_q:
+        _open_example(by_q[pick])
 
 
 def run_query(query: str, categories: dict):
@@ -307,7 +363,7 @@ with st.sidebar:
             st.toast("Workflow saved", icon=":material/check:")
         for _k in ("query", "query_input", "industry", "application", "nature",
                    "categories", "focus_tool", "last_result", "results", "headline",
-                   "show_readme"):
+                   "show_readme", "show_examples"):
             st.session_state.pop(_k, None)
         st.rerun()
 
@@ -320,11 +376,40 @@ with st.sidebar:
         help="Project overview / demo-day presentation",
     ):
         st.session_state.show_readme = not st.session_state.get("show_readme", False)
+        st.session_state.show_examples = False
         st.rerun()
 
+    # Examples: full-page gallery of curated workflows (examples/*.json).
+    if st.button(
+        "← Back to app" if st.session_state.get("show_examples") else "Examples",
+        icon=":material/bookmark:",
+        key="sb_saved",
+        use_container_width=True,
+        help="Curated example workflows to open and edit",
+    ):
+        st.session_state.show_examples = not st.session_state.get("show_examples", False)
+        st.session_state.show_readme = False
+        st.rerun()
+
+    # Quick switch between example workflows from anywhere in the app. Keep the
+    # selection in sync with whatever's actually on screen (a real query, or
+    # "New workflow", resets it to the placeholder).
+    _ex_by_query = {e["query"]: e for e in _load_examples()}
+    if _ex_by_query:
+        if st.session_state.get("query") in _ex_by_query:
+            st.session_state.sb_example_pick = st.session_state.query
+        elif st.session_state.get("sb_example_pick") not in (None, "— example —"):
+            st.session_state.sb_example_pick = "— example —"
+        st.selectbox(
+            "Jump to example",
+            options=["— example —"] + list(_ex_by_query),
+            key="sb_example_pick",
+            on_change=_jump_example,
+            label_visibility="collapsed",
+            help="Load a curated example workflow (no backend call)",
+        )
+
     # Placeholders -- no function yet.
-    st.button("Saved workflows", icon=":material/bookmark:", key="sb_saved",
-              use_container_width=True, disabled=True)
     st.button("Settings", icon=":material/settings:", key="sb_settings",
               use_container_width=True, disabled=True)
     st.button("Help", icon=":material/help:", key="sb_help",
@@ -344,6 +429,42 @@ if st.session_state.get("show_readme"):
             deck_view(markdown=_md, key="tw_deck")
         else:
             st.markdown(_md)  # fallback: deck component unavailable
+    st.stop()
+
+
+# --- EXAMPLES (curated workflow gallery) -------------------------------------
+# Full-page: replaces the main area; the sidebar (rendered above) stays.
+# Each card opens a shipped examples/*.json straight into the results view --
+# we pre-seed st.session_state.results with a matching cache key so the LAYOUT
+# block below reuses it instead of POSTing to the backend.
+if st.session_state.get("show_examples"):
+    with st.container(key="tw_examples"):
+        st.header("Example workflows")
+        st.caption(
+            "Curated digital-twin workflows. Open one to explore and edit its "
+            "graph — nodes, wiring and tool cards, no backend call."
+        )
+        _examples = _load_examples()
+        if not _examples:
+            st.info("No examples found (examples/*.json).")
+        for _ex in _examples:
+            with st.container(border=True):
+                st.subheader(_ex["query"])
+                _cats = _ex.get("categories") or {}
+                _bits = [v for v in (_cats.get("industry"), _cats.get("application"),
+                                     _cats.get("nature_of_project")) if v and v != "(Any)"]
+                if _bits:
+                    st.caption(" · ".join(_bits))
+                _lead = (_ex.get("description") or "").split("\n\n")[0]
+                if _lead:
+                    st.write(_lead)
+                _nodes = len((_ex["workflow"].get("nodes") or []))
+                _edges = len((_ex["workflow"].get("edges") or []))
+                st.caption(f"{_nodes} nodes · {_edges} connections · {len(_ex.get('tools') or [])} tools")
+                if st.button("Open workflow", key=f"ex_open_{_ex['_slug']}",
+                             icon=":material/open_in_new:"):
+                    _open_example(_ex)
+                    st.rerun()
     st.stop()
 
 
