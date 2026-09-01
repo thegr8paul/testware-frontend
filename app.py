@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -224,6 +225,35 @@ def _jump_example() -> None:
     by_q = {e["query"]: e for e in _load_examples()}
     if pick in by_q:
         _open_example(by_q[pick])
+
+
+def _example_payload(result: dict | None) -> dict:
+    """A live result narrowed to the examples/*.json shape (runtime-only keys
+    like the result-cache 'key' and '_slug' dropped)."""
+    result = result or {}
+    return {
+        "query": result.get("query", ""),
+        "categories": result.get("categories", {}) or {},
+        "description": result.get("description", ""),
+        "tools": result.get("tools", []) or [],
+        "workflow": result.get("workflow") or {"nodes": [], "edges": []},
+    }
+
+
+def _write_example(name: str, result: dict | None) -> Path:
+    """Persist the on-screen workflow as examples/NN-<slug>.json so it ships
+    with the app as a permanent pitch example. NN auto-increments. Only useful
+    where the disk survives (local dev / an always-on host); on Streamlit
+    Community Cloud copy the JSON into a new repo file instead."""
+    slug = re.sub(r"[^a-z0-9]+", "-", (name or "").lower()).strip("-") or "workflow"
+    nums = [int(m.group(1)) for p in EXAMPLES_DIR.glob("*.json")
+            if (m := re.match(r"(\d+)-", p.name))]
+    nn = f"{(max(nums) + 1) if nums else 1:02d}"
+    EXAMPLES_DIR.mkdir(exist_ok=True)
+    path = EXAMPLES_DIR / f"{nn}-{slug}.json"
+    path.write_text(json.dumps(_example_payload(result), indent=2) + "\n")
+    _load_examples.clear()  # bust the cache -> the new example shows without a restart
+    return path
 
 
 def run_query(query: str, categories: dict):
@@ -545,6 +575,42 @@ if st.session_state.query:
                     st.rerun()
     else:
         st.caption("No workflow available for this query.")
+
+    # --- SECTION: SAVE AS PITCH EXAMPLE (authoring) -------------------------
+    # Capture what's on screen -- query + categories + description + tools +
+    # the graph INCLUDING any canvas edits -- as examples/NN-<slug>.json, so a
+    # good workflow can be kept and reused as a demo example. Writing to disk
+    # only sticks where the disk persists (local dev / always-on host); on
+    # Streamlit Community Cloud, copy the JSON and paste it into a new repo
+    # file instead.
+    if workflow.get("nodes"):
+        with st.expander("Save this workflow as a pitch example"):
+            _ex_name = st.text_input(
+                "Example name",
+                value=(st.session_state.query or "")[:60],
+                key="tw_ex_name",
+                help="Becomes the filename: examples/NN-<name>.json",
+            )
+            _save_col, _hint_col = st.columns([1, 3], vertical_alignment="center")
+            with _save_col:
+                if st.button("Save to examples/", key="tw_ex_save",
+                             icon=":material/bookmark_add:", use_container_width=True):
+                    try:
+                        _p = _write_example(_ex_name, st.session_state.last_result)
+                        st.success(f"Wrote `examples/{_p.name}` — `git add` + commit it to keep it.")
+                    except OSError as _e:
+                        st.error(f"Couldn't write the file: {_e}")
+            with _hint_col:
+                st.caption(
+                    "Commit & push the file and it shows up in the sidebar "
+                    "**Examples** list for everyone. On Streamlit Cloud the disk "
+                    "resets on redeploy — use the JSON below instead: copy it "
+                    "into a new `examples/NN-name.json` in the repo."
+                )
+            st.code(
+                json.dumps(_example_payload(st.session_state.last_result), indent=2),
+                language="json",
+            )
 
     # --- SECTION: TOOL SUGGESTIONS ------------------------------------------
     st.header("Suggested Tools")

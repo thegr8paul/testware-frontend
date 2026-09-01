@@ -37,6 +37,13 @@ and `git log 9c2589a..feat/frontend-refresh` for the commits.
   or "New workflow" resets it. Add an example by dropping a `NN-name.json`
   file (shape: one `_save_workflow` payload — `{query, categories,
   description, tools, workflow}`) in `examples/`; `NN-` sets the order.
+- `_write_example()` / `_example_payload()` — the **"Save this workflow as a
+  pitch example"** expander under the workflow canvas. Writes the on-screen
+  result (query + categories + description + tools + graph incl. canvas edits)
+  to `examples/NN-<slug>.json` and clears the `_load_examples` cache so it
+  shows at once. Commit + push to keep it. The expander also prints the JSON
+  for copy/paste — on Streamlit Cloud (ephemeral disk) paste it into a new
+  repo file rather than relying on the disk write.
 - Result caching — `run_query()` is only called when
   `(query, json.dumps(categories, sort_keys=True))` changes; otherwise the
   cached `description / tools / workflow` is reused. **Why:** the backend
