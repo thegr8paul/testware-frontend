@@ -142,19 +142,60 @@ def _current_categories() -> dict:
     return {k: v for k, v in picks.items() if v != "(Any)"}
 
 
-def build_enhanced_query(raw_query: str, categories: dict) -> str:
-    """Fold the selected dropdown tags into the query text sent to the backend.
+# --- Enhanced query ---------------------------------------------------------
+# rag-service's POST /query takes ONE string (rag/schemas.py: QueryRequest,
+# min 3 / max 1000 chars) and reuses it for BOTH the vector-retrieval
+# embedding AND every generation prompt (answer / diagram / tools). So the
+# recipe is: the user's own words first and verbatim (retrieval leans on
+# them), then the picked categories, then one short instruction that steers
+# the answer toward what the UI shows. Everything below is parametric --
+# tune the constants, not the f-string.
 
-    Each tag is optional -- an unset dropdown is stored as None in `categories`
-    and skipped here. With nothing selected, the raw query is returned as-is.
-    The backend embeds this same string for retrieval and reuses it for
-    generation, so the tags inform both.
+_QUERY_MAX = 1000  # QueryRequest.query max_length; longer -> HTTP 422
+_CATEGORY_LABELS = {
+    "industry": "Industry",
+    "application": "Application",
+    "nature_of_project": "Nature of project",
+}
+# Appended last. Kept to one sentence on purpose -- it is embedded for
+# retrieval too, so a longer instruction would dilute the user's problem
+# statement. Set to "" to send just the query + context.
+_OUTPUT_STEER = (
+    "Answer as a concrete end-to-end digital-twin workflow: name a specific "
+    "catalogue tool for each step, note its fidelity tier and any relevant "
+    "standards, and give a rough budget and timeline."
+)
+
+
+def build_enhanced_query(raw_query: str, categories: dict) -> str:
+    """Compose the single string sent to the backend: the raw prompt, then the
+    set categories as a labelled block, then `_OUTPUT_STEER` -- all kept within
+    `_QUERY_MAX`. Only the raw prompt is trimmed (with an ellipsis) if the
+    budget is tight; the context block and steer are short and fixed.
+
+    `categories` uses the `_current_categories()` shape -- `{industry,
+    application, nature_of_project}` with unset values already dropped; an
+    empty dict just yields "<query>\\n\\n<steer>".
     """
-    labels = {"industry": "Industry", "application": "Application", "nature_of_project": "Nature of project"}
-    parts = [f"{labels.get(key, key)}: {value}" for key, value in categories.items() if value]
-    if not parts:
-        return raw_query
-    return f"{raw_query}\n\nContext — " + "; ".join(parts)
+    raw = (raw_query or "").strip()
+
+    blocks = []
+    ctx = [f"- {_CATEGORY_LABELS.get(k, k)}: {v}"
+           for k, v in categories.items() if v and v != "(Any)"]
+    if ctx:
+        blocks.append("Context:\n" + "\n".join(ctx))
+    if _OUTPUT_STEER:
+        blocks.append(_OUTPUT_STEER)
+    tail = "\n\n".join(blocks)
+
+    if not tail:
+        return raw[:_QUERY_MAX]
+    budget = _QUERY_MAX - len(tail) - 2  # 2 = the "\n\n" that joins raw to tail
+    if budget <= 0:                      # pathological: tail alone too long
+        return tail[:_QUERY_MAX]
+    if len(raw) > budget:
+        raw = raw[: budget - 1].rstrip() + "…"
+    return f"{raw}\n\n{tail}"
 
 
 SAVED_WORKFLOWS_PATH = Path(__file__).with_name("saved_workflows.json")
