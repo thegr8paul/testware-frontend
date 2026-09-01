@@ -231,6 +231,27 @@ body { -webkit-font-smoothing: antialiased; }
 }
 .st-key-sb_new_workflow button { font-weight: 600 !important; color: #111111 !important; }
 
+/* --- three-area nav (sidebar radio: Chat / Presentation / Examples) ---- */
+.st-key-sb_area [role="radiogroup"] { gap: 2px; }
+.st-key-sb_area [role="radiogroup"] > label {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 1.04rem;
+}
+.st-key-sb_area [role="radiogroup"] > label:hover { background: #ECE8DE; }
+
+/* example picker (sidebar radio, only rendered while the Examples area is
+   active) -- compact, unobtrusive */
+.st-key-sb_example_pick [role="radiogroup"] { gap: 1px; }
+.st-key-sb_example_pick [role="radiogroup"] > label {
+  width: 100%;
+  padding: 5px 9px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.st-key-sb_example_pick [role="radiogroup"] > label:hover { background: #ECE8DE; }
+
 /* --- Section 2 card focused from a Section 3 node click ------------------- */
 .st-key-tw_focus_card {
   outline: 2px solid #111111;
@@ -239,7 +260,7 @@ body { -webkit-font-smoothing: antialiased; }
   background: rgba(17, 17, 17, 0.03);
 }
 
-/* --- Read Me / demo-day deck (sidebar -> Read Me) ----------------------- */
+/* --- Presentation area: demo-day deck --------------------------------- */
 /* The deck is a full-bleed component (components/deck/, renders
    presentation.md as animated slides). Break it out of the padded,
    max-width content column so it spans the viewport. */
@@ -254,16 +275,3 @@ body { -webkit-font-smoothing: antialiased; }
   width: 100vw !important;
   max-width: none !important;
 }
-.st-key-sb_readme button { font-weight: 600 !important; color: #111111 !important; }
-
-/* --- Example workflows gallery (sidebar -> Examples) ------------------- */
-.st-key-tw_examples { max-width: 780px; margin: 0 auto; }
-.st-key-tw_examples [data-testid="stVerticalBlockBorderWrapper"] {
-  margin-bottom: 0.9rem;
-}
-.st-key-tw_examples [data-testid="stVerticalBlockBorderWrapper"] > div {
-  padding: 0.35rem 0.25rem;
-}
-.st-key-sb_saved button { font-weight: 600 !important; color: #111111 !important; }
-/* "jump to example" selectbox sits just under the Examples button */
-.st-key-sb_example_pick { margin-top: -0.35rem; }
