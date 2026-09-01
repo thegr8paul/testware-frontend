@@ -58,7 +58,11 @@
   .drawflow .drawflow-node { cursor: grab; }
   .drawflow .drawflow-node.selected { cursor: grabbing; }
 
-  .drawflow-node .twn-title { font-weight: 600; line-height: 1.2; }
+  .drawflow-node .twn-title { font-weight: 600; line-height: 1.2; text-align: center; }
+  /* product logo (keyword-matched from the node label) -- the ONLY colour on
+     a node. Small, centred above the title; absent when nothing matched. */
+  .drawflow-node .twn-logo { display: flex; justify-content: center; margin: 0 0 4px; }
+  .drawflow-node .twn-logo img { width: 20px; height: 20px; display: block; border-radius: 4px; }
   .drawflow-node .twn-badge {
     position: absolute; top: -8px; right: -8px;
     background: #111; color: #fff; font-size: 9px; font-weight: 700;
@@ -89,40 +93,48 @@
     content: ""; position: absolute; inset: -7px; border-radius: 50%;
   }
   .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
-  .drawflow-node.t-model .twn-port .dot    { border-color: rgba(63,125,120,0.85); }
-  .drawflow-node.t-decision .twn-port .dot { border-color: rgba(169,130,47,0.85); }
-  .drawflow-node.t-output .twn-port .dot,
-  .drawflow-node.t-database .twn-port .dot { border-color: rgba(84,98,138,0.85); }
 
-  /* per-type tint + texture. Class is "t-<type>" (backend node type:
-     input | process | model | decision | merge | output | database). */
-  .drawflow-node.t-input    { background: rgba(255,255,255,0.55); }
-  .drawflow-node.t-process  { background:
-      radial-gradient(rgba(17,17,17,0.10) 0.9px, transparent 0.9px) 0 0 / 10px 10px,
-      rgba(255,255,255,0.55); }
-  .drawflow-node.t-merge    { background:
-      linear-gradient(rgba(17,17,17,0.07) 1px, transparent 1px) 0 0 / 100% 10px,
-      rgba(255,255,255,0.55); }
-  .drawflow-node.t-model    { background:
-      repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 8px),
-      rgba(63,125,120,0.22);
-      border-color: rgba(63,125,120,0.60); }
-  .drawflow-node.t-decision { background:
-      repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
-      repeating-linear-gradient(90deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 8px),
-      rgba(169,130,47,0.22);
-      border-color: rgba(169,130,47,0.60); }
-  .drawflow-node.t-output   { background: rgba(63,125,85,0.22); border-color: rgba(63,125,85,0.60); }
+  /* --- per-category encoding: shape + texture, NO colour ------------------
+     Class is "t-<type>" (backend node type). Category is told apart by
+     TEXTURE (flow/scaffold nodes) and SILHOUETTE (all nodes) only. Colour on
+     a node is reserved for a product logo (see .twn-logo / logoFor()). */
 
-  /* database -- indigo/slate tint, elliptical top+bottom edges (cylinder
-     silhouette) and a faint DB-cylinder glyph watermark in the corner. */
+  .drawflow-node.t-input,
+  .drawflow-node.t-process,
+  .drawflow-node.t-merge,
+  .drawflow-node.t-decision {
+    background-color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(120, 120, 120, 0.55);
+  }
+  /* t-input: no pattern -- the clean card is the cue */
+  .drawflow-node.t-process {
+    background-image: radial-gradient(rgba(17,17,17,0.11) 0.9px, transparent 0.9px);
+    background-size: 9px 9px;
+  }
+  .drawflow-node.t-merge {
+    background-image: repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 9px);
+  }
+  .drawflow-node.t-decision {
+    background-image: repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 9px);
+  }
+
+  /* --- per-category silhouette -----------------------------------------
+     Shape as a third, orthogonal cue. The bounding box stays rectangular
+     (border-radius only, no clip-path) so wires keep anchoring to the port
+     dots on the card edges. */
+  .drawflow-node.t-input    { border-radius: 999px; }              /* pill  -- the entry point   */
+  .drawflow-node.t-process  { border-radius: 2px; }                /* sharp box -- an operation  */
+  .drawflow-node.t-merge    { border-radius: 14px; }               /* soft box -- a join         */
+  .drawflow-node.t-decision { border-radius: 14px 2px 14px 2px; }  /* offset corners -- a branch */
+  .drawflow-node.t-model    { border-radius: 6px; }                /* gently rounded -- a tool   */
+  .drawflow-node.t-output   { border-radius: 3px 3px 18px 18px; }  /* footed card -- a result    */
+  /* database -- cylinder: horizontal radius = half the width makes the
+     whole top and bottom edge one arc; the vertical radius sets how deep
+     that arc bows. Extra top/bottom padding clears the curve. */
   .drawflow-node.t-database {
-    border-color: rgba(84,98,138,0.60);
-    border-radius: 10px / 26px;
-    background:
-      no-repeat right -6px bottom -8px / 42px
-        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="rgba(17,17,17,0.16)" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 1.66 3.13 3 7 3s7-1.34 7-3V5"/><path d="M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3"/></svg>'),
-      rgba(84,98,138,0.20);
+    border-radius: 50% / 20px;
+    padding-top: 22px;
+    padding-bottom: 22px;
   }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
@@ -135,8 +147,10 @@
   .drawflow .connection { display: none !important; }
   .drawflow .drawflow-node .input,
   .drawflow .drawflow-node .output { display: none !important; }
+  /* Above the nodes so the fat transparent `.hit` twins and the delete
+     handles are clickable; the SVG itself stays pointer-transparent. */
   #wires {
-    position: absolute; inset: 0; z-index: 0;
+    position: absolute; inset: 0; z-index: 6;
     pointer-events: none; overflow: visible;
   }
   #wires path.wire { fill: none; stroke: rgba(17, 17, 17, 0.32); stroke-width: 1.25px; }
@@ -189,10 +203,11 @@
     var builtSig = null;      // graph a build() has completed for
     var heldSig = null;       // content-sig of the graph we currently hold (build OR user edit)
     var selEdge = -1;         // index into edgeList of the selected wire (-1 = none)
-    var pending = null;       // in-progress connection: {a: srcIntId, op: portNo, x, y}
+    var pending = null;       // in-progress connection: {side, intId, port, x, y, want}
     var panelRO = null;       // live ResizeObserver on #panel
     var settleUntil = 0;      // rAF wire-redraw deadline after a build
     var wheelBound = false;    // our smooth wheel handler is installed once
+    var wiringBound = false;   // our connection-editing handlers are installed once
 
     function panel() { return document.getElementById("panel"); }
     function sized() {
@@ -206,11 +221,56 @@
       });
     }
 
+    // --- product logos ----------------------------------------------------
+    // A node that names a real tool gets that tool's mark -- the only colour
+    // on a node. Matched by substring against "<label> <catalogue_id>"
+    // (lower-cased). Marks are simplified, nominative glyphs (not the exact
+    // trademarked artwork) -- fine for an internal demo. Add more below.
+    var LOGO_SVG = {
+      nvidia: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#76B900'/><path d='M11 20c3.6-6.4 13.8-6.4 17.4 0-3.6 6.4-13.8 6.4-17.4 0z' fill='none' stroke='#fff' stroke-width='2.6'/><circle cx='20' cy='20' r='3.2' fill='#fff'/></svg>",
+      ansys: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#FFB71B'/><path d='M11 28l9-17 9 17M15.5 22.5h9' fill='none' stroke='#1a1a1a' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      simulink: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0076A8'/><path d='M6 25c6.5 0 6.5-11 13.5-11S26 25 34 25' fill='none' stroke='#FF8C00' stroke-width='2.8' stroke-linecap='round'/><rect x='4.5' y='23.5' width='4' height='4' fill='#fff'/><rect x='31.5' y='12' width='4' height='4' fill='#fff'/></svg>",
+      siemens: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#00819B'/><text x='20' y='27' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='17' fill='#fff'>S</text></svg>",
+      comsol: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#D6001C'/><circle cx='20' cy='20' r='8.5' fill='none' stroke='#fff' stroke-width='3'/></svg>",
+      dassault: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0033A0'/><text x='20' y='26' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='13' fill='#fff'>3DS</text></svg>",
+      aws: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#232F3E'/><path d='M10 24c6 3.4 14 3.4 20 0' fill='none' stroke='#FF9900' stroke-width='2.6' stroke-linecap='round'/><path d='M26 22.5l4 1.5-1.6 3.8' fill='none' stroke='#FF9900' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      azure: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#0089D6'/><path d='M19 9l10 22H9z' fill='#fff'/></svg>",
+      kafka: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#1a1a1a'/><g fill='#fff'><circle cx='14' cy='20' r='3'/><circle cx='27' cy='12' r='3'/><circle cx='27' cy='28' r='3'/></g><g stroke='#fff' stroke-width='2'><path d='M16.5 18.5l8-5M16.5 21.5l8 5'/></g></svg>",
+      modelica: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#B5231F'/><text x='20' y='27' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='17' fill='#fff'>M</text></svg>",
+      comms: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='7' fill='#3A3A36'/><g fill='none' stroke='#fff' stroke-width='2.4' stroke-linecap='round'><circle cx='20' cy='20' r='2.6' fill='#fff' stroke='none'/><path d='M14.5 25.5a8 8 0 010-11M25.5 14.5a8 8 0 010 11M11 29a13 13 0 010-18M29 11a13 13 0 010 18'/></g></svg>"
+    };
+    var LOGO_KEYS = [
+      ["omniverse", "nvidia"], ["nvidia", "nvidia"],
+      ["ansys", "ansys"], ["fluent", "ansys"], ["twin builder", "ansys"],
+      ["simulink", "simulink"], ["matlab", "simulink"], ["mathworks", "simulink"],
+      ["siemens", "siemens"], ["simcenter", "siemens"], ["amesim", "siemens"], ["star-ccm", "siemens"],
+      ["comsol", "comsol"],
+      ["dassault", "dassault"], ["3dexperience", "dassault"], ["catia", "dassault"],
+        ["simulia", "dassault"], ["abaqus", "dassault"], ["solidworks", "dassault"],
+      ["aws", "aws"], ["sagemaker", "aws"], ["s3 ", "aws"],
+      ["azure", "azure"],
+      ["kafka", "kafka"],
+      ["modelica", "modelica"], ["dymola", "modelica"], ["openmodelica", "modelica"],
+      ["mqtt", "comms"], ["opc-ua", "comms"], ["opcua", "comms"], ["broker", "comms"],
+        ["telemetry", "comms"], ["message bus", "comms"], ["data bus", "comms"], ["sensor stream", "comms"]
+    ];
+    function logoFor(n) {
+      var hay = ((n.label || "") + " " + (n.catalogue_id || "")).toLowerCase();
+      for (var i = 0; i < LOGO_KEYS.length; i++) {
+        if (hay.indexOf(LOGO_KEYS[i][0]) !== -1) {
+          return "data:image/svg+xml," + encodeURIComponent(LOGO_SVG[LOGO_KEYS[i][1]]);
+        }
+      }
+      return null;
+    }
+
     // content only -- the styling class lives on the .drawflow-node element.
     // Every port row carries an anchor <i class="dot" id="a-in|out-<intId>-<k>">
     // sitting on the card edge; drawWires() connects lines to those.
     function nodeContent(n, intId) {
       var badge = n.catalogue_id ? '<div class="twn-badge">DB</div>' : "";
+      var lg = logoFor(n);
+      var logo = lg ? '<div class="twn-logo"><img alt="" src="' + lg + '"></div>' : "";
       var ins = (n.inputs || []).map(function (p, k) {
         return '<div class="twn-port"><i class="dot" id="a-in-' + intId + '-' + (k + 1) +
                '"></i><span>' + esc(p) + "</span></div>";
@@ -223,7 +283,7 @@
         ? '<div class="twn-body"><div class="twn-col in">' + ins +
           '</div><div class="twn-col out">' + outs + "</div></div>"
         : "";
-      return badge + '<div class="twn-title">' + esc(n.label || n.id) + "</div>" + body;
+      return badge + logo + '<div class="twn-title">' + esc(n.label || n.id) + "</div>" + body;
     }
 
     // longest-path rank per node id
@@ -296,13 +356,16 @@
         }
       });
       if (pending) {
-        var ps = anchorAt("a-out-" + pending.a + "-" + pending.op, pending.a, "out");
+        var ps = anchorAt("a-" + pending.side + "-" + pending.intId + "-" + pending.port,
+                          pending.intId, pending.side);
         if (ps) {
           var px1 = ps.x - wr.left, py1 = ps.y - wr.top;
           var px2 = pending.x - wr.left, py2 = pending.y - wr.top;
           var pdx = Math.max(30, Math.abs(px2 - px1) * 0.5);
+          var c1x = pending.side === "out" ? px1 + pdx : px1 - pdx;
+          var c2x = pending.side === "out" ? px2 - pdx : px2 + pdx;
           parts.push('<path class="pending" d="M ' + px1 + ' ' + py1 + ' C ' +
-            (px1 + pdx) + ' ' + py1 + ' ' + (px2 - pdx) + ' ' + py2 + ' ' + px2 + ' ' + py2 + '"/>');
+            c1x + ' ' + py1 + ' ' + c2x + ' ' + py2 + ' ' + px2 + ' ' + py2 + '"/>');
         }
       }
       svg.innerHTML = parts.join("");
@@ -372,6 +435,94 @@
         heldSig = graphSig(g);          // so the echo is recognised, no rebuild
         setValue({ kind: "edit", workflow: g, ts: Date.now() });
       }, 140);
+    }
+
+    // --- connection editing -----------------------------------------------
+    // Drag from a port dot to another port dot to wire nodes; drag an input's
+    // existing wire off to reroute or delete it; click a wire then its x to
+    // remove it. Every change re-emits the graph via emitEdit().
+    function dotInfo(el) {
+      var m = el && el.id && el.id.match(/^a-(out|in)-(\d+)-(\d+)$/);
+      return m ? { side: m[1], intId: parseInt(m[2], 10), port: parseInt(m[3], 10) } : null;
+    }
+    function dropEdgesIntoInput(b, ip) {   // an input port holds one wire
+      for (var i = edgeList.length - 1; i >= 0; i--) {
+        if (edgeList[i].b === b && edgeList[i].ip === ip) edgeList.splice(i, 1);
+      }
+    }
+    function installWiring() {
+      if (wiringBound) return;
+      wiringBound = true;
+      var pnl = panel();
+
+      // start a connection -- capture phase so Drawflow's node drag never begins
+      pnl.addEventListener("pointerdown", function (e) {
+        var dot = e.target.closest && e.target.closest(".dot");
+        if (dot) {
+          var info = dotInfo(dot);
+          if (!info) return;
+          e.preventDefault();
+          e.stopPropagation();
+          selEdge = -1;
+          if (info.side === "in") {
+            var ex = edgeList.filter(function (x) { return x.b === info.intId && x.ip === info.port; })[0];
+            if (ex) {                       // pick up the existing wire (reroute / detach)
+              edgeList.splice(edgeList.indexOf(ex), 1);
+              pending = { side: "out", intId: ex.a, port: ex.op, x: e.clientX, y: e.clientY, want: "in" };
+            } else {
+              pending = { side: "in", intId: info.intId, port: info.port, x: e.clientX, y: e.clientY, want: "out" };
+            }
+          } else {
+            pending = { side: "out", intId: info.intId, port: info.port, x: e.clientX, y: e.clientY, want: "in" };
+          }
+          drawWires();
+          return;
+        }
+        // click on empty canvas -> drop wire selection
+        if (selEdge !== -1 && !(e.target.closest && (e.target.closest(".hit") || e.target.closest(".del")))) {
+          selEdge = -1; drawWires();
+        }
+      }, true);
+
+      window.addEventListener("pointermove", function (e) {
+        if (!pending) return;
+        pending.x = e.clientX; pending.y = e.clientY;
+        drawWires();
+      }, { passive: true });
+
+      window.addEventListener("pointerup", function (e) {
+        if (!pending) return;
+        var p = pending; pending = null;
+        var over = document.elementFromPoint(e.clientX, e.clientY);
+        var dot = over && over.closest && over.closest(".dot");
+        var info = dot && dotInfo(dot);
+        if (info && info.side === p.want && info.intId !== p.intId) {
+          var a, b, op, ip;
+          if (p.side === "out") { a = p.intId; op = p.port; b = info.intId; ip = info.port; }
+          else                  { a = info.intId; op = info.port; b = p.intId; ip = p.port; }
+          dropEdgesIntoInput(b, ip);
+          if (!edgeExists(a, b, op, ip)) edgeList.push({ a: a, b: b, op: op, ip: ip });
+        }
+        drawWires();
+        emitEdit();                         // covers create, reroute, and detach-to-delete
+      }, { passive: true });
+
+      // select / delete a wire (the .hit twin and .del handle sit in #wires)
+      var svg = document.getElementById("wires");
+      svg.addEventListener("click", function (e) {
+        var del = e.target.closest && e.target.closest(".del");
+        if (del) {
+          var di = parseInt(del.getAttribute("data-ei"), 10);
+          if (di >= 0 && di < edgeList.length) { edgeList.splice(di, 1); selEdge = -1; drawWires(); emitEdit(); }
+          return;
+        }
+        var hit = e.target.closest && e.target.closest(".hit");
+        if (hit) {
+          var hi = parseInt(hit.getAttribute("data-ei"), 10);
+          selEdge = (selEdge === hi) ? -1 : hi;
+          drawWires();
+        }
+      });
     }
 
     // Frame ALL nodes: measure their real bounding box, add a slight margin
@@ -477,6 +628,7 @@
       editor.zoom_max = 1.8;
       editor.start();
       installWheel();             // replace Drawflow's jumpy fixed-step wheel zoom
+      installWiring();            // drag-a-port-dot connection editing
       dfToNode = {};
       edgeList = [];
 
@@ -547,15 +699,15 @@
       setTimeout(autoFit, 60);         // ...again once layout / fonts settle
       setTimeout(autoFit, 260);
 
-      // "edit" -> node cards can be dragged around. New wiring is impossible
-      // anyway: Drawflow's own port dots are display:none (we render #wires
-      // ourselves), so there is nothing to grab to start a connection.
+      // "edit" -> node cards can be dragged around; connection editing is
+      // handled by installWiring() (Drawflow's own port dots stay hidden --
+      // we drive the drag from our .dot anchors and render #wires ourselves).
       editor.editor_mode = "edit";
       // redraw our wires whenever Drawflow pans or zooms
       editor.on("translate", drawWires);
       editor.on("zoom", drawWires);
-      // ...and live, while a node is being dragged (Drawflow sets .drag/.node_dragged)
-      editor.on("nodeMoved", drawWires);
+      // ...and live, while a node is being dragged; persist the new position
+      editor.on("nodeMoved", function () { drawWires(); emitEdit(); });
       var pnl = panel();
       ["mousemove", "touchmove"].forEach(function (ev) {
         pnl.addEventListener(ev, function () {
@@ -595,6 +747,7 @@
       requestAnimationFrame(settleTick);
 
       builtSig = lastSig;
+      heldSig = graphSig(wf);   // recognise our own post-edit echo, don't rebuild
     }
 
     function schedule(args) {
@@ -616,11 +769,17 @@
       setTimeout(run, 1000);
     }
 
+    // Rebuild gate -- node identity + suggestion set ONLY, deliberately NOT
+    // the edges. Once the canvas is up, edgeList is the source of truth for
+    // wiring; a render that carries the same nodes (an edit echo, a focus
+    // rerun, the pre-edit graph coming back a beat late) must NOT rebuild or
+    // it re-fits the view and throws away the user's zoom/pan and edits.
+    // A genuinely new graph (new query) brings new node ids -> rebuild.
     function sig(args) {
       try {
         var wf = args.workflow || {};
         return JSON.stringify([(wf.nodes || []).map(function (n) { return n.id; }),
-                               (wf.edges || []).length, args.suggested || []]);
+                               args.suggested || []]);
       } catch (e) { return Math.random().toString(); }
     }
 
@@ -634,6 +793,14 @@
       setHeight(FIXED_HEIGHT);
       var s = sig(args);
       if (s === builtSig) {  // same graph -> just re-settle the wires
+        settleUntil = Date.now() + 600;
+        requestAnimationFrame(settleTick);
+        return;
+      }
+      // our own edit coming back from Streamlit (edge count changed, so `sig`
+      // differs) -- adopt it without a disruptive rebuild / re-fit
+      if (heldSig && graphSig(args.workflow) === heldSig) {
+        builtSig = s;
         settleUntil = Date.now() + 600;
         requestAnimationFrame(settleTick);
         return;
