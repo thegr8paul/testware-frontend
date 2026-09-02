@@ -4,10 +4,72 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="drawflow.min.css" />
 <style>
+  /* Colours as CSS variables so applyTheme() (see the script below) can flip
+     this iframe's own palette in sync with the app's [data-theme] toggle --
+     each iframe is a separate document, so it can't just inherit the parent
+     page's CSS. Dark keeps the same relationships as light (translucent
+     node fill lighter than the panel behind it, wires/textures readable at
+     the same low opacity against the new ground). */
+  :root {
+    --wf-ink: #111111;
+    --wf-node-bg: rgba(255, 255, 255, 0.55);
+    --wf-node-border: rgba(120, 120, 120, 0.55);
+    --wf-node-shadow: rgba(0, 0, 0, 0.12);
+    --wf-fit-bg: #ffffff;
+    --wf-fit-border: #E7E3DA;
+    --wf-fit-ink: #333333;
+    --wf-fit-hover-bg: #F1EFE9;
+    --wf-fit-hover-border: #D6CFC0;
+    --wf-fit-hover-ink: #111111;
+    --wf-badge-bg: #111111;
+    --wf-badge-ink: #ffffff;
+    --wf-port-label: #555555;
+    --wf-dot-bg: #ffffff;
+    --wf-dot-border: #6a6a6a;
+    --wf-dot-hover: #111111;
+    --wf-texture-dot: rgba(17, 17, 17, 0.11);
+    --wf-texture-merge: rgba(17, 17, 17, 0.08);
+    --wf-texture-decision: rgba(17, 17, 17, 0.09);
+    --wf-suggested-outline: rgba(17, 17, 17, 0.55);
+    --wf-wire: rgba(17, 17, 17, 0.32);
+    --wf-wire-sel: rgba(17, 17, 17, 0.8);
+    --wf-wire-pending: rgba(17, 17, 17, 0.55);
+    --wf-del-bg: #ffffff;
+    --wf-del-border: rgba(17, 17, 17, 0.55);
+    --wf-del-ink: rgba(17, 17, 17, 0.75);
+  }
+  :root[data-theme="dark"] {
+    --wf-ink: #F3F1EA;
+    --wf-node-bg: rgba(40, 37, 26, 0.65);
+    --wf-node-border: rgba(180, 175, 155, 0.35);
+    --wf-node-shadow: rgba(0, 0, 0, 0.45);
+    --wf-fit-bg: #1E1C16;
+    --wf-fit-border: #34311F;
+    --wf-fit-ink: #D8D4C6;
+    --wf-fit-hover-bg: #262319;
+    --wf-fit-hover-border: #4A4530;
+    --wf-fit-hover-ink: #F3F1EA;
+    --wf-badge-bg: #F3F1EA;
+    --wf-badge-ink: #14130E;
+    --wf-port-label: #B9B4A2;
+    --wf-dot-bg: #1E1C16;
+    --wf-dot-border: #8A8570;
+    --wf-dot-hover: #F3F1EA;
+    --wf-texture-dot: rgba(255, 255, 255, 0.10);
+    --wf-texture-merge: rgba(255, 255, 255, 0.08);
+    --wf-texture-decision: rgba(255, 255, 255, 0.09);
+    --wf-suggested-outline: rgba(243, 241, 234, 0.55);
+    --wf-wire: rgba(243, 241, 234, 0.32);
+    --wf-wire-sel: rgba(243, 241, 234, 0.85);
+    --wf-wire-pending: rgba(243, 241, 234, 0.55);
+    --wf-del-bg: #1E1C16;
+    --wf-del-border: rgba(243, 241, 234, 0.45);
+    --wf-del-ink: rgba(243, 241, 234, 0.8);
+  }
   html, body {
     margin: 0; height: 100%; min-height: 520px; overflow: hidden; background: transparent;
     font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, sans-serif;
-    color: #111111;
+    color: var(--wf-ink);
   }
   /* No panel chrome -- the canvas sits directly on the page's beige ground.
      min-height so the panel is measurable on the FIRST render (before
@@ -30,11 +92,11 @@
     position: absolute; top: 10px; right: 12px; z-index: 20;
     width: 32px; height: 32px; padding: 0;
     display: flex; align-items: center; justify-content: center;
-    border: 1px solid #E7E3DA; border-radius: 8px;
-    background: #ffffff; color: #333333; cursor: pointer;
+    border: 1px solid var(--wf-fit-border); border-radius: 8px;
+    background: var(--wf-fit-bg); color: var(--wf-fit-ink); cursor: pointer;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
   }
-  #tw-fit:hover { background: #F1EFE9; color: #111111; border-color: #D6CFC0; }
+  #tw-fit:hover { background: var(--wf-fit-hover-bg); color: var(--wf-fit-hover-ink); border-color: var(--wf-fit-hover-border); }
   .parent-drawflow { cursor: grab; }
   .parent-drawflow:active { cursor: grabbing; }
 
@@ -46,12 +108,12 @@
   .drawflow .drawflow-node {
     box-sizing: border-box;
     width: 200px;
-    border: 1px solid rgba(120, 120, 120, 0.55);
+    border: 1px solid var(--wf-node-border);
     border-radius: 12px;
     padding: 8px 10px;
     font-size: 13px;
-    background: rgba(255, 255, 255, 0.55);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    background: var(--wf-node-bg);
+    box-shadow: 0 8px 18px var(--wf-node-shadow);
   }
   /* draggable affordance only -- no colour / outline change while grabbed
      (Drawflow's own .selected{background:red} is neutralised in drawflow.min.css) */
@@ -65,7 +127,7 @@
   .drawflow-node .twn-logo img { width: 20px; height: 20px; display: block; border-radius: 4px; }
   .drawflow-node .twn-badge {
     position: absolute; top: -8px; right: -8px;
-    background: #111; color: #fff; font-size: 9px; font-weight: 700;
+    background: var(--wf-badge-bg); color: var(--wf-badge-ink); font-size: 9px; font-weight: 700;
     letter-spacing: .5px; padding: 2px 5px; border-radius: 6px;
   }
 
@@ -76,7 +138,7 @@
   .drawflow-node .twn-col { flex: 1 1 0; min-width: 0; }
   .drawflow-node .twn-port {
     display: flex; align-items: center; gap: 5px;
-    font-size: 11px; color: #555; line-height: 1.7; padding: 0 3px;
+    font-size: 11px; color: var(--wf-port-label); line-height: 1.7; padding: 0 3px;
   }
   .drawflow-node .twn-col.out .twn-port { flex-direction: row-reverse; }
   .drawflow-node .twn-port span {
@@ -85,14 +147,14 @@
   .drawflow-node .twn-port .dot {
     position: relative;
     flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
-    background: #fff; border: 1.6px solid #6a6a6a;
+    background: var(--wf-dot-bg); border: 1.6px solid var(--wf-dot-border);
     cursor: crosshair;
   }
   /* invisible ~20px grab target around each port dot */
   .drawflow-node .twn-port .dot::before {
     content: ""; position: absolute; inset: -7px; border-radius: 50%;
   }
-  .drawflow-node .twn-port .dot:hover { border-color: #111; background: #111; }
+  .drawflow-node .twn-port .dot:hover { border-color: var(--wf-dot-hover); background: var(--wf-dot-hover); }
 
   /* --- per-category encoding: shape + texture, NO colour ------------------
      Class is "t-<type>" (backend node type). Category is told apart by
@@ -103,19 +165,19 @@
   .drawflow-node.t-process,
   .drawflow-node.t-merge,
   .drawflow-node.t-decision {
-    background-color: rgba(255, 255, 255, 0.55);
-    border-color: rgba(120, 120, 120, 0.55);
+    background-color: var(--wf-node-bg);
+    border-color: var(--wf-node-border);
   }
   /* t-input: no pattern -- the clean card is the cue */
   .drawflow-node.t-process {
-    background-image: radial-gradient(rgba(17,17,17,0.11) 0.9px, transparent 0.9px);
+    background-image: radial-gradient(var(--wf-texture-dot) 0.9px, transparent 0.9px);
     background-size: 9px 9px;
   }
   .drawflow-node.t-merge {
-    background-image: repeating-linear-gradient(0deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 9px);
+    background-image: repeating-linear-gradient(0deg, var(--wf-texture-merge) 0 1px, transparent 1px 9px);
   }
   .drawflow-node.t-decision {
-    background-image: repeating-linear-gradient(45deg, rgba(17,17,17,0.09) 0 1px, transparent 1px 9px);
+    background-image: repeating-linear-gradient(45deg, var(--wf-texture-decision) 0 1px, transparent 1px 9px);
   }
 
   /* --- per-category silhouette -----------------------------------------
@@ -138,7 +200,7 @@
   }
 
   /* suggested: outline does NOT change the box size, so ports stay put */
-  .drawflow-node.is-suggested { outline: 1.5px solid rgba(17, 17, 17, 0.55); outline-offset: 1px; }
+  .drawflow-node.is-suggested { outline: 1.5px solid var(--wf-suggested-outline); outline-offset: 1px; }
 
   /* Drawflow's own connection renderer AND its floating port dots are
      unreliable inside a scaled, iframe-hosted canvas. Hide both; we draw the
@@ -153,10 +215,10 @@
     position: absolute; inset: 0; z-index: 6;
     pointer-events: none; overflow: visible;
   }
-  #wires path.wire { fill: none; stroke: rgba(17, 17, 17, 0.32); stroke-width: 1.25px; }
-  #wires path.wire.sel { stroke: rgba(17, 17, 17, 0.8); stroke-width: 2px; }
+  #wires path.wire { fill: none; stroke: var(--wf-wire); stroke-width: 1.25px; }
+  #wires path.wire.sel { stroke: var(--wf-wire-sel); stroke-width: 2px; }
   #wires path.pending {
-    fill: none; stroke: rgba(17, 17, 17, 0.55);
+    fill: none; stroke: var(--wf-wire-pending);
     stroke-width: 1.5px; stroke-dasharray: 3 3;
   }
   /* transparent fat twin -- the only clickable part of a wire */
@@ -165,8 +227,8 @@
     pointer-events: stroke; cursor: pointer;
   }
   #wires g.del { pointer-events: all; cursor: pointer; }
-  #wires g.del circle { fill: #fff; stroke: rgba(17, 17, 17, 0.55); stroke-width: 1.2px; }
-  #wires g.del path { stroke: rgba(17, 17, 17, 0.75); stroke-width: 1.6px; }
+  #wires g.del circle { fill: var(--wf-del-bg); stroke: var(--wf-del-border); stroke-width: 1.2px; }
+  #wires g.del path { stroke: var(--wf-del-ink); stroke-width: 1.6px; }
 </style>
 </head>
 <body>
@@ -219,6 +281,17 @@
       return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
       });
+    }
+
+    // Re-skins this iframe's own --wf-* palette (see the :root /
+    // :root[data-theme="dark"] blocks in <style>) in place -- never touches
+    // the graph, so it must run on EVERY render call, independent of the
+    // rebuild-vs-reuse branches below (sig() / heldSig never see this value).
+    function applyTheme(theme) {
+      var t = theme === "dark" ? "dark" : "light";
+      if (document.documentElement.getAttribute("data-theme") !== t) {
+        document.documentElement.setAttribute("data-theme", t);
+      }
     }
 
     // --- product logos ----------------------------------------------------
@@ -790,6 +863,7 @@
       var d = event.data || {};
       if (d.type !== "streamlit:render") return;
       var args = d.args || {};
+      applyTheme(args.theme);   // first -- re-skin runs regardless of which branch below fires
       setHeight(FIXED_HEIGHT);
       var s = sig(args);
       if (s === builtSig) {  // same graph -> just re-settle the wires
