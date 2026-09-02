@@ -1,0 +1,200 @@
+{
+  "query": "Patient-specific cardiorespiratory digital twin for ICU ventilation decision support",
+  "categories": {
+    "industry": "Healthcare & Life Sciences",
+    "application": "Clinical decision support",
+    "nature_of_project": "R&D / applied research"
+  },
+  "description": "Imaging and the EHR personalise a coupled cardiorespiratory model: airway segmentation and estimated lung compliance parameterise a Pulse lung-mechanics model, while heart rate, pressures and labs parameterise a 0D OpenCOR cardiovascular model. An ensemble Kalman filter continuously assimilates the live ventilator and monitor signals — airway pressure, SpO2, end-tidal CO2 — so the twin stays locked to the patient in front of the clinician.\n\nThe twin then sweeps candidate PEEP and FiO2 settings, forecasts the resulting gas exchange with an uncertainty band, and surfaces an advisory recommendation — never a closed-loop action. It is advisory software: any real deployment would be regulated as Software as a Medical Device (IEC 62304, ISO 13485) and would need prospective clinical validation. Indicative budget EUR 150-300k for a research prototype (model coupling, assimilation pipeline, retrospective ICU-dataset validation); 6-9 months to a bench-validated twin, well before any clinical use.\n\nIllustrative output — a saved generation shown for display only, not a delivered project.",
+  "tools": [
+    {
+      "catalogue_id": "pulse-engine",
+      "name": "Pulse Physiology Engine",
+      "rationale": "Whole-body physiology with a detailed respiratory mechanics model; supplies the lung side of the patient twin and responds to ventilator settings directly.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "physics-based (lumped-parameter)",
+      "spatial_scale": "organ - whole body",
+      "temporal_scale": "~10 ms - ~1 day",
+      "validation_level": "validated against published physiology and clinical datasets",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (Apache 2.0).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Population-average sub-models — extremes of physiology need re-parameterisation",
+        "Not a substitute for patient-specific imaging-based airway geometry"
+      ],
+      "inputs": [
+        "Personalised parameters",
+        "Ventilator settings"
+      ],
+      "outputs": [
+        "Lung mechanics state",
+        "Gas exchange"
+      ],
+      "standards": [
+        "HL7 (via adapter)"
+      ],
+      "docs_url": "https://example.com/catalogue/pulse-engine",
+      "alternatives": [
+        "xlung",
+        "custom-airway-1d"
+      ]
+    },
+    {
+      "catalogue_id": "opencor-cvs",
+      "name": "OpenCOR + CellML cardiovascular model",
+      "rationale": "0D lumped-parameter circulation personalised from vitals and labs; couples to the lung model so haemodynamics and gas exchange move together.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "physics-based (0D)",
+      "spatial_scale": "circulation-level",
+      "temporal_scale": "~1 ms - ~1 h",
+      "validation_level": "model families validated in the physiology literature",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (GPL/BSD components).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Parameter identifiability — many parameter sets fit the same vitals",
+        "0D assumption misses regional perfusion effects"
+      ],
+      "inputs": [
+        "Personalised parameters"
+      ],
+      "outputs": [
+        "Pressures & flows",
+        "Cardiac output estimate"
+      ],
+      "standards": [
+        "CellML 1.1"
+      ],
+      "docs_url": "https://example.com/catalogue/opencor",
+      "alternatives": [
+        "chaste",
+        "simvascular-0d"
+      ]
+    },
+    {
+      "catalogue_id": "filterpy-enkf",
+      "name": "FilterPy (ensemble Kalman filter)",
+      "rationale": "Assimilates the live ventilator and monitor streams into the coupled model each cycle, keeping the twin locked to the actual patient.",
+      "development_status": "community-maintained",
+      "access_type": "open source",
+      "fidelity_tier": "data assimilation",
+      "spatial_scale": "n/a",
+      "temporal_scale": "~1 s update",
+      "validation_level": "standard method; textbook-validated",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (MIT).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Filter divergence if process/observation noise is mis-specified",
+        "Ensemble too small — covariance collapse"
+      ],
+      "inputs": [
+        "Model forecast",
+        "Ventilator & monitor signals"
+      ],
+      "outputs": [
+        "Assimilated state",
+        "State covariance"
+      ],
+      "standards": [],
+      "docs_url": "https://example.com/catalogue/filterpy",
+      "alternatives": [
+        "custom-ukf",
+        "particle-filter"
+      ]
+    },
+    {
+      "catalogue_id": "chaospy-uq",
+      "name": "ChaosPy uncertainty quantification",
+      "rationale": "Propagates parameter and state uncertainty through the PEEP/FiO2 forecast so the advisory carries a confidence band, not a bare number.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "uncertainty quantification",
+      "spatial_scale": "n/a",
+      "temporal_scale": "per forecast",
+      "validation_level": "established polynomial-chaos / sampling library",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (MIT).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Cost grows quickly with the number of uncertain parameters",
+        "Surrogate can mislead if the response is sharply non-linear"
+      ],
+      "inputs": [
+        "Forecast ensemble"
+      ],
+      "outputs": [
+        "Forecast with confidence interval",
+        "Parameter sensitivities"
+      ],
+      "standards": [],
+      "docs_url": "https://example.com/catalogue/chaospy",
+      "alternatives": [
+        "uqpy",
+        "muq"
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      { "id": "img", "type": "input", "label": "Chest CT / echo", "inputs": [], "outputs": ["imaging"] },
+      { "id": "ehr", "type": "input", "label": "EHR, labs, ABG", "inputs": [], "outputs": ["ehr"] },
+      { "id": "vent", "type": "input", "label": "Ventilator & monitor stream", "inputs": [], "outputs": ["signals"] },
+      { "id": "cat", "type": "database", "label": "Model catalogue", "inputs": [], "outputs": ["records"] },
+      { "id": "seg", "type": "process", "label": "Segment airways · estimate compliance", "inputs": ["imaging"], "outputs": ["anatomy"] },
+      { "id": "pers", "type": "process", "label": "Personalise model parameters", "inputs": ["anatomy", "ehr", "records"], "outputs": ["params"] },
+      { "id": "lung", "type": "model", "label": "Pulse lung mechanics (0D/1D)", "inputs": ["params"], "outputs": ["lung_state"], "catalogue_id": "pulse-engine" },
+      { "id": "cvs", "type": "model", "label": "OpenCOR cardiovascular (0D)", "inputs": ["params"], "outputs": ["cvs_state"], "catalogue_id": "opencor-cvs" },
+      { "id": "da", "type": "process", "label": "EnKF data assimilation", "inputs": ["lung_state", "cvs_state", "signals"], "outputs": ["assimilated"], "catalogue_id": "filterpy-enkf" },
+      { "id": "state", "type": "merge", "label": "Coupled patient state", "inputs": ["assimilated", "signals"], "outputs": ["patient_state"] },
+      { "id": "sweep", "type": "model", "label": "Forecast: PEEP / FiO2 sweep", "inputs": ["patient_state"], "outputs": ["forecast"] },
+      { "id": "uq", "type": "process", "label": "Uncertainty quantification", "inputs": ["forecast"], "outputs": ["forecast_ci"], "catalogue_id": "chaospy-uq" },
+      { "id": "gate", "type": "decision", "label": "Predicted PaO2 in target range?", "inputs": ["forecast_ci"], "outputs": ["yes", "no"] },
+      { "id": "rec", "type": "output", "label": "Advisory: suggested setting + CI", "inputs": ["advice"], "outputs": [] },
+      { "id": "hold", "type": "output", "label": "Hold · keep monitoring", "inputs": ["hold"], "outputs": [] },
+      { "id": "store", "type": "database", "label": "De-identified case store", "inputs": ["case"], "outputs": [] }
+    ],
+    "edges": [
+      { "source": "img", "target": "seg" },
+      { "source": "seg", "target": "pers", "target_port": 0 },
+      { "source": "ehr", "target": "pers", "target_port": 1 },
+      { "source": "cat", "target": "pers", "target_port": 2 },
+      { "source": "pers", "target": "lung" },
+      { "source": "pers", "target": "cvs" },
+      { "source": "lung", "target": "da", "target_port": 0 },
+      { "source": "cvs", "target": "da", "target_port": 1 },
+      { "source": "vent", "target": "da", "target_port": 2 },
+      { "source": "da", "target": "state", "target_port": 0 },
+      { "source": "vent", "target": "state", "target_port": 1 },
+      { "source": "state", "target": "sweep" },
+      { "source": "sweep", "target": "uq" },
+      { "source": "uq", "target": "gate" },
+      { "source": "gate", "target": "rec", "source_port": 0, "label": "yes" },
+      { "source": "gate", "target": "hold", "source_port": 1, "label": "no" },
+      { "source": "state", "target": "store" }
+    ]
+  }
+}
