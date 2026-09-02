@@ -401,22 +401,25 @@ def render_search_bar(mode: str):
         st.session_state.query_input = st.session_state.query
 
     with st.container(key=f"tw_searchbar_{mode}"):
-        # Row 1: the text field. The Search icon-button is rendered right
-        # after it and then CSS-positioned to sit *inside* the field on the
-        # right (Streamlit can't put a widget inside st.text_input directly).
-        query_text = st.text_input(
-            "Describe your digital twin problem",  # kept for a11y; hidden below
-            key="query_input",
-            label_visibility="collapsed",
-            placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
-        )
-        submitted = st.button(
-            "",
-            icon=":material/search:",
-            type="primary",
-            key="tw_search_btn",
-            help="Search",
-        )
+        # Row 1: the text field + submit button, batched inside a form so a
+        # value only commits (and triggers a search) on an actual submit --
+        # Enter in the field or the button click -- never on merely losing
+        # focus (e.g. clicking a popover), which a bare st.text_input would
+        # also treat as a commit and search on.
+        with st.form(key=f"tw_searchform_{mode}", border=False):
+            query_text = st.text_input(
+                "Describe your digital twin problem",  # kept for a11y; hidden below
+                key="query_input",
+                label_visibility="collapsed",
+                placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
+            )
+            submitted = st.form_submit_button(
+                "",
+                icon=":material/search:",
+                type="primary",
+                key="tw_search_btn",
+                help="Search",
+            )
 
         # Row 2: Industry / Application / Nature-of-project icon popovers, plus the
         # empty area the caller uses to trigger the loading shimmer
@@ -471,11 +474,10 @@ def render_search_bar(mode: str):
 
         status_slot = btn_cols[3].empty()
 
-    # Submit on the Search button OR on Enter. Pressing Enter in the text
-    # field commits `query_input` and reruns, so a non-empty value that
-    # differs from the last executed query means the user hit Enter -- run it.
+    # Inside a form, `submitted` is only True on an actual submit (button
+    # click or Enter in the field) -- never on the field merely losing focus.
     typed = query_text.strip()
-    if typed and (submitted or query_text != (st.session_state.get("query") or "")):
+    if typed and submitted:
         st.session_state.query = query_text
         st.session_state.categories = _current_categories()
         st.rerun()
