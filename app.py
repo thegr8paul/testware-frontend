@@ -840,7 +840,9 @@ _SCROLL_SETTLE_JS = """
     else el.scrollTo({ top: top, behavior: "smooth" });
   }
 
-  var t, settling = false;
+  var t, settling = false, lastPos = null, lastDir = 0;
+  var SNAP_NEAR = 150;   // px: "almost aligned" -> finish it
+  var FILL = 0.82;       // one area covering this much of the viewport == settled
 
   function settle() {
     if (settling) return;
@@ -848,32 +850,75 @@ _SCROLL_SETTLE_JS = """
                    .filter(Boolean);
     if (areas.length < 2) return;
     var vh = window.innerHeight;
-
-    // Signed offset of each area's top from the header line: 0 == aligned.
-    var offs = areas.map(function (a) { return a.getBoundingClientRect().top - HEADER; });
-
-    // Already parked cleanly on a seam? leave it alone.
-    for (var i = 0; i < offs.length; i++) if (Math.abs(offs[i]) <= 4) return;
-
-    // Only seams close to the viewport count; if every seam is far away we're
-    // deep inside one tall area (e.g. long chat results) -> continuous scroll,
-    // don't touch it.
-    var near = offs.filter(function (o) { return o > -vh * 0.88 && o < vh * 0.88; });
-    if (!near.length) return;
-
-    // Ease the NEAREST seam onto the header line -- so we finish (or undo) the
-    // transition instead of resting straddling two canvases.
-    var pick = near.reduce(function (p, c) { return Math.abs(c) < Math.abs(p) ? c : p; });
+    var usable = vh - HEADER;
     var sc = scroller();
+    var cur = pos(sc);
+    var down = lastDir >= 0;
+
+    // Per area: signed offset of its TOP from the header line, and how much
+    // of the usable viewport it currently covers.
+    var info = areas.map(function (a) {
+      var r = a.getBoundingClientRect();
+      var covTop = Math.max(r.top, HEADER);
+      var covBot = Math.min(r.bottom, vh);
+      return { off: r.top - HEADER, frac: Math.max(0, covBot - covTop) / usable };
+    });
+
+    // Nearest seam to the header line.
+    var near = info[0].off;
+    for (var i = 1; i < info.length; i++) {
+      if (Math.abs(info[i].off) < Math.abs(near)) near = info[i].off;
+    }
+
+    // 1. A seam is essentially aligned -> nothing to do.
+    if (Math.abs(near) <= 8) return;
+
+    // 2. A seam is close to aligned -> finish it precisely, but only in the
+    //    direction the user was already moving (down snaps a seam that is
+    //    still below the line; up snaps one just above it). This is what
+    //    lands the deck full-canvas without yanking you back when you scroll
+    //    on into the next area.
+    if (Math.abs(near) <= SNAP_NEAR) {
+      if ((down && near > 0) || (!down && near < 0)) {
+        settling = true;
+        go(sc, Math.round(cur + near));
+        setTimeout(function () { settling = false; lastPos = pos(scroller()); }, 550);
+      }
+      return;
+    }
+
+    // 3. Bigger gap. If one area already fills the viewport you're inside it
+    //    -- leave it (this is the tall Examples / chat content case).
+    for (var k = 0; k < info.length; k++) if (info[k].frac >= FILL) return;
+
+    // 4. Genuinely straddling two areas. Resolve toward the direction of
+    //    travel only: down -> align the next area's top; up -> align the top
+    //    of the area you're backing into (if it's within ~a screen).
+    var target = null;
+    info.forEach(function (x) {
+      if (down) {
+        if (x.off > 8 && x.off < vh && (target === null || x.off < target)) target = x.off;
+      } else {
+        if (x.off <= 8 && x.off > -(usable + 40) && (target === null || x.off > target)) target = x.off;
+      }
+    });
+    if (target === null || Math.abs(target) <= 8) return;
+
     settling = true;
-    go(sc, Math.round(pos(sc) + pick));
-    setTimeout(function () { settling = false; }, 550);
+    go(sc, Math.round(cur + target));
+    setTimeout(function () { settling = false; lastPos = pos(scroller()); }, 550);
   }
 
   function onScroll() {
     if (settling) return;
+    var p = pos(scroller());
+    if (lastPos !== null) {
+      if (p > lastPos + 1) lastDir = 1;
+      else if (p < lastPos - 1) lastDir = -1;
+    }
+    lastPos = p;
     clearTimeout(t);
-    t = setTimeout(settle, 130);   // fire once the scroll has come to rest
+    t = setTimeout(settle, 140);   // fire once the scroll has come to rest
   }
 
   // The scroll container can be re-created across Streamlit reruns; (re)bind
@@ -898,9 +943,12 @@ _SCROLL_SETTLE_JS = """
 def render_scroll_settle() -> None:
     """Keep the page a single continuous scroll, but never let it come to
     rest straddling two of the three areas (app / presentation / examples).
-    A scroll-idle handler eases the nearest seam onto the header line;
-    scrolling through a tall area is left untouched. Pure viewport behaviour
-    -- no backend, no state."""
+    When the scroll stops mid-transition it resolves the seam ONLY in the
+    direction the user was already scrolling -- down finishes the move into
+    the next area, up backs out to the previous one. Once a seam has been
+    scrolled past, that area is left alone, so scrolling through the tall
+    Examples / chat content is never pulled back. Pure viewport behaviour --
+    no backend, no state."""
     st.html(_SCROLL_SETTLE_JS, unsafe_allow_javascript=True)
 
 
