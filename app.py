@@ -129,6 +129,7 @@ def load_css():
     save-and-reload loop with no Python change (see README)."""
     css = Path(__file__).with_name("styles.css").read_text()
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    st.markdown("<style>footer {visibility: hidden;}</style>", unsafe_allow_html=True)
 
 
 load_css()
