@@ -53,6 +53,20 @@ and `git log 9c2589a..feat/frontend-refresh` for the commits.
   shows at once. Commit + push to keep it. The expander also prints the JSON
   for copy/paste — on Streamlit Cloud (ephemeral disk) paste it into a new
   repo file rather than relying on the disk write.
+- `build_enhanced_query(raw, categories)` — fills `_PROMPT_TEMPLATE`'s
+  `{query}` / `{context}` parameters and returns the finished instruction
+  prompt; **that return value, not the bare search-bar text, is what's
+  POSTed** as `query` (`rag/schemas.py` `QueryRequest`: 3–1000 chars, reused
+  for the retrieval embedding *and* every generation prompt). The template
+  is prewritten and fixed — the search-bar text and the three dropdown
+  categories are the only parts that vary, substituted in as parameters —
+  and carries 3 standing instructions (workflow description = two
+  paragraphs / `_DESC_WORDS` total; suggest up to `_MAX_TOOLS` tools,
+  catalogue-only; build the workflow by combining those same tools). Only
+  `{query}` is ever ellipsised, and only if the filled prompt would exceed
+  `_QUERY_MAX`. `_EXAMPLE_ENHANCED_QUERY` is a worked example (asserted
+  equal to the function's own output) — read it to see exactly what goes
+  over the wire.
 - Result caching — `run_query()` is only called when
   `(query, json.dumps(categories, sort_keys=True))` changes; otherwise the
   cached `description / tools / workflow` is reused. **Why:** the backend

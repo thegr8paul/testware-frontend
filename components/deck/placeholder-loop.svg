@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="DIAGRAM — R&D TO V&V LOOP placeholder">
+  <rect width="800" height="500" fill="#F1EFE9"/>
+  <rect x="0.5" y="0.5" width="799" height="499" fill="none" stroke="#E7E3DA"/>
+  <g stroke="#1A1A1A" stroke-opacity="0.14" stroke-width="1.5" fill="none">
+    <rect x="250" y="150" width="300" height="190" rx="10"/>
+    <circle cx="330" cy="215" r="26"/>
+    <path d="M250 315 L360 235 L430 290 L500 240 L550 285"/>
+  </g>
+  <g fill="#FFFFFF" stroke-width="2">
+    <circle cx="360" cy="235" r="7" stroke="#3F7D78"/>
+    <circle cx="430" cy="290" r="7" stroke="#A9822F"/>
+    <circle cx="500" cy="240" r="7" stroke="#54628A"/>
+  </g>
+  <text x="400" y="400" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="22" font-weight="700" letter-spacing="2" fill="#7C7869">DIAGRAM — R&D TO V&V LOOP</text>
+  <text x="400" y="428" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="14" letter-spacing="2" fill="#9A968C">REPLACE IN components/deck/</text>
+</svg>
