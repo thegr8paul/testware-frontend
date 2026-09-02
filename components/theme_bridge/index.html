@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body>
+<script>
+(function () {
+  "use strict";
+  // ---------------------------------------------------------------------
+  // Invisible, one-shot component: on first load, reads the last-saved
+  // theme choice ("light" | "dark") from localStorage and reports it back
+  // to Streamlit (so st.session_state.theme can be hydrated from a prior
+  // session), and -- as a same-origin best-effort -- patches the real
+  // page's `data-theme` attribute directly, ahead of the Python rerun, to
+  // cut the flash of the wrong theme on load. Never re-renders anything;
+  // it has no visual output of its own (height 0).
+  // ---------------------------------------------------------------------
+  function send(type, extra) {
+    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, extra || {}), "*");
+  }
+  function setValue(value) { send("streamlit:setComponentValue", { value: value, dataType: "json" }); }
+  function setHeight(h) { send("streamlit:setFrameHeight", { height: h }); }
+
+  var stored = null;
+  try {
+    var v = localStorage.getItem("tw-theme");
+    if (v === "light" || v === "dark") stored = v;
+  } catch (e) { /* localStorage unavailable -- fine, no persisted preference */ }
+
+  if (stored) {
+    try { window.parent.document.documentElement.setAttribute("data-theme", stored); } catch (e) { /* cross-origin or blocked -- Python-driven sync still applies next rerun */ }
+  }
+
+  setHeight(0);
+  send("streamlit:componentReady", { apiVersion: 1 });
+  setValue(stored);
+})();
+</script>
+</body>
+</html>

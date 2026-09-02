@@ -6,11 +6,75 @@
    submit button, light-gray pill chips. Typeface is left to the Streamlit
    theme (unchanged).
 
+   Colours are CSS custom properties (:root = light, [data-theme="dark"] =
+   dark) so the whole page -- plus the two iframe components, which read
+   their own copies of these values, see app.py's theme bootstrap block and
+   components/*/index.html's applyTheme() -- flips with the header's theme
+   toggle. Dark values keep the same lightness *relationships* as light
+   (elevated surface lighter than page bg, hairlines low-contrast) rather
+   than being a fresh palette.
+
    Edit + save -> runOnSave reloads in ~1s.
 
    NOTE: several selectors rely on Streamlit-private hooks
    ([data-testid="..."], .st-key-<key>) -- may break on a Streamlit upgrade.
 --------------------------------------------------------------------------- */
+
+:root {
+  --tw-bg: #FBFAF7;
+  --tw-bg-elevated: #FFFFFF;
+  --tw-panel-2: #F1EFE9;
+  --tw-ink: #1A1A1A;
+  --tw-ink-2: #3A3A36;
+  --tw-muted: #6B6B66;
+  --tw-muted-2: #9A968C;
+  --tw-hair: #E7E3DA;
+  --tw-hair-strong: #C9C3B6;
+  --tw-accent: #111111;
+  --tw-accent-hover: #000000;
+  --tw-accent-ink: #FFFFFF;
+  --tw-chip-bg: #F4F2EC;
+  --tw-chip-border: #E0DBCF;
+  --tw-hover-fill: #ECE8DE;
+  --tw-disabled-ink: #A6A299;
+  --tw-shimmer: rgba(17, 17, 17, 0.10);
+  --tw-shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.12), 0 14px 34px rgba(0, 0, 0, 0.14);
+  --tw-shadow-sm-focus: 0 2px 6px rgba(0, 0, 0, 0.14), 0 16px 38px rgba(0, 0, 0, 0.18);
+  /* Bold on purpose: earlier, more conservative gray/tan values here
+     (#B8AEA0 border, #EAE6DC fill) were still too close to the page bg
+     (#FBFAF7) to read as a card at a glance -- confirmed via screenshot
+     after screenshot. Going for unmistakable rather than subtle this time. */
+  --tw-card-border: #94876F;
+  --tw-card-bg: #D4CCBA;
+}
+
+/* app.py's theme bootstrap stamps data-theme on <html> every rerun (see
+   render_header()'s toggle + the theme_bridge component for the persisted
+   choice), so this is the only place dark values are defined. */
+[data-theme="dark"] {
+  --tw-bg: #15140F;
+  --tw-bg-elevated: #1E1C16;
+  --tw-panel-2: #262319;
+  --tw-ink: #F3F1EA;
+  --tw-ink-2: #D8D4C6;
+  --tw-muted: #9C9788;
+  --tw-muted-2: #726D5E;
+  --tw-hair: #34311F;
+  --tw-hair-strong: #4A4530;
+  --tw-accent: #F3F1EA;
+  --tw-accent-hover: #FFFFFF;
+  --tw-accent-ink: #14130E;
+  --tw-chip-bg: #201E15;
+  --tw-chip-border: #3A3626;
+  --tw-hover-fill: #2A2718;
+  --tw-disabled-ink: #6E6A5B;
+  --tw-shimmer: rgba(255, 255, 255, 0.08);
+  --tw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --tw-shadow-sm-focus: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.55);
+  --tw-card-border: #4A4530;
+  --tw-card-bg: #1E1C16;
+  color-scheme: dark;
+}
 
 /* --- global sizing --------------------------------------------------------
    Larger, reader-friendly scale in the spirit of Perplexity / ChatGPT.
@@ -18,53 +82,167 @@
    per-element rules further down only fine-tune the ratios. Colours are
    unchanged -- this pass is font-size only. */
 html { font-size: 18px; }
-body { -webkit-font-smoothing: antialiased; }
+body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 
-[data-testid="stAppViewContainer"] { background: #FBFAF7; overflow-x: hidden; }
+[data-testid="stAppViewContainer"] { background: var(--tw-bg); overflow-x: hidden; }
+[data-testid="stMainBlockContainer"],
 [data-testid="stAppViewBlockContainer"] {
-  max-width: 1080px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 3rem 3rem 4rem;
+  /* top padding clears the fixed header (~3.9rem tall) + the original 3rem
+     of breathing room the design already had */
+  padding: 7rem 3rem 4rem;
 }
 #MainMenu, footer, [data-testid="stStatusWidget"] { visibility: hidden; }
+[data-testid="stHeader"] { display: none; }  /* replaced by .st-key-tw_header below */
 [data-testid="stIFrame"] { border: none; background: transparent; }
+
+/* No page-level scroll-snap -- Chat and Examples scroll normally. One-slide-
+   at-a-time snap is scoped entirely inside the Dashboard's own component
+   (components/deck/index.html), which owns its own bounded, internally-
+   scrolling viewport for exactly that reason. */
+.st-key-tw_section_dashboard,
+.st-key-tw_section_examples {
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--tw-card-border);
+}
 
 /* Workflow canvas: full-bleed horizontally (no side boundary) -- break out
    of the padded, max-width content column; only top/bottom stay in flow. */
-.st-key-tw_wf {
+.st-key-tw_wf,
+[class*="st-key-tw_wf_ex_"] {
   width: 100%;
 }
 .st-key-tw_wf iframe,
 .st-key-tw_wf [data-testid="stIFrame"],
-.st-key-tw_wf [data-testid="stCustomComponentV1"] {
+.st-key-tw_wf [data-testid="stCustomComponentV1"],
+[class*="st-key-tw_wf_ex_"] iframe,
+[class*="st-key-tw_wf_ex_"] [data-testid="stIFrame"],
+[class*="st-key-tw_wf_ex_"] [data-testid="stCustomComponentV1"] {
   width: 100% !important;
   max-width: none !important;
 }
+[class*="st-key-tw_wf_ex_"] { margin-bottom: 1.5rem; }
 
 /* headings a touch larger + tighter, matching the roomier body */
-[data-testid="stHeading"] h1 { font-size: 2.15rem; letter-spacing: -0.02em; }
-[data-testid="stHeading"] h2 { font-size: 1.7rem; letter-spacing: -0.015em; margin-top: 2rem; }
-[data-testid="stHeading"] h3 { font-size: 1.32rem; letter-spacing: -0.01em; }
+[data-testid="stHeading"] h1 { font-size: 2.15rem; letter-spacing: -0.02em; color: var(--tw-ink); }
+[data-testid="stHeading"] h2 { font-size: 1.7rem; letter-spacing: -0.015em; margin-top: 2rem; color: var(--tw-ink); }
+[data-testid="stHeading"] h3 { font-size: 1.32rem; letter-spacing: -0.01em; color: var(--tw-ink); }
 
 /* body copy: answer prose + list items sit a step above the base, the way a
    chat answer pane does; captions/meta stay quiet but readable. */
 [data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li { font-size: 1.05rem; line-height: 1.7; }
+[data-testid="stMarkdownContainer"] li { font-size: 1.05rem; line-height: 1.7; color: var(--tw-ink); }
 [data-testid="stCaptionContainer"],
-[data-testid="stCaptionContainer"] p { font-size: 0.9rem; }
+[data-testid="stCaptionContainer"] p { font-size: 0.9rem; color: var(--tw-muted); }
 [data-testid="stExpander"] summary { font-size: 1rem; }
+
+/* --- Header: logo (left) + theme / LinkedIn / New workflow / Settings /
+   Help (right) -- ALWAYS pinned to the top of the viewport, replaces the
+   old sidebar nav rail. Deliberately position:fixed, not sticky -- sticky
+   only "sticks" within its nearest scrolling ancestor's box, and something
+   in Streamlit's own wrapper chain was preventing that from engaging
+   reliably; fixed pins to the real browser viewport unconditionally and
+   doesn't depend on that ancestor chain at all. Because fixed elements are
+   taken out of document flow, [data-testid="stMainBlockContainer"] below
+   carries extra top padding sized to this header's height so page content
+   doesn't start underneath it. */
+.st-key-tw_header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--tw-bg) !important;
+  border-bottom: 1px solid var(--tw-card-border) !important;
+  padding: 0.85rem calc(max(0px, (100vw - 1440px) / 2) + 3rem);
+}
+/* Force logo-left / actions-right deterministically -- don't rely solely on
+   st.container(horizontal_alignment="distribute"). Also zero out the
+   st.markdown wrapper's default margins so the logo's box lines up with the
+   button row's box (they're rendered through different Streamlit element
+   types with different default spacing). */
+.st-key-tw_header [data-testid="stHorizontalBlock"] {
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100%;
+}
+.st-key-tw_header [data-testid="stMarkdownContainer"],
+.st-key-tw_header [data-testid="element-container"] {
+  margin: 0;
+}
+.tw-logo { display: flex; align-items: center; gap: 0.5rem; color: var(--tw-ink); }
+.tw-wordmark {
+  font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Roboto Mono", "Cascadia Code", Consolas, monospace;
+  font-weight: 700;
+  font-size: 1.08rem;
+  letter-spacing: -0.01em;
+}
+.tw-wordmark i { font-style: normal; color: var(--tw-accent); }
+
+/* Borderless icon buttons -- no permanent "box" outline, just the glyph;
+   a soft fill appears only on hover. `!important` throughout because
+   Streamlit's own native button theme (pinned "light" in
+   .streamlit/config.toml -- see the theming note in README) otherwise wins
+   the cascade on :hover and can make the icon unreadable in dark mode. The
+   wildcard descendant selector forces the icon glyph itself (rendered
+   through Streamlit's own internal markup, not something we control
+   directly) to inherit the same colour rather than a Streamlit default. */
+.st-key-tw_header_actions [data-testid="stButton"] button,
+.st-key-tw_header_actions [data-testid="stLinkButton"] a {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent !important;
+  border: none !important;
+  color: var(--tw-ink) !important;
+  box-shadow: none !important;
+}
+.st-key-tw_header_actions [data-testid="stButton"] button *,
+.st-key-tw_header_actions [data-testid="stLinkButton"] a * {
+  color: inherit !important;
+}
+.st-key-tw_header_actions [data-testid="stButton"] button:hover:not(:disabled),
+.st-key-tw_header_actions [data-testid="stLinkButton"] a:hover {
+  background: var(--tw-hover-fill) !important;
+  color: var(--tw-ink) !important;
+}
+.st-key-tw_header_actions [data-testid="stButton"] button:disabled {
+  color: var(--tw-disabled-ink) !important;
+  opacity: 1;
+}
+
+/* Streamlit's hover tooltip (the `help=` bubble) reads its colours from the
+   NATIVE Streamlit theme (.streamlit/config.toml, pinned "light" -- not our
+   [data-theme] system), so left alone it can render unreadable text against
+   our page in dark mode. Force it to follow our own theme instead. */
+[data-testid="stTooltipContent"] {
+  background: var(--tw-bg-elevated) !important;
+  border: 1px solid var(--tw-hair) !important;
+  color: var(--tw-ink) !important;
+}
+[data-testid="stTooltipContent"] * {
+  color: var(--tw-ink) !important;
+}
 
 /* --- Landing: eyebrow + rotating headline + bar, centred ----------------- */
 .st-key-tw_landing {
-  min-height: 74vh;
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 .st-key-tw_landing [data-testid="stVerticalBlock"] { align-items: center; }
+/* Streamlit auto-attaches a "link to heading" icon to any rendered heading
+   -- including our raw-HTML hero <h1> -- via stHeaderActionElements. Makes
+   no sense on a rotating marketing headline; hidden here only (real section
+   headings elsewhere keep their anchor links). */
+.st-key-tw_landing [data-testid="stHeaderActionElements"] { display: none; }
 .tw-eyebrow {
   text-align: center;
-  color: #6B6B66;
+  color: var(--tw-muted);
   font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -72,7 +250,7 @@ body { -webkit-font-smoothing: antialiased; }
 }
 .tw-hero-title {
   text-align: center;
-  color: #1A1A1A;
+  color: var(--tw-ink);
   font-weight: 700;
   font-size: clamp(2.15rem, 4vw, 3rem);
   letter-spacing: -0.02em;
@@ -88,16 +266,16 @@ body { -webkit-font-smoothing: antialiased; }
 .st-key-tw_searchbar_hero,
 .st-key-tw_searchbar_compact {
   position: relative;
-  background: #FFFFFF;
-  border: 1px solid #E7E3DA;
-  border-radius: 26px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.06);
+  background: var(--tw-card-bg) !important;
+  border: 1.5px solid var(--tw-card-border) !important;
+  border-radius: 26px !important;
+  box-shadow: var(--tw-shadow-sm) !important;
   padding: 16px 18px 14px;
 }
 .st-key-tw_searchbar_hero:focus-within,
 .st-key-tw_searchbar_compact:focus-within {
-  border-color: #C9C3B6;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 14px 36px rgba(0, 0, 0, 0.09);
+  border-color: var(--tw-hair-strong) !important;
+  box-shadow: var(--tw-shadow-sm-focus) !important;
 }
 .st-key-tw_searchbar_hero {
   width: 100%;
@@ -121,18 +299,27 @@ body { -webkit-font-smoothing: antialiased; }
   border-color: transparent !important;
   box-shadow: none !important;
 }
+/* Typed-text colour: target the input AND every element/pseudo inside its
+   wrapper (belt-and-suspenders -- BaseWeb's own inline-styled input theming
+   has repeatedly out-prioritized a plain `input`-only selector here). */
+.st-key-tw_searchbar_hero [data-baseweb="input"],
+.st-key-tw_searchbar_hero [data-baseweb="input"] *,
+.st-key-tw_searchbar_compact [data-baseweb="input"],
+.st-key-tw_searchbar_compact [data-baseweb="input"] * {
+  color: var(--tw-ink) !important;
+  -webkit-text-fill-color: var(--tw-ink) !important;
+  caret-color: var(--tw-ink) !important;
+}
 .st-key-tw_searchbar_hero [data-baseweb="input"] input,
 .st-key-tw_searchbar_compact [data-baseweb="input"] input {
-  color: #1A1A1A !important;
-  -webkit-text-fill-color: #1A1A1A !important;
   font-size: 1.35rem !important;
   padding: 4px 52px 4px 2px !important;
 }
 .st-key-tw_searchbar_compact [data-baseweb="input"] input { font-size: 1.18rem !important; }
 .st-key-tw_searchbar_hero [data-baseweb="input"] input::placeholder,
 .st-key-tw_searchbar_compact [data-baseweb="input"] input::placeholder {
-  color: #9A968C !important;
-  -webkit-text-fill-color: #9A968C !important;
+  color: var(--tw-muted-2) !important;
+  -webkit-text-fill-color: var(--tw-muted-2) !important;
 }
 
 /* --- Circular black submit button, bottom-right of the bar --------------- */
@@ -148,12 +335,12 @@ body { -webkit-font-smoothing: antialiased; }
   width: 40px; height: 40px; min-height: 40px;
   padding: 0;
   border-radius: 50%;
-  background: #111 !important;
-  color: #fff !important;
+  background: var(--tw-accent) !important;
+  color: var(--tw-accent-ink) !important;
   border: none !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
-.st-key-tw_search_btn button:hover { background: #000 !important; }
+.st-key-tw_search_btn button:hover { background: var(--tw-accent-hover) !important; }
 .st-key-tw_searchbar_compact .st-key-tw_search_btn button { width: 34px; height: 34px; min-height: 34px; }
 
 /* --- Chip row under the input ------------------------------------------------ */
@@ -168,9 +355,9 @@ body { -webkit-font-smoothing: antialiased; }
 /* the 3 category popovers -> light-gray rounded pill chips */
 .st-key-tw_searchbar_hero [data-testid="stPopover"] button,
 .st-key-tw_searchbar_compact [data-testid="stPopover"] button {
-  background: #F1EFE9 !important;
-  border: 1px solid #E7E3DA !important;
-  color: #3A3A36 !important;
+  background: var(--tw-panel-2) !important;
+  border: 1px solid var(--tw-hair) !important;
+  color: var(--tw-ink-2) !important;
   border-radius: 999px !important;
   padding: 5px 14px !important;
   min-height: 34px;
@@ -178,14 +365,14 @@ body { -webkit-font-smoothing: antialiased; }
 }
 .st-key-tw_searchbar_hero [data-testid="stPopover"] button:hover,
 .st-key-tw_searchbar_compact [data-testid="stPopover"] button:hover {
-  background: #E9E6DE !important;
-  border-color: #D6CFC0 !important;
-  color: #111111 !important;
+  background: var(--tw-hover-fill) !important;
+  border-color: var(--tw-hair-strong) !important;
+  color: var(--tw-ink) !important;
 }
 [data-tw-active="true"] [data-testid="stPopover"] button {
-  background: #EAE6DA !important;
-  border-color: #111111 !important;
-  color: #111111 !important;
+  background: var(--tw-hover-fill) !important;
+  border-color: var(--tw-accent) !important;
+  color: var(--tw-ink) !important;
   font-weight: 600;
 }
 
@@ -200,68 +387,24 @@ body { -webkit-font-smoothing: antialiased; }
   padding: 2px 11px;
   margin: 0 6px 6px 0;
   font-size: 0.85rem;
-  color: #3A3A36;
-  border: 1px solid #E0DBCF;
+  color: var(--tw-ink-2);
+  border: 1px solid var(--tw-chip-border);
   border-radius: 999px;
-  background: #F4F2EC;
+  background: var(--tw-chip-bg);
 }
-
-/* --- Sidebar nav rail ------------------------------------------------------- */
-[data-testid="stSidebar"] { background: #F7F5F0; border-right: 1px solid #EBE7DD; }
-[data-testid="stSidebar"] [data-testid="stButton"] button {
-  border: none;
-  background: transparent;
-  color: #3A3A36;
-  justify-content: flex-start;
-  gap: 11px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  font-weight: 500;
-  font-size: 1.02rem;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button:hover:not(:disabled) {
-  background: #ECE8DE;
-  color: #111111;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button:disabled {
-  color: #A6A299;
-  opacity: 1;
-}
-.st-key-sb_new_workflow button { font-weight: 600 !important; color: #111111 !important; }
-
-/* --- three-area nav (sidebar radio: Chat / Presentation / Examples) ---- */
-.st-key-sb_area [role="radiogroup"] { gap: 2px; }
-.st-key-sb_area [role="radiogroup"] > label {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 1.04rem;
-}
-.st-key-sb_area [role="radiogroup"] > label:hover { background: #ECE8DE; }
-
-/* example picker (sidebar radio, only rendered while the Examples area is
-   active) -- compact, unobtrusive */
-.st-key-sb_example_pick [role="radiogroup"] { gap: 1px; }
-.st-key-sb_example_pick [role="radiogroup"] > label {
-  width: 100%;
-  padding: 5px 9px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-.st-key-sb_example_pick [role="radiogroup"] > label:hover { background: #ECE8DE; }
 
 /* --- Section 2 card focused from a Section 3 node click ------------------- */
 .st-key-tw_focus_card {
-  outline: 2px solid #111111;
+  outline: 2px solid var(--tw-accent);
   outline-offset: 2px;
   border-radius: 10px;
-  background: rgba(17, 17, 17, 0.03);
+  background: rgba(128, 128, 128, 0.06);
 }
 
-/* --- Presentation area: demo-day deck --------------------------------- */
+/* --- Dashboard section: demo-day deck -------------------------------- */
 /* The deck is a full-bleed component (components/deck/, renders
-   presentation.md as animated slides). Break it out of the padded,
-   max-width content column so it spans the viewport. */
+   presentation.md as continuously-scrollable sections). Break it out of the
+   padded, max-width content column so it spans the viewport. */
 .st-key-tw_readme {
   width: 100vw;
   margin-left: calc(50% - 50vw);

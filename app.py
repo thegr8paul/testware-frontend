@@ -31,14 +31,24 @@ DEFAULT_API_URL = _resolve_api_url()
 _WF_DIR = Path(__file__).with_name("components") / "workflow"
 workflow_canvas = components.declare_component("tw_workflow", path=str(_WF_DIR))
 
-# Read Me / demo-day deck -- renders presentation.md as animated slides.
-# Guarded: if the component assets are ever missing on a deploy, Read Me
-# falls back to plain Markdown instead of taking down the whole app.
+# Read Me / demo-day deck -- renders presentation.md as continuously
+# scrollable sections (the Dashboard). Guarded: if the component assets are
+# ever missing on a deploy, it falls back to plain Markdown instead of
+# taking down the whole app.
 _DECK_DIR = Path(__file__).with_name("components") / "deck"
 try:
     deck_view = components.declare_component("tw_deck", path=str(_DECK_DIR))
 except Exception:  # noqa: BLE001
     deck_view = None
+
+# Theme bridge -- an invisible, one-shot component that hydrates
+# st.session_state.theme from localStorage on load (see the theme bootstrap
+# block below load_css()). Guarded the same way as deck_view.
+_THEME_DIR = Path(__file__).with_name("components") / "theme_bridge"
+try:
+    theme_bridge = components.declare_component("tw_theme_bridge", path=str(_THEME_DIR))
+except Exception:  # noqa: BLE001
+    theme_bridge = None
 
 # Search-bar facets (curated -- see facets.json "_provenance"). Loaded once.
 _FACETS = json.loads(Path(__file__).with_name("facets.json").read_text())
@@ -80,6 +90,20 @@ GLASS_PANEL_CSS = """
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
 """
 
+# testware.dev wordmark, header top-left. Inline SVG + text (not raster
+# assets) so it recolors automatically with the theme toggle via
+# currentColor / the --tw-* CSS variables in styles.css -- no light/dark PNG
+# pair to maintain. Mark: an open-square/bracket outline, gap mid-right edge.
+LOGO_HTML = """
+<div class="tw-logo">
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+    <path d="M20,9 V4 H4 V20 H20 V15" fill="none" stroke="currentColor"
+          stroke-width="2.3" stroke-linejoin="miter" stroke-linecap="square"/>
+  </svg>
+  <span class="tw-wordmark">testware<i>.dev</i></span>
+</div>
+"""
+
 # Workflow node types the backend emits and the canvas component styles.
 WORKFLOW_NODE_TYPES = ("input", "process", "model", "decision", "merge", "output", "database")
 
@@ -91,7 +115,7 @@ _BAR_LOADING_CSS = (
     "@keyframes tw-bar-sweep{0%{background-position:220% 0}100%{background-position:-220% 0}}"
     ".st-key-tw_searchbar_compact::after{content:'';position:absolute;inset:0;"
     "border-radius:inherit;pointer-events:none;z-index:6;"
-    "background:linear-gradient(100deg,transparent 38%,rgba(17,17,17,0.10) 50%,transparent 62%);"
+    "background:linear-gradient(100deg,transparent 38%,var(--tw-shimmer) 50%,transparent 62%);"
     "background-size:220% 100%;animation:tw-bar-sweep 2.5s linear infinite;}"
     "</style>"
 )
@@ -109,8 +133,31 @@ def load_css():
 
 load_css()
 
-# Fixed backend URL -- override with the API_URL env var. (Used to be a
-# sidebar text input; the sidebar is now a nav rail.)
+# --- THEME (light/dark) -----------------------------------------------------
+# st.session_state.theme is the single source of truth ("light" | "dark").
+# On first load, the theme_bridge component reports back the last-saved
+# choice from localStorage (if any) so a returning visitor's preference
+# survives a reload; the header's toggle button just flips this value.
+# Every rerun, st.html() (real DOM, unlike sanitized st.markdown) re-syncs
+# the <html data-theme> attribute + localStorage from whatever this holds --
+# that's what the top-level CSS variables in styles.css key off of, and
+# what's passed as `theme=` into the deck / workflow-canvas components below
+# so their own iframe-local palettes flip in sync.
+st.session_state.setdefault("theme", "light")
+if theme_bridge is not None:
+    _stored_theme = theme_bridge(key="tw_theme_bridge", default=None)
+    if _stored_theme in ("light", "dark") and st.session_state.get("_theme_hydrated") != _stored_theme:
+        st.session_state.theme = _stored_theme
+        st.session_state["_theme_hydrated"] = _stored_theme
+st.html(
+    "<script>"
+    f"document.documentElement.setAttribute('data-theme', '{st.session_state.theme}');"
+    f"try{{localStorage.setItem('tw-theme', '{st.session_state.theme}')}}catch(e){{}}"
+    "</script>",
+    unsafe_allow_javascript=True,
+)
+
+# Fixed backend URL -- override with the API_URL env var.
 api_url = DEFAULT_API_URL.rstrip("/")
 
 # --- STATE ---------------------------------------------------------------------
@@ -124,11 +171,6 @@ st.session_state.setdefault("nature", "(Any)")
 st.session_state.setdefault("categories", {})
 st.session_state.setdefault("focus_tool", None)  # catalogue_id of the node clicked in Section 3
 st.session_state.setdefault("headline", random.choice(HEADLINES))
-# The app has three top-level areas, chosen in the sidebar:
-#   "chat"          -> the query interface + its workflow output
-#   "presentation"  -> the demo-day deck (presentation.md)
-#   "examples"      -> the curated mock workflows (examples/*.json)
-st.session_state.setdefault("area", "chat")
 
 
 def _current_categories() -> dict:
@@ -269,28 +311,6 @@ def _load_examples() -> list[dict]:
             ex["_slug"] = path.stem
             out.append(ex)
     return out
-
-
-def _open_example(ex: dict) -> None:
-    """Load a curated example into session as if it were a query result:
-    pre-seed st.session_state.results with a cache key that matches the LAYOUT
-    block's, so it's reused instead of POSTing to the backend. Mutates state
-    only -- the caller reruns (or Streamlit auto-reruns after an on_change)."""
-    cats = dict(ex.get("categories") or {})
-    st.session_state.query = ex["query"]
-    st.session_state.query_input = ex["query"]          # compact search field
-    st.session_state.categories = cats
-    st.session_state.industry = cats.get("industry") or "(Any)"
-    st.session_state.application = cats.get("application") or "(Any)"
-    st.session_state.nature = cats.get("nature_of_project") or "(Any)"
-    st.session_state.results = {
-        "key": (ex["query"], json.dumps(cats, sort_keys=True)),
-        "description": ex.get("description", ""),
-        "tools": ex.get("tools", []),
-        "workflow": ex["workflow"],
-    }
-    st.session_state.focus_tool = None
-    st.session_state.area = "examples"
 
 
 def _example_short(ex: dict) -> str:
@@ -515,12 +535,10 @@ def render_search_bar(mode: str):
     return status_slot
 
 
-def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
-    """The workflow output: description + editable canvas + tool cards. Shared
-    by the Chat area (allow_search/allow_save on -- live query, can be saved as
-    an example) and the Examples area (both off -- a curated, pre-seeded
-    result, never a backend call)."""
-    status_slot = render_search_bar("compact") if allow_search else None
+def _render_workflow_result() -> None:
+    """The Chat section's output for a live query: description + editable
+    canvas + tool cards."""
+    status_slot = render_search_bar("compact")
 
     # applied category filters as chips, for transparency
     applied = [f"{k.replace('_', ' ').title()}: {v}"
@@ -533,14 +551,12 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
     # UI churn -- clicking a workflow node, opening a popover -- then reuse the
     # result instead of re-POSTing (which, being LLM-backed, would return a
     # different graph and rebuild the canvas, losing any dragged node positions).
-    # Examples pre-seed `results` with a matching key, so this never fetches.
     _cache_key = (st.session_state.query,
                   json.dumps(st.session_state.categories, sort_keys=True))
     _cache = st.session_state.get("results")
     if not (_cache and _cache.get("key") == _cache_key):
-        if status_slot is not None:
-            with status_slot:
-                st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
+        with status_slot:
+            st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
         st.header("Workflow Description")
         description, tools, workflow, ok = run_query_stream(
             st.session_state.query, st.session_state.categories, status_slot
@@ -585,7 +601,8 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
     _wf_suggested = [t["catalogue_id"] for t in tools if t.get("catalogue_id")]
     if workflow.get("nodes"):
         _sel = workflow_canvas(
-            workflow=workflow, suggested=_wf_suggested, key="tw_wf", default=None
+            workflow=workflow, suggested=_wf_suggested, key="tw_wf", default=None,
+            theme=st.session_state.theme,
         )
         if isinstance(_sel, dict):
             if _sel.get("kind") == "edit" and _sel.get("workflow"):
@@ -601,13 +618,13 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
     else:
         st.caption("No workflow available for this query.")
 
-    # --- SECTION: SAVE AS PITCH EXAMPLE (Chat area only) ------------------
+    # --- SECTION: SAVE AS PITCH EXAMPLE -----------------------------------
     # Capture what's on screen -- query + categories + description + tools +
     # the graph INCLUDING any canvas edits -- as examples/NN-<slug>.json, so a
     # good workflow can be kept and reused as a demo example. Writing to disk
     # only sticks where the disk persists (local dev / always-on host); on
     # Streamlit Community Cloud, copy the JSON into a new repo file instead.
-    if allow_save and workflow.get("nodes"):
+    if workflow.get("nodes"):
         with st.expander("Save this workflow as a pitch example"):
             _ex_name = st.text_input(
                 "Example name",
@@ -691,123 +708,106 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
                     st.markdown(f"[Reference]({tool['docs_url']})")  # traceability link
 
 
-# --- SIDEBAR (three-area nav) -------------------------------------------------
-# One switch for the whole app: Chat / Presentation / Examples. Anything
-# area-specific (start a new chat, pick which example) sits right under it so
-# each area stays self-contained.
-_AREAS = {"Chat": "chat", "Presentation": "presentation", "Examples": "examples"}
+# --- HEADER ------------------------------------------------------------------
+# Sticky top bar: logo (left) + theme toggle / LinkedIn / New workflow /
+# Settings / Help (right). Replaces the old sidebar nav rail -- the app is
+# one continuously-scrolling page now (Chat, then Dashboard, then Examples).
+LINKEDIN_URL = "https://www.linkedin.com/company/testware-dev"
 
-with st.sidebar:
-    _prev_area = st.session_state.get("area", "chat")
-    _area_label = st.radio(
-        "Area",
-        list(_AREAS),
-        index=list(_AREAS.values()).index(_prev_area),
-        key="sb_area",
-        label_visibility="collapsed",
-    )
-    area = _AREAS[_area_label]
-    st.session_state.area = area
-    # Leaving Examples for Chat: don't drag the loaded example into the chat
-    # space -- reset to a clean landing and rerun so setdefault() re-seeds
-    # `query` before the main area reads it.
-    if _prev_area == "examples" and area == "chat" and \
-            st.session_state.get("query") in {e["query"] for e in _load_examples()}:
+
+def _theme_toggle_button() -> None:
+    is_dark = st.session_state.theme == "dark"
+    icon = ":material/light_mode:" if is_dark else ":material/dark_mode:"
+    if st.button("", icon=icon, key="tw_theme_toggle",
+                 help="Switch to light mode" if is_dark else "Switch to dark mode"):
+        st.session_state.theme = "light" if is_dark else "dark"
+        st.rerun()
+
+
+def _new_workflow_button() -> None:
+    if st.button("", icon=":material/add:", key="tw_new_workflow",
+                 help="Save the current workflow and start a new one"):
+        if _save_workflow(st.session_state.get("last_result")):
+            st.toast("Workflow saved", icon=":material/check:")
         for _k in ("query", "query_input", "industry", "application", "nature",
-                   "categories", "focus_tool", "last_result", "results"):
+                   "categories", "focus_tool", "last_result", "results", "headline"):
             st.session_state.pop(_k, None)
         st.rerun()
 
-    st.divider()
 
-    if area == "chat":
-        if st.button(
-            "New workflow",
-            icon=":material/add:",
-            key="sb_new_workflow",
-            use_container_width=True,
-            help="Save the current workflow and start a new one",
-        ):
-            if _save_workflow(st.session_state.get("last_result")):
-                st.toast("Workflow saved", icon=":material/check:")
-            for _k in ("query", "query_input", "industry", "application", "nature",
-                       "categories", "focus_tool", "last_result", "results", "headline"):
-                st.session_state.pop(_k, None)
-            st.rerun()
-
-    elif area == "examples":
-        _exs = _load_examples()
-        if not _exs:
-            st.caption("No examples found (examples/*.json).")
-        else:
-            _by_q = {e["query"]: e for e in _exs}
-            _loaded = st.session_state.get("query") if st.session_state.get("query") in _by_q \
-                else _exs[0]["query"]
-            _pick = st.radio(
-                "Example",
-                list(_by_q),
-                index=list(_by_q).index(_loaded),
-                format_func=lambda q: _example_short(_by_q[q]),
-                key="sb_example_pick",
-                label_visibility="collapsed",
-            )
-            if st.session_state.get("query") != _pick:
-                _open_example(_by_q[_pick])
-                st.rerun()
-
-    # area == "presentation": nothing to configure
-
-    st.divider()
-    st.button("Settings", icon=":material/settings:", key="sb_settings",
-              use_container_width=True, disabled=True)
-    st.button("Help", icon=":material/help:", key="sb_help",
-              use_container_width=True, disabled=True)
+def render_header() -> None:
+    with st.container(key="tw_header", horizontal=True,
+                       horizontal_alignment="distribute", vertical_alignment="center"):
+        st.markdown(LOGO_HTML, unsafe_allow_html=True)
+        with st.container(key="tw_header_actions", horizontal=True, gap="small",
+                           vertical_alignment="center"):
+            _theme_toggle_button()
+            st.link_button("", url=LINKEDIN_URL, icon=":material/link:",
+                            key="tw_linkedin", help="LinkedIn")
+            _new_workflow_button()
+            st.button("", icon=":material/settings:", key="sb_settings",
+                      disabled=True, help="Settings")
+            st.button("", icon=":material/help:", key="sb_help",
+                      disabled=True, help="Help")
 
 
-# --- MAIN AREA -------------------------------------------------------------
-# Dispatch on the sidebar's `area`. Presentation and Examples fully replace
-# the main pane (st.stop()); Chat is the default.
-
-if area == "presentation":
-    # The demo-day deck: presentation.md rendered as animated slides. Edit the
-    # slides in presentation.md (next to this file) -- Markdown, split by `---`;
-    # see the header comment in that file. Push and Streamlit Cloud redeploys.
-    _pres = Path(__file__).with_name("presentation.md")
-    _md = _pres.read_text() if _pres.exists() else "# Presentation\n\n_presentation.md not found._"
-    with st.container(key="tw_readme"):
-        if deck_view is not None:
-            deck_view(markdown=_md, key="tw_deck")
-        else:
-            st.markdown(_md)  # fallback: deck component unavailable
-    st.stop()
-
-if area == "examples":
-    # Curated mock workflows. The sidebar radio keeps exactly one loaded via
-    # _open_example(), which pre-seeds st.session_state.results with a matching
-    # cache key -- so _render_workflow_result() never calls the backend here.
+def render_examples_section() -> None:
+    """All curated workflows (examples/*.json), each a fully interactive,
+    drag/wire-editable canvas -- the same component the live Chat result
+    uses. Edits are session-only, kept per example; they never write back to
+    the examples/*.json files on disk (use the Chat area's "Save this
+    workflow as a pitch example" for that)."""
+    st.header("Examples")
     _exs = _load_examples()
     if not _exs:
-        st.info("No example workflows found (examples/*.json).")
-        st.stop()
-    if st.session_state.get("query") not in {e["query"] for e in _exs}:
-        _open_example(_exs[0])  # first render of the area -- load one
-        st.rerun()
-    st.caption(
-        "Example workflow — curated, no backend call. Switch examples in the sidebar."
-    )
-    _render_workflow_result(allow_search=False, allow_save=False)
-    st.stop()
-
-
-# --- CHAT AREA -----------------------------------------------------------------
-if st.session_state.query:
-    _render_workflow_result(allow_search=True, allow_save=True)
-else:
-    # Landing view: eyebrow + rotating headline + the one big search bar,
-    # vertically & horizontally centred (styled in styles.css).
-    with st.container(key="tw_landing"):
-        st.markdown(
-            f"<h1 class='tw-hero-title'>{st.session_state.headline}</h1>",
-            unsafe_allow_html=True,
+        st.caption("No examples found (examples/*.json).")
+        return
+    _edits = st.session_state.setdefault("dashboard_example_edits", {})
+    for ex in _exs:
+        st.subheader(_example_short(ex))
+        if ex.get("description"):
+            st.caption(ex["description"][:220])
+        _wf = _edits.get(ex["_slug"], ex["workflow"])
+        _suggested = [t["catalogue_id"] for t in ex.get("tools", []) if t.get("catalogue_id")]
+        _sel = workflow_canvas(
+            workflow=_wf, suggested=_suggested, key=f"tw_wf_ex_{ex['_slug']}",
+            default=None, theme=st.session_state.theme,
         )
-        render_search_bar("hero")
+        if isinstance(_sel, dict) and _sel.get("kind") == "edit" and _sel.get("workflow"):
+            _edits[ex["_slug"]] = _sel["workflow"]
+
+
+# --- PAGE FLOW -----------------------------------------------------------------
+# One continuously-scrolling page: header, then three snap-scrollable
+# sections -- Chat, Dashboard, Examples (scroll-snap rules live in styles.css).
+render_header()
+
+with st.container(key="tw_section_chat"):
+    if st.session_state.query:
+        _render_workflow_result()
+    else:
+        # Landing view: eyebrow + rotating headline + the one big search bar,
+        # vertically & horizontally centred (styled in styles.css).
+        with st.container(key="tw_landing"):
+            st.markdown(
+                f"<h1 class='tw-hero-title'>{st.session_state.headline}</h1>",
+                unsafe_allow_html=True,
+            )
+            render_search_bar("hero")
+
+with st.container(key="tw_section_dashboard"):
+    # The demo-day deck: presentation.md rendered as a one-slide-at-a-time,
+    # scroll-snapped section (its own internal viewport -- see
+    # components/deck/index.html). Edit the slides in presentation.md (next
+    # to this file) -- Markdown, split by `---`; see the header comment in
+    # that file. Push and Streamlit Cloud redeploys.
+    _pres = Path(__file__).with_name("presentation.md")
+    _md = _pres.read_text() if _pres.exists() else "# Dashboard\n\n_presentation.md not found._"
+    with st.container(key="tw_readme"):
+        if deck_view is not None:
+            deck_view(markdown=_md, key="tw_deck", theme=st.session_state.theme)
+        else:
+            st.markdown(_md)  # fallback: deck component unavailable
+
+with st.container(key="tw_section_examples"):
+    render_examples_section()
