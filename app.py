@@ -448,7 +448,7 @@ def render_search_bar(mode: str):
                 "Describe your digital twin problem",  # kept for a11y; hidden below
                 key="query_input",
                 label_visibility="collapsed",
-                placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
+                placeholder="Build digital twin of complex asset, system, or process",
             )
             submitted = st.form_submit_button(
                 "",
@@ -610,7 +610,7 @@ def _render_workflow_result() -> None:
         # Cache hit -- nothing was fetched this rerun, so there's nothing left
         # to stream. Render the description plainly from the cached value.
         description = _cache["description"]
-        st.header("Workflow Description")
+        st.header("Digital Twin Specification")
         with st.container(key="tw_answer"):
             st.write(description)
         st.write(description)
@@ -636,11 +636,11 @@ def _render_workflow_result() -> None:
     # --- SECTION: WORKFLOW CANVAS ---------------------------------------------
     st.header("Workflow")
     st.caption(
-        "Suggested pipeline. Nodes tagged **DB** map to a catalogue entry; an "
-        "accent ring marks tools also in the list below. Click a node to focus "
-        "its card. Drag a node to move it; drag an output dot to an input dot to "
-        "wire; click a wire then Delete (or its ×) to remove it. Drag canvas to "
-        "pan, wheel to zoom."
+        "An interactive multi-node pipeline can be used to add, remove, and modify connections between recommended tools."
+        # "accent ring marks tools also in the list below. Click a node to focus "
+        # "its card. Drag a node to move it; drag an output dot to an input dot to "
+        # "wire; click a wire then Delete (or its ×) to remove it. Drag canvas to "
+        # "pan, wheel to zoom."
     )
     _wf_suggested = [t["catalogue_id"] for t in tools if t.get("catalogue_id")]
     if workflow.get("nodes"):
