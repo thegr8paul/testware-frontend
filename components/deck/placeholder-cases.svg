@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="3 GENERATED FLOWCHARTS — ICME / BUILDING (IFC) / PATIENT placeholder">
+  <rect width="900" height="460" fill="#F1EFE9"/>
+  <rect x="0.5" y="0.5" width="899" height="459" fill="none" stroke="#E7E3DA"/>
+  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
+    <path d="M150 210 H300 M470 150 H600 M470 270 H600 M770 210 H620"/>
+    <path d="M300 210 C 385 210, 385 150, 470 150 M300 210 C 385 210, 385 270, 470 270"/>
+  </g>
+  <g fill="#FFFFFF" stroke-width="2">
+    <rect x="90" y="182" width="60" height="56" rx="8" stroke="#3F7D78"/>
+    <rect x="440" y="122" width="60" height="56" rx="8" stroke="#A9822F"/>
+    <rect x="440" y="242" width="60" height="56" rx="8" stroke="#54628A"/>
+    <rect x="760" y="182" width="60" height="56" rx="8" stroke="#3F7D55"/>
+  </g>
+  <text x="450" y="378" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">3 GENERATED FLOWCHARTS — ICME / BUILDING (IFC) / PATIENT</text>
+  <text x="450" y="406" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">PLACEHOLDER — REPLACE IN components/deck/</text>
+</svg>

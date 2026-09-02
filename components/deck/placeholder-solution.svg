@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-label="PROMPT + TAGS to WORKFLOW + FLOWCHART + TOOLS placeholder">
+  <rect width="900" height="560" fill="#F1EFE9"/>
+  <rect x="0.5" y="0.5" width="899" height="559" fill="none" stroke="#E7E3DA"/>
+  <rect x="60" y="60" width="780" height="440" rx="12" fill="#FBFAF7" stroke="#E7E3DA"/>
+  <line x1="60" y1="104" x2="840" y2="104" stroke="#E7E3DA"/>
+  <g fill="#D9D5CA"><circle cx="88" cy="82" r="5"/><circle cx="108" cy="82" r="5"/><circle cx="128" cy="82" r="5"/></g>
+  <g stroke="#1A1A1A" stroke-opacity="0.14" stroke-width="1.5" fill="none">
+    <rect x="100" y="150" width="220" height="300" rx="8"/>
+    <rect x="360" y="150" width="440" height="140" rx="8"/>
+    <path d="M420 330 H740 M420 380 H700 M420 430 H720"/>
+  </g>
+  <text x="450" y="524" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">PROMPT + TAGS to WORKFLOW + FLOWCHART + TOOLS</text>
+  <text x="450" y="548" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">SCREENSHOT PLACEHOLDER — REPLACE IN components/deck/</text>
+</svg>
