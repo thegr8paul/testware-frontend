@@ -9,12 +9,18 @@
    Colours are CSS custom properties (:root = light, [data-theme="dark"] =
    dark) so the whole page -- plus the two iframe components, which read
    their own copies of these values, see app.py's theme bootstrap block and
-   components/*/index.html's applyTheme() -- flips with the header's theme
+   each component's index.html applyTheme() -- flips with the header's theme
    toggle. Dark values keep the same lightness *relationships* as light
    (elevated surface lighter than page bg, hairlines low-contrast) rather
    than being a fresh palette.
 
    Edit + save -> runOnSave reloads in ~1s.
+
+   NOTE: these --tw-* tokens are hand-copied into components/deck/index.html
+   (as --*) and components/workflow/index.html (as --wf-*) under different
+   naming conventions, since each is a sandboxed iframe with its own
+   document and can't inherit this file. There is no single source of
+   truth -- a palette change here must be mirrored in both by hand.
 
    NOTE: several selectors rely on Streamlit-private hooks
    ([data-testid="..."], .st-key-<key>) -- may break on a Streamlit upgrade.
@@ -44,8 +50,15 @@
      (#B8AEA0 border, #EAE6DC fill) were still too close to the page bg
      (#FBFAF7) to read as a card at a glance -- confirmed via screenshot
      after screenshot. Going for unmistakable rather than subtle this time. */
-  --tw-card-border: #94876F;
-  --tw-card-bg: #D4CCBA;
+  /* Search-bar card -- a clear grey tone (was a tan #D4CCBA that read as
+     nearly invisible against the cream page in light mode). */
+  --tw-card-border: #B3AEA2;
+  --tw-card-bg: #D8D5CD;
+  /* Answer bubble -- a deliberately darkish grey so it reads clearly against
+     the cream page background (earlier, lighter values were too close to the
+     bg to be visible at all). */
+  --tw-bubble-bg: #DAD6CD;
+  --tw-bubble-border: #B7B1A4;
 }
 
 /* app.py's theme bootstrap stamps data-theme on <html> every rerun (see
@@ -71,8 +84,13 @@
   --tw-shimmer: rgba(255, 255, 255, 0.08);
   --tw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.45);
   --tw-shadow-sm-focus: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.55);
-  --tw-card-border: #4A4530;
-  --tw-card-bg: #1E1C16;
+  /* Same "unmistakable, not subtle" intent as the light card above -- an
+     earlier value here (#1E1C16, ~2% lighter than --tw-bg) was too close to
+     the page background to read as a card at all in dark mode. */
+  --tw-card-border: #5C5138;
+  --tw-card-bg: #332C1D;
+  --tw-bubble-bg: #33302A;
+  --tw-bubble-border: #55503F;
   color-scheme: dark;
 }
 
@@ -136,6 +154,27 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 [data-testid="stCaptionContainer"],
 [data-testid="stCaptionContainer"] p { font-size: 0.9rem; color: var(--tw-muted); }
 [data-testid="stExpander"] summary { font-size: 1rem; }
+
+/* The streamed/cached bot answer (app.py's st.container(key="tw_answer")) --
+   a darkish-grey bubble behind the answer prose so it reads as "the answer"
+   rather than bare body text sitting on the page background. Dedicated
+   --tw-bubble-* tokens (clearly darker than the page bg in both themes) --
+   earlier, lighter fills were too close to the background to be visible. */
+.st-key-tw_answer {
+  background: var(--tw-bubble-bg) !important;
+  border: 1px solid var(--tw-bubble-border) !important;
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin: 0.5rem 0 1rem 0;
+}
+
+/* Uniform keyboard-focus ring across every interactive control -- several
+   custom-styled buttons/pills below only defined a :hover state, leaving
+   keyboard focus to fall back to (or lose) the browser default. */
+:focus-visible {
+  outline: 2px solid var(--tw-accent);
+  outline-offset: 2px;
+}
 
 /* --- Header: logo (left) + theme / LinkedIn / New workflow / Settings /
    Help (right) -- ALWAYS pinned to the top of the viewport, replaces the
@@ -250,7 +289,11 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 }
 .tw-hero-title {
   text-align: center;
-  color: var(--tw-ink);
+  /* !important: this is raw-HTML markdown, not a Streamlit stHeading, so it
+     never gets the [data-testid="stHeading"] override below and would
+     otherwise fall through to Streamlit's native (config.toml, pinned-light)
+     heading colour -- dark text, invisible on the dark page. */
+  color: var(--tw-ink) !important;
   font-weight: 700;
   font-size: clamp(2.15rem, 4vw, 3rem);
   letter-spacing: -0.02em;
@@ -271,6 +314,23 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
   border-radius: 26px !important;
   box-shadow: var(--tw-shadow-sm) !important;
   padding: 16px 18px 14px;
+}
+/* Belt: Streamlit paints its own (config.toml, pinned-light) background on the
+   inner block wrappers, which in light mode is ~cream and covers the card
+   fill above -- so the card looked absent in light mode. Force every inner
+   layout wrapper transparent so the card's own grey background shows through
+   (the input/popovers keep their own explicit backgrounds set elsewhere). */
+.st-key-tw_searchbar_hero > div,
+.st-key-tw_searchbar_compact > div,
+.st-key-tw_searchbar_hero [data-testid="stVerticalBlock"],
+.st-key-tw_searchbar_compact [data-testid="stVerticalBlock"],
+.st-key-tw_searchbar_hero [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-tw_searchbar_compact [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-tw_searchbar_hero [data-testid="stElementContainer"],
+.st-key-tw_searchbar_compact [data-testid="stElementContainer"],
+.st-key-tw_searchbar_hero [data-testid="stHorizontalBlock"],
+.st-key-tw_searchbar_compact [data-testid="stHorizontalBlock"] {
+  background: transparent !important;
 }
 .st-key-tw_searchbar_hero:focus-within,
 .st-key-tw_searchbar_compact:focus-within {
@@ -399,6 +459,63 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
   outline-offset: 2px;
   border-radius: 10px;
   background: rgba(128, 128, 128, 0.06);
+}
+
+/* --- "Save this workflow as a pitch example" -> Save button -------------
+   Was left as a bare native Streamlit button (grey/white chrome) inside an
+   otherwise fully themed expander. Match the app's own filled-accent button
+   language (same colours as the search bar's circular submit button). */
+.st-key-tw_ex_save button {
+  background: var(--tw-accent) !important;
+  color: var(--tw-accent-ink) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  font-weight: 600;
+}
+.st-key-tw_ex_save button:hover:not(:disabled) { background: var(--tw-accent-hover) !important; }
+
+/* --- Dark-mode parity for native Streamlit chrome ------------------------
+   .streamlit/config.toml's [theme] is pinned "base = light" and can't
+   respond to our own [data-theme] toggle at all (it's baked into
+   Streamlit's frontend at load, before any of our CSS/JS runs) -- so any
+   native, unpatched widget stays light-themed regardless of the in-app
+   toggle. These are the widgets used in app.py that styles.css didn't
+   already cover elsewhere (the header/tooltip fixes above are the same
+   fight, for different elements). */
+[data-theme="dark"] [data-baseweb="popover"],
+[data-theme="dark"] [data-testid="stPopoverBody"] {
+  background: var(--tw-bg-elevated) !important;
+  border: 1px solid var(--tw-hair) !important;
+  color: var(--tw-ink) !important;
+}
+[data-theme="dark"] [data-baseweb="popover"] *,
+[data-theme="dark"] [data-testid="stPopoverBody"] * {
+  color: var(--tw-ink) !important;
+}
+[data-theme="dark"] [data-baseweb="menu"] li:hover,
+[data-theme="dark"] [role="option"]:hover {
+  background: var(--tw-hover-fill) !important;
+}
+[data-theme="dark"] [data-testid="stExpander"] {
+  background: var(--tw-bg-elevated) !important;
+  border-color: var(--tw-hair) !important;
+}
+[data-theme="dark"] [data-testid="stExpander"] *,
+[data-theme="dark"] [data-testid="stExpanderDetails"] * {
+  color: var(--tw-ink) !important;
+}
+[data-theme="dark"] [data-testid="stCodeBlock"] pre,
+[data-theme="dark"] [data-testid="stCodeBlock"] code {
+  background: var(--tw-panel-2) !important;
+  color: var(--tw-ink) !important;
+}
+[data-theme="dark"] .stTextInput input {
+  background: var(--tw-bg-elevated) !important;
+  color: var(--tw-ink) !important;
+  border-color: var(--tw-hair) !important;
+}
+[data-theme="dark"] .stTextInput input::placeholder {
+  color: var(--tw-muted-2) !important;
 }
 
 /* --- Dashboard section: demo-day deck -------------------------------- */
