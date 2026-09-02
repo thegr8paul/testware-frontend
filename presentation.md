@@ -25,8 +25,6 @@
 ## testware*.dev*
 ### One-stop webshop for digital-twin-based everything, everywhere, all at once.
 
-Digital twins are moving from R&D novelty to industrial necessity.
-
 ![Hero visual](placeholder-hero.svg)
 
 ---
