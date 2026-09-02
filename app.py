@@ -74,22 +74,6 @@ HEADLINES = [
     "Spin up a twin.",
 ]
 
-# "Liquid glass" panel recipe. Duplicated across three documents (styles.css
-# search bar, the "thinking" cue, and components/workflow/index.html) since
-# each has its own <style>. Keep them visually in sync.
-GLASS_PANEL_CSS = """
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 16px;
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.28)),
-    rgba(220, 225, 235, 0.30);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  backdrop-filter: blur(18px) saturate(180%);
-  box-shadow:
-    0 8px 30px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
-"""
-
 # testware.dev wordmark, header top-left. Inline SVG + text (not raster
 # assets) so it recolors automatically with the theme toggle via
 # currentColor / the --tw-* CSS variables in styles.css -- no light/dark PNG
@@ -129,6 +113,7 @@ def load_css():
     save-and-reload loop with no Python change (see README)."""
     css = Path(__file__).with_name("styles.css").read_text()
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    st.markdown("<style>footer {visibility: hidden;}</style>", unsafe_allow_html=True)
 
 
 load_css()
@@ -387,6 +372,8 @@ def run_query_stream(query: str, categories: dict, status_slot):
                     return
 
         status_slot.empty()  # stop the shimmer now that real content is arriving
+        with st.container(key="tw_answer"):
+            description = st.write_stream(_answer_tokens())
         description = st.write_stream(_answer_tokens())
     except requests.RequestException as exc:
         # Nothing streamed yet -- the connection itself never came up.
@@ -569,6 +556,8 @@ def _render_workflow_result() -> None:
         # to stream. Render the description plainly from the cached value.
         description = _cache["description"]
         st.header("Workflow Description")
+        with st.container(key="tw_answer"):
+            st.write(description)
         st.write(description)
         # A previous fetch dropped mid-stream -- offer an explicit retry
         # instead of forcing a full page refresh to try again.
@@ -746,9 +735,9 @@ def render_header() -> None:
                             key="tw_linkedin", help="LinkedIn")
             _new_workflow_button()
             st.button("", icon=":material/settings:", key="sb_settings",
-                      disabled=True, help="Settings")
+                      disabled=True, help="Settings — coming soon")
             st.button("", icon=":material/help:", key="sb_help",
-                      disabled=True, help="Help")
+                      disabled=True, help="Help — coming soon")
 
 
 def render_examples_section() -> None:
