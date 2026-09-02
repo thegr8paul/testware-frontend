@@ -142,14 +142,19 @@ def _current_categories() -> dict:
     return {k: v for k, v in picks.items() if v != "(Any)"}
 
 
-# --- Enhanced query ---------------------------------------------------------
+# --- Enhanced query -----------------------------------------------------------
 # rag-service's POST /query takes ONE string (rag/schemas.py: QueryRequest,
 # min 3 / max 1000 chars) and reuses it for BOTH the vector-retrieval
-# embedding AND every generation prompt (answer / diagram / tools). So the
-# recipe is: the user's own words first and verbatim (retrieval leans on
-# them), then the picked categories, then one short instruction that steers
-# the answer toward what the UI shows. Everything below is parametric --
-# tune the constants, not the f-string.
+# embedding AND every generation prompt (answer / diagram / tools). So this
+# is not "raw query + appended notes" -- it's one prewritten instruction
+# prompt with the raw query and the three dropdown categories filled in as
+# parameters, and it is this whole string, not the bare search-bar text,
+# that goes over the wire. The instructions are the team's own asks:
+#  1. workflow description length
+#  2. cap + ground the suggested tools in the catalogue
+#  3. build the workflow by combining those same tools
+#  4. two-paragraph shape for the description
+# Tune the constants below, not the template's structure.
 
 _QUERY_MAX = 1000  # QueryRequest.query max_length; longer -> HTTP 422
 _CATEGORY_LABELS = {
@@ -157,45 +162,70 @@ _CATEGORY_LABELS = {
     "application": "Application",
     "nature_of_project": "Nature of project",
 }
-# Appended last. Kept to one sentence on purpose -- it is embedded for
-# retrieval too, so a longer instruction would dilute the user's problem
-# statement. Set to "" to send just the query + context.
-_OUTPUT_STEER = (
-    "Answer as a concrete end-to-end digital-twin workflow: name a specific "
-    "catalogue tool for each step, note its fidelity tier and any relevant "
-    "standards, and give a rough budget and timeline."
+_MAX_TOOLS = 6          # instruction 2
+_DESC_WORDS = "200-300"  # instruction 1
+
+_PROMPT_TEMPLATE = (
+    "Digital-twin project request submitted via testware.dev.\n\n"
+    'User prompt: "{query}"\n'
+    "{context}"
+    "\n"
+    "Instructions for this answer:\n"
+    "1. Write the workflow description in exactly two paragraphs, "
+    "{desc_words} words total.\n"
+    "2. Suggest up to {max_tools} relevant products/methods from the "
+    "catalogue only -- never invent a tool.\n"
+    "3. Build the workflow (flowchart) by combining those same suggested "
+    "products, in a logical order."
 )
 
 
 def build_enhanced_query(raw_query: str, categories: dict) -> str:
-    """Compose the single string sent to the backend: the raw prompt, then the
-    set categories as a labelled block, then `_OUTPUT_STEER` -- all kept within
-    `_QUERY_MAX`. Only the raw prompt is trimmed (with an ellipsis) if the
-    budget is tight; the context block and steer are short and fixed.
+    """Fill `_PROMPT_TEMPLATE`'s parameters -- {query} (the search-bar text)
+    and {context} (the set dropdown categories, `_current_categories()`
+    shape) -- and return the finished instruction prompt. This return value
+    IS what's POSTed as `query`, not the bare search-bar text.
 
-    `categories` uses the `_current_categories()` shape -- `{industry,
-    application, nature_of_project}` with unset values already dropped; an
-    empty dict just yields "<query>\\n\\n<steer>".
+    Only {query} is ever trimmed (with an ellipsis), and only if the result
+    would exceed `_QUERY_MAX`; the instructions and context are short and
+    fixed, so they're always sent intact.
     """
-    raw = (raw_query or "").strip()
-
-    blocks = []
-    ctx = [f"- {_CATEGORY_LABELS.get(k, k)}: {v}"
+    ctx = [f"{_CATEGORY_LABELS.get(k, k)}: {v}"
            for k, v in categories.items() if v and v != "(Any)"]
-    if ctx:
-        blocks.append("Context:\n" + "\n".join(ctx))
-    if _OUTPUT_STEER:
-        blocks.append(_OUTPUT_STEER)
-    tail = "\n\n".join(blocks)
+    context = ("Context: " + " | ".join(ctx) + "\n") if ctx else ""
 
-    if not tail:
-        return raw[:_QUERY_MAX]
-    budget = _QUERY_MAX - len(tail) - 2  # 2 = the "\n\n" that joins raw to tail
-    if budget <= 0:                      # pathological: tail alone too long
-        return tail[:_QUERY_MAX]
-    if len(raw) > budget:
-        raw = raw[: budget - 1].rstrip() + "…"
-    return f"{raw}\n\n{tail}"
+    fixed_len = len(_PROMPT_TEMPLATE.format(
+        query="", context=context, desc_words=_DESC_WORDS, max_tools=_MAX_TOOLS
+    ))
+    query = (raw_query or "").strip()
+    budget = _QUERY_MAX - fixed_len
+    if budget <= 0:      # pathological: instructions alone don't fit -- shouldn't happen
+        return _PROMPT_TEMPLATE.format(
+            query="", context=context, desc_words=_DESC_WORDS, max_tools=_MAX_TOOLS
+        )[:_QUERY_MAX]
+    if len(query) > budget:
+        query = query[: budget - 1].rstrip() + "…"
+
+    return _PROMPT_TEMPLATE.format(
+        query=query, context=context, desc_words=_DESC_WORDS, max_tools=_MAX_TOOLS
+    )
+
+
+# Worked example -- what actually goes over the wire for a filled-in search
+# (all three categories set). 571 of the 1000-char budget; the rest is
+# headroom for a longer prompt. Kept here as living documentation, not
+# executed -- see tests/ or run build_enhanced_query() directly to reproduce.
+_EXAMPLE_ENHANCED_QUERY = """\
+Digital-twin project request submitted via testware.dev.
+
+User prompt: "Predictive-maintenance digital twin for a 400-tonne hydraulic press"
+Context: Industry: Manufacturing & Industrial | Application: Predictive maintenance | Nature of project: Consulting / services
+
+Instructions for this answer:
+1. Write the workflow description in exactly two paragraphs, 200-300 words total.
+2. Suggest up to 6 relevant products/methods from the catalogue only -- never invent a tool.
+3. Build the workflow (flowchart) by combining those same suggested products, in a logical order.\
+"""  # noqa: E501 -- fixture text, not code
 
 
 SAVED_WORKFLOWS_PATH = Path(__file__).with_name("saved_workflows.json")
