@@ -1,0 +1,205 @@
+{
+  "query": "ICME-based digital twin for material-failure prediction in a forged aerospace component",
+  "categories": {
+    "industry": "Aerospace & Defence",
+    "application": "Materials & process modelling",
+    "nature_of_project": "R&D / applied research"
+  },
+  "description": "An ICME digital twin for material-failure prediction chains models across scales. CALPHAD phase equilibria fix the phase fractions produced by the heat-treatment route; a synthetic representative volume element (RVE) carries that microstructure into a DAMASK crystal-plasticity solve for local stress and strain; those fields are homogenised into an anisotropic material card for a component-level Abaqus analysis, and a Tanaka–Mura law converts the resolved shear history at hotspots into a crack-initiation life. Non-destructive inspection findings are fused in so the estimate reflects the actual part rather than the nominal one.\n\nThe output is a per-hotspot life distribution that gates the maintenance interval and feeds a fleet-wide materials data lake for re-calibration. Budget roughly EUR 60-120k for the first component family (solver seats, an RVE calibration campaign and one coupon test series); expect 4-6 months to a chain validated against existing coupon and full-scale fatigue data.\n\nIllustrative output — a saved generation shown for display only, not a delivered project.",
+  "tools": [
+    {
+      "catalogue_id": "thermocalc-tcfe",
+      "name": "Thermo-Calc (TCFE database)",
+      "rationale": "CALPHAD phase-equilibria and precipitation modelling; sets the phase fractions and precipitate state the heat-treatment route produces, which every downstream scale depends on.",
+      "development_status": "actively maintained",
+      "access_type": "commercial",
+      "fidelity_tier": "physics-based",
+      "spatial_scale": "~1 nm - ~100 um",
+      "temporal_scale": "~1 s - ~1e5 s",
+      "validation_level": "validated against alloy phase-diagram and DSC data",
+      "pricing": {
+        "estimate_low": 6000.0,
+        "estimate_high": 18000.0,
+        "currency": "EUR",
+        "unit": "per seat/year",
+        "notes": "Model estimate; module and database bundle dependent.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Assumes local thermodynamic equilibrium — fast quenches under-predict retained phases",
+        "Database coverage thins for highly alloyed or novel compositions"
+      ],
+      "inputs": [
+        "Alloy composition",
+        "Heat-treatment schedule"
+      ],
+      "outputs": [
+        "Phase fractions",
+        "Precipitate size distribution"
+      ],
+      "standards": [
+        "CALPHAD"
+      ],
+      "docs_url": "https://example.com/catalogue/thermocalc",
+      "alternatives": [
+        "pandat",
+        "open-calphad"
+      ]
+    },
+    {
+      "catalogue_id": "damask-cp",
+      "name": "DAMASK crystal-plasticity",
+      "rationale": "Spectral crystal-plasticity solver on the RVE; produces the local stress/strain and slip-system activity a crack-initiation law needs.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "physics-based",
+      "spatial_scale": "~1 um - ~500 um",
+      "temporal_scale": "~1 ms - ~1e3 s",
+      "validation_level": "benchmarked against DIC and lattice-strain measurements",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (GPLv3); cost is HPC time and setup effort.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "RVE too small — grain statistics not converged",
+        "Hardening parameters need per-alloy calibration or results drift"
+      ],
+      "inputs": [
+        "Synthetic microstructure (RVE)",
+        "Boundary conditions"
+      ],
+      "outputs": [
+        "Local stress / strain fields",
+        "Slip-system shear history"
+      ],
+      "standards": [
+        "HDF5"
+      ],
+      "docs_url": "https://example.com/catalogue/damask",
+      "alternatives": [
+        "moose-tensor-mechanics",
+        "abaqus-umat-cp"
+      ]
+    },
+    {
+      "catalogue_id": "abaqus-std",
+      "name": "Abaqus/Standard",
+      "rationale": "Component-level implicit FE with the homogenised anisotropic card; resolves the hotspot stress concentrations that set where cracks start.",
+      "development_status": "actively maintained",
+      "access_type": "commercial",
+      "fidelity_tier": "physics-based",
+      "spatial_scale": "~0.1 mm - ~2 m",
+      "temporal_scale": "quasi-static - ~1e3 s",
+      "validation_level": "validated against strain-gauged component tests",
+      "pricing": {
+        "estimate_low": 400.0,
+        "estimate_high": 1200.0,
+        "currency": "EUR",
+        "unit": "per token/month",
+        "notes": "Model estimate; token-pool licensing.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Mesh too coarse at fillets — hotspot stress under-resolved",
+        "Linear material card misses local plastic redistribution"
+      ],
+      "inputs": [
+        "Component geometry / mesh",
+        "Anisotropic material card",
+        "Service load spectrum"
+      ],
+      "outputs": [
+        "Hotspot stress / strain",
+        "Load-path summary"
+      ],
+      "standards": [
+        "STEP AP242",
+        "FMI 2.0"
+      ],
+      "docs_url": "https://example.com/catalogue/abaqus-standard",
+      "alternatives": [
+        "ansys-mechanical",
+        "calculix"
+      ]
+    },
+    {
+      "catalogue_id": "crackinit-tm",
+      "name": "Tanaka–Mura crack-initiation model",
+      "rationale": "Converts resolved slip-band shear history into a crack-initiation life per hotspot; the physics link between microstructure and component fatigue.",
+      "development_status": "actively maintained",
+      "access_type": "open-core",
+      "fidelity_tier": "physics-based",
+      "spatial_scale": "~1 um - ~1 mm",
+      "temporal_scale": "~1e3 - ~1e8 cycles",
+      "validation_level": "calibrated on strain-life coupon data",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 3000.0,
+        "currency": "EUR",
+        "unit": "per seat/year",
+        "notes": "Open core; paid validation-support tier.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Assumes initiation-dominated life — non-conservative for large initial defects",
+        "Sensitive to the assumed slip-band length"
+      ],
+      "inputs": [
+        "Slip-system shear history",
+        "Hotspot stress / strain"
+      ],
+      "outputs": [
+        "Crack-initiation life",
+        "Scatter band"
+      ],
+      "standards": [
+        "ASTM E606"
+      ],
+      "docs_url": "https://example.com/catalogue/tanaka-mura",
+      "alternatives": [
+        "fe-safe",
+        "custom-fkm"
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      { "id": "proc", "type": "input", "label": "Process route & heat treatment", "inputs": [], "outputs": ["schedule"] },
+      { "id": "loads", "type": "input", "label": "Service load spectrum", "inputs": [], "outputs": ["spectrum"] },
+      { "id": "ndt", "type": "input", "label": "NDT / inspection findings", "inputs": [], "outputs": ["defects"] },
+      { "id": "cat", "type": "database", "label": "Model catalogue", "inputs": [], "outputs": ["records"] },
+      { "id": "calphad", "type": "model", "label": "Thermo-Calc phase equilibria", "inputs": ["schedule", "records"], "outputs": ["phases"], "catalogue_id": "thermocalc-tcfe" },
+      { "id": "rve", "type": "process", "label": "Synthesise microstructure RVE", "inputs": ["phases"], "outputs": ["rve"] },
+      { "id": "cp", "type": "model", "label": "DAMASK crystal plasticity", "inputs": ["rve"], "outputs": ["local_fields"], "catalogue_id": "damask-cp" },
+      { "id": "homog", "type": "process", "label": "Homogenise → anisotropic card", "inputs": ["local_fields"], "outputs": ["material_card"] },
+      { "id": "fe", "type": "model", "label": "Abaqus component FE", "inputs": ["material_card", "spectrum"], "outputs": ["hotspot_stress"], "catalogue_id": "abaqus-std" },
+      { "id": "crack", "type": "model", "label": "Tanaka–Mura crack initiation", "inputs": ["hotspot_stress", "local_fields"], "outputs": ["initiation_life"], "catalogue_id": "crackinit-tm" },
+      { "id": "fuse", "type": "merge", "label": "Fuse model + inspection", "inputs": ["initiation_life", "defects"], "outputs": ["life_estimate"] },
+      { "id": "gate", "type": "decision", "label": "Predicted life < required?", "inputs": ["life_estimate"], "outputs": ["yes", "no"] },
+      { "id": "flag", "type": "output", "label": "Flag part · shorten interval", "inputs": ["trigger"], "outputs": [] },
+      { "id": "accept", "type": "output", "label": "Accept · log to fleet twin", "inputs": ["entry"], "outputs": [] },
+      { "id": "lake", "type": "database", "label": "Materials data lake", "inputs": ["run"], "outputs": [] }
+    ],
+    "edges": [
+      { "source": "proc", "target": "calphad", "target_port": 0 },
+      { "source": "cat", "target": "calphad", "target_port": 1 },
+      { "source": "calphad", "target": "rve" },
+      { "source": "rve", "target": "cp" },
+      { "source": "cp", "target": "homog" },
+      { "source": "homog", "target": "fe", "target_port": 0 },
+      { "source": "loads", "target": "fe", "target_port": 1 },
+      { "source": "fe", "target": "crack", "target_port": 0 },
+      { "source": "cp", "target": "crack", "target_port": 1 },
+      { "source": "crack", "target": "fuse", "target_port": 0 },
+      { "source": "ndt", "target": "fuse", "target_port": 1 },
+      { "source": "fuse", "target": "gate" },
+      { "source": "gate", "target": "flag", "source_port": 0, "label": "yes" },
+      { "source": "gate", "target": "accept", "source_port": 1, "label": "no" },
+      { "source": "fe", "target": "lake" }
+    ]
+  }
+}

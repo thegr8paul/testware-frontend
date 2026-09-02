@@ -303,7 +303,7 @@ def _example_short(ex: dict) -> str:
     '02-ev-battery-pack-thermal' -> 'EV battery pack thermal'."""
     stem = re.sub(r"^\d+[-_]?", "", ex.get("_slug", "") or "")
     words = stem.replace("_", "-").split("-")
-    _acronyms = {"ev", "ai", "ml", "cfd", "hpc", "iot"}
+    _acronyms = {"ev", "ai", "ml", "cfd", "hpc", "iot", "icme", "ifc"}
     out = " ".join(w.upper() if w in _acronyms else w for w in words if w).strip()
     return (out[:1].upper() + out[1:]) if out else ex.get("query", "example")
 
@@ -522,6 +522,61 @@ def render_search_bar(mode: str):
     return status_slot
 
 
+def _render_tool_cards(tools: list, focus_id: str | None = None) -> None:
+    """Ranked tool-result cards. Shared by the live Chat result and each
+    Examples panel. `focus_id` highlights + expands the card whose
+    catalogue_id matches (Chat only -- Examples pass None)."""
+    if not tools:
+        st.caption("No matching tools found in the catalogue for this query.")
+        return
+    for tool in tools:  # loop over each ranked tool result
+        focused = bool(tool.get("catalogue_id")) and tool["catalogue_id"] == focus_id
+        card = st.container(border=True, key="tw_focus_card") if focused else st.container(border=True)
+        with card:  # bordered box makes each tool visually distinct
+            if focused:
+                st.caption("🔎 Selected in the workflow")
+            st.subheader(tool["name"])  # tool name as subheading
+            st.write(tool["rationale"])  # why this tool was suggested (explainability)
+
+            # tag row: fidelity tier / spatial scale / temporal scale / standards,
+            # each labeled so it's clear what kind of value each tag is. Real
+            # catalogue entries frequently leave these null, hence the fallback.
+            tag_parts = [
+                f"`Fidelity: {tool['fidelity_tier'] or '—'}`",
+                f"`Spatial: {tool['spatial_scale'] or '—'}`",
+                f"`Temporal: {tool['temporal_scale'] or '—'}`",
+            ]
+            tag_parts += [f"`Standard: {s}`" for s in tool["standards"]]  # one pill per standard
+            st.caption("  ·  ".join(tag_parts))
+
+            # pricing + validation: the two numbers a lead engineer checks
+            # right after "does it fit" - can I afford it, can I trust it.
+            # Pricing is always model-estimated -- the catalogue has no pricing
+            # field at all -- so it's captioned as such, never shown as fact.
+            price = tool["pricing"]
+            price_line = f"{price['currency']} {price['estimate_low']:,.0f}-{price['estimate_high']:,.0f} {price['unit']}"
+            col3, col4 = st.columns(2)
+            with col3:
+                st.write(f"**Est. price:** {price_line}")
+                st.caption("AI estimate — not sourced from the catalogue")
+            with col4:
+                st.write(f"**Validation:** {tool['validation_level'] or '—'}")
+
+            with st.expander("Details", expanded=focused):  # full schema dump, collapsed by default
+                st.markdown("**Inputs**")
+                for i in tool["inputs"]:
+                    st.write(f"- {i}")
+                st.markdown("**Outputs**")
+                for o in tool["outputs"]:
+                    st.write(f"- {o}")
+                if tool["known_fail_modes"]:  # also always model-estimated, same as pricing
+                    st.markdown("**Known limitations** _(AI estimate — not sourced from the catalogue)_")
+                    for f in tool["known_fail_modes"]:
+                        st.write(f"- {f}")
+                if tool.get("docs_url"):
+                    st.markdown(f"[Reference]({tool['docs_url']})")  # traceability link
+
+
 def _render_workflow_result() -> None:
     """The Chat section's output for a live query: description + editable
     canvas + tool cards."""
@@ -643,58 +698,8 @@ def _render_workflow_result() -> None:
             )
 
     # --- SECTION: TOOL SUGGESTIONS ------------------------------------------
-    st.header("Tool Recommendations")
-
-    if not tools:
-        st.caption("Relevant modelling methods and software from the catalogue are listed here.")
-
-    _focus = st.session_state.get("focus_tool")
-    for tool in tools:  # loop over each ranked tool result
-        focused = bool(tool.get("catalogue_id")) and tool["catalogue_id"] == _focus
-        card = st.container(border=True, key="tw_focus_card") if focused else st.container(border=True)
-        with card:  # bordered box makes each tool visually distinct
-            if focused:
-                st.caption("🔎 Selected in the workflow")
-            st.subheader(tool["name"])  # tool name as subheading
-            st.write(tool["rationale"])  # why this tool was suggested (explainability)
-
-            # tag row: fidelity tier / spatial scale / temporal scale / standards,
-            # each labeled so it's clear what kind of value each tag is. Real
-            # catalogue entries frequently leave these null, hence the fallback.
-            tag_parts = [
-                f"`Fidelity: {tool['fidelity_tier'] or '—'}`",
-                f"`Spatial: {tool['spatial_scale'] or '—'}`",
-                f"`Temporal: {tool['temporal_scale'] or '—'}`",
-            ]
-            tag_parts += [f"`Standard: {s}`" for s in tool["standards"]]  # one pill per standard
-            st.caption("  ·  ".join(tag_parts))
-
-            # pricing + validation: the two numbers a lead engineer checks
-            # right after "does it fit" - can I afford it, can I trust it.
-            # Pricing is always model-estimated -- the catalogue has no pricing
-            # field at all -- so it's captioned as such, never shown as fact.
-            price = tool["pricing"]
-            price_line = f"{price['currency']} {price['estimate_low']:,.0f}-{price['estimate_high']:,.0f} {price['unit']}"
-            col3, col4 = st.columns(2)
-            with col3:
-                st.write(f"**Est. price:** {price_line}")
-                st.caption("AI estimate — not sourced from the catalogue")
-            with col4:
-                st.write(f"**Validation:** {tool['validation_level'] or '—'}")
-
-            with st.expander("Details", expanded=focused):  # full schema dump, collapsed by default
-                st.markdown("**Inputs**")
-                for i in tool["inputs"]:
-                    st.write(f"- {i}")
-                st.markdown("**Outputs**")
-                for o in tool["outputs"]:
-                    st.write(f"- {o}")
-                if tool["known_fail_modes"]:  # also always model-estimated, same as pricing
-                    st.markdown("**Known limitations** _(AI estimate — not sourced from the catalogue)_")
-                    for f in tool["known_fail_modes"]:
-                        st.write(f"- {f}")
-                if tool.get("docs_url"):
-                    st.markdown(f"[Reference]({tool['docs_url']})")  # traceability link
+    st.header("Suggested Tools")
+    _render_tool_cards(tools, st.session_state.get("focus_tool"))
 
 
 # --- HEADER ------------------------------------------------------------------
@@ -741,23 +746,59 @@ def render_header() -> None:
 
 
 def render_examples_section() -> None:
-    """All curated workflows (examples/*.json), each a fully interactive,
-    drag/wire-editable canvas -- the same component the live Chat result
-    uses. Edits are session-only, kept per example; they never write back to
-    the examples/*.json files on disk (use the Chat area's "Save this
-    workflow as a pitch example" for that)."""
+    """The page's third area: curated example workflows (examples/*.json)
+    shown one at a time, exactly as a generated result would look --
+    description, editable flowchart canvas, and the suggested-tool cards.
+    The chevrons + dots step between examples. Canvas edits are session-only
+    and kept per example; they never write back to the JSON files on disk.
+
+    These example workflows are illustrative saved generations for the
+    pitch, not delivered projects -- the copy in each file says so."""
     st.header("Examples")
     _exs = _load_examples()
     if not _exs:
         st.caption("No examples found (examples/*.json).")
         return
+
+    n = len(_exs)
+    st.session_state.setdefault("tw_examples_idx", 0)
+    idx = max(0, min(int(st.session_state["tw_examples_idx"]), n - 1))
+    st.session_state["tw_examples_idx"] = idx
+    ex = _exs[idx]
+
+    # prev / dots + counter / next
+    with st.container(key="tw_examples_nav", horizontal=True,
+                       vertical_alignment="center"):
+        if st.button("", icon=":material/chevron_left:", key="tw_ex_prev",
+                     disabled=idx == 0, help="Previous example"):
+            st.session_state["tw_examples_idx"] = idx - 1
+            st.rerun()
+        _dots = "".join(
+            f"<span class='tw-ex-dot{' on' if i == idx else ''}'></span>"
+            for i in range(n)
+        )
+        st.markdown(
+            f"<div class='tw-ex-dots'>{_dots}</div>"
+            f"<div class='tw-ex-count'>{idx + 1} / {n}</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("", icon=":material/chevron_right:", key="tw_ex_next",
+                     disabled=idx == n - 1, help="Next example"):
+            st.session_state["tw_examples_idx"] = idx + 1
+            st.rerun()
+
+    # The active example. Keyed by slug so switching fully remounts the panel
+    # (fresh canvas, clean fade-in -- see styles.css .st-key-tw_example_panel_*).
     _edits = st.session_state.setdefault("dashboard_example_edits", {})
-    for ex in _exs:
+    with st.container(key=f"tw_example_panel_{ex['_slug']}"):
         st.subheader(_example_short(ex))
         if ex.get("description"):
-            st.caption(ex["description"][:220])
+            st.write(ex["description"])
+
+        st.markdown("#### Workflow")
         _wf = _edits.get(ex["_slug"], ex["workflow"])
-        _suggested = [t["catalogue_id"] for t in ex.get("tools", []) if t.get("catalogue_id")]
+        _suggested = [t["catalogue_id"] for t in ex.get("tools", [])
+                      if t.get("catalogue_id")]
         _sel = workflow_canvas(
             workflow=_wf, suggested=_suggested, key=f"tw_wf_ex_{ex['_slug']}",
             default=None, theme=st.session_state.theme,
@@ -765,10 +806,253 @@ def render_examples_section() -> None:
         if isinstance(_sel, dict) and _sel.get("kind") == "edit" and _sel.get("workflow"):
             _edits[ex["_slug"]] = _sel["workflow"]
 
+        st.markdown("#### Suggested tools")
+        _render_tool_cards(ex.get("tools", []))
+
+
+_SCROLL_SETTLE_JS = """
+<script>
+(function () {
+  if (window.__twScrollSettle) return;   // once per page load, survives reruns
+  window.__twScrollSettle = true;
+
+  var HEADER = 80;   // == deck HEADER_OFFSET; the line areas align their top to
+  var IDS = ["tw_section_chat", "tw_section_dashboard", "tw_section_examples"];
+
+  function scroller() {
+    var c = [
+      document.querySelector('[data-testid="stAppViewContainer"]'),
+      document.querySelector('[data-testid="stMain"]'),
+      document.scrollingElement, document.documentElement, document.body
+    ];
+    for (var i = 0; i < c.length; i++) {
+      if (c[i] && c[i].scrollHeight - c[i].clientHeight > 4) return c[i];
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  function isWin(el) {
+    return el === document.scrollingElement || el === document.documentElement
+        || el === document.body;
+  }
+  function pos(el) { return isWin(el) ? (window.scrollY || window.pageYOffset) : el.scrollTop; }
+  function go(el, top) {
+    if (isWin(el)) window.scrollTo({ top: top, behavior: "smooth" });
+    else el.scrollTo({ top: top, behavior: "smooth" });
+  }
+
+  var t, settling = false;
+
+  function settle() {
+    if (settling) return;
+    var areas = IDS.map(function (id) { return document.querySelector('.st-key-' + id); })
+                   .filter(Boolean);
+    if (areas.length < 2) return;
+    var vh = window.innerHeight;
+
+    // Signed offset of each area's top from the header line: 0 == aligned.
+    var offs = areas.map(function (a) { return a.getBoundingClientRect().top - HEADER; });
+
+    // Already parked cleanly on a seam? leave it alone.
+    for (var i = 0; i < offs.length; i++) if (Math.abs(offs[i]) <= 4) return;
+
+    // Only seams close to the viewport count; if every seam is far away we're
+    // deep inside one tall area (e.g. long chat results) -> continuous scroll,
+    // don't touch it.
+    var near = offs.filter(function (o) { return o > -vh * 0.88 && o < vh * 0.88; });
+    if (!near.length) return;
+
+    // Ease the NEAREST seam onto the header line -- so we finish (or undo) the
+    // transition instead of resting straddling two canvases.
+    var pick = near.reduce(function (p, c) { return Math.abs(c) < Math.abs(p) ? c : p; });
+    var sc = scroller();
+    settling = true;
+    go(sc, Math.round(pos(sc) + pick));
+    setTimeout(function () { settling = false; }, 550);
+  }
+
+  function onScroll() {
+    if (settling) return;
+    clearTimeout(t);
+    t = setTimeout(settle, 130);   // fire once the scroll has come to rest
+  }
+
+  // The scroll container can be re-created across Streamlit reruns; (re)bind
+  // defensively, and also listen on window so document-level scrolling is
+  // covered whichever element actually scrolls.
+  function bind() {
+    var sc = scroller();
+    if (sc && !sc.__twBound) {
+      sc.__twBound = true;
+      sc.addEventListener("scroll", onScroll, { passive: true });
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(settle, 200); });
+  bind();
+  setInterval(bind, 2000);
+})();
+</script>
+"""
+
+
+def render_scroll_settle() -> None:
+    """Keep the page a single continuous scroll, but never let it come to
+    rest straddling two of the three areas (app / presentation / examples).
+    A scroll-idle handler eases the nearest seam onto the header line;
+    scrolling through a tall area is left untouched. Pure viewport behaviour
+    -- no backend, no state."""
+    st.html(_SCROLL_SETTLE_JS, unsafe_allow_javascript=True)
+
+
+def _count_slides(md: str) -> int:
+    """How many slides presentation.md renders -- mirrors the deck parser
+    (components/deck/index.html): split on a `---` / `***` line, drop chunks
+    that are empty once HTML comments are stripped."""
+    chunks = re.split(r"\n[ \t]*(?:-{3,}|\*{3,})[ \t]*\n", md)
+    n = sum(1 for c in chunks if re.sub(r"<!--.*?-->", "", c, flags=re.S).strip())
+    return max(n, 1)
+
+
+# A fixed left-edge rail: [app] · [slide 1] … [slide N] · [examples]. The
+# first and last stripes are longer (styles.css .edge) so app / examples are
+# obvious. Clicking a stripe jumps straight there -- app / examples by
+# scrolling this page, slides by calling the deck's window.__deckAPI. Built
+# straight onto document.body so Streamlit's reruns never touch it; the
+# %SLIDES% token is filled in by render_nav_rail().
+_NAV_RAIL_JS = """
+<script>
+(function () {
+  var N = %SLIDES%;                       // presentation slide count
+  var HEADER = 80;                        // == deck HEADER_OFFSET
+  if (window.__twRail && window.__twRailN === N) return;
+  var old = document.getElementById("tw-navrail");
+  if (old) old.remove();
+  window.__twRail = true;
+  window.__twRailN = N;
+
+  var total = N + 2;                      // app + slides + examples
+  var rail = document.createElement("nav");
+  rail.id = "tw-navrail";
+  rail.setAttribute("aria-label", "Page navigation");
+  var dots = [];
+  for (var i = 0; i < total; i++) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "tw-navrail-dot" + (i === 0 || i === total - 1 ? " edge" : "");
+    b.dataset.g = String(i);
+    b.setAttribute("aria-label",
+      i === 0 ? "Go to app" : i === total - 1 ? "Go to examples" : "Go to slide " + i);
+    b.addEventListener("click", function () { navTo(parseInt(this.dataset.g, 10)); });
+    rail.appendChild(b);
+    dots.push(b);
+  }
+  (document.body || document.documentElement).appendChild(rail);
+
+  function q(s) { return document.querySelector(s); }
+  function scroller() {
+    var c = [q('[data-testid="stAppViewContainer"]'), q('[data-testid="stMain"]'),
+             document.scrollingElement, document.documentElement, document.body];
+    for (var i = 0; i < c.length; i++) {
+      if (c[i] && c[i].scrollHeight - c[i].clientHeight > 4) return c[i];
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  function isWin(el) {
+    return el === document.scrollingElement || el === document.documentElement || el === document.body;
+  }
+  function toEl(el) {
+    if (!el) return;
+    var sc = scroller();
+    var dy = el.getBoundingClientRect().top - HEADER;
+    var cur = isWin(sc) ? (window.scrollY || window.pageYOffset || 0) : sc.scrollTop;
+    if (isWin(sc)) window.scrollTo({ top: cur + dy, behavior: "smooth" });
+    else sc.scrollTo({ top: cur + dy, behavior: "smooth" });
+  }
+  function deck() {
+    try {
+      var f = q(".st-key-tw_readme iframe");
+      return (f && f.contentWindow && f.contentWindow.__deckAPI) ? f.contentWindow.__deckAPI : null;
+    } catch (e) { return null; }
+  }
+
+  function navTo(g) {
+    if (g <= 0) { toEl(q(".st-key-tw_section_chat")); return; }
+    if (g >= N + 1) { toEl(q(".st-key-tw_section_examples")); return; }
+    toEl(q(".st-key-tw_section_dashboard"));
+    var d = deck();
+    if (d) setTimeout(function () { d.goto(g - 1); }, 60);
+  }
+
+  function currentG() {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var ex = q(".st-key-tw_section_examples");
+    if (ex && ex.getBoundingClientRect().top <= vh * 0.5) return N + 1;
+    var dash = q(".st-key-tw_section_dashboard");
+    if (dash) {
+      var r = dash.getBoundingClientRect();
+      if (r.top <= vh * 0.5 && r.bottom >= vh * 0.5) {
+        var d = deck();
+        return 1 + (d ? d.index() : 0);
+      }
+      if (r.top > vh * 0.5) return 0;
+    }
+    return 0;
+  }
+  function sync() {
+    var g = currentG();
+    for (var i = 0; i < dots.length; i++) dots[i].classList.toggle("on", i <= g);
+  }
+  window.__twRailSync = sync;
+
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { ticking = false; sync(); });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  function bindSc() {
+    var s = scroller();
+    if (s && !s.__twRailBound) { s.__twRailBound = true; s.addEventListener("scroll", onScroll, { passive: true }); }
+  }
+  bindSc();
+  setInterval(bindSc, 2000);
+  setInterval(sync, 1000);   // also catches deck slide changes if the notify was missed
+
+  // Arrow Up / Down pages the presentation while focus is on the page (the
+  // deck runs the same handler for when focus is inside its iframe). At the
+  // first / last slide the key is left alone so it scrolls out of the area.
+  window.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || (e.target && e.target.isContentEditable)) return;
+    if (currentG() < 1 || currentG() > N) return;   // only inside the presentation
+    var d = deck();
+    if (!d) return;
+    var tgt = d.index() + (e.key === "ArrowDown" ? 1 : -1);
+    if (tgt < 0 || tgt > d.count() - 1) return;      // edges: let it scroll away
+    e.preventDefault();
+    d.goto(tgt);
+  });
+
+  sync();
+})();
+</script>
+"""
+
+
+def render_nav_rail(slide_count: int) -> None:
+    """Left-edge page rail: app | each slide | examples. Content-only, built
+    directly on document.body; no backend, no state."""
+    st.html(_NAV_RAIL_JS.replace("%SLIDES%", str(int(slide_count))),
+            unsafe_allow_javascript=True)
+
 
 # --- PAGE FLOW -----------------------------------------------------------------
-# One continuously-scrolling page: header, then three snap-scrollable
-# sections -- Chat, Dashboard, Examples (scroll-snap rules live in styles.css).
+# One continuously-scrolling page: header, then the three areas -- Chat,
+# Dashboard, Examples. Scrolling is continuous; a scroll-idle "settle"
+# (render_scroll_settle, at the end) keeps it from parking between areas.
 render_header()
 
 with st.container(key="tw_section_chat"):
@@ -800,3 +1084,6 @@ with st.container(key="tw_section_dashboard"):
 
 with st.container(key="tw_section_examples"):
     render_examples_section()
+
+render_scroll_settle()
+render_nav_rail(_count_slides(_md))

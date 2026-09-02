@@ -115,14 +115,124 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 [data-testid="stHeader"] { display: none; }  /* replaced by .st-key-tw_header below */
 [data-testid="stIFrame"] { border: none; background: transparent; }
 
-/* No page-level scroll-snap -- Chat and Examples scroll normally. One-slide-
-   at-a-time snap is scoped entirely inside the Dashboard's own component
-   (components/deck/index.html), which owns its own bounded, internally-
-   scrolling viewport for exactly that reason. */
+/* --- Three-area page: app -> presentation -> examples --------------------
+   One continuous vertical scroll through the whole page -- NO CSS
+   scroll-snap (it fought the deck's own internal scroll and the long chat
+   results). Instead a scroll-idle "settle" script in app.py
+   (render_scroll_settle) watches for the scroll coming to rest straddling
+   two areas and eases it onto the nearer seam, so you never park
+   half-between the app, presentation and examples canvases. Scrolling
+   *through* a tall area is untouched.
+
+   Each of the presentation and examples areas is at least one screen tall
+   so those seams are real: the deck lands full-canvas (80px == the deck's
+   own HEADER_OFFSET in components/deck/index.html) and the examples strip
+   stands alone. The deck area is flush under the header -- no top padding
+   here or its iframe never reaches the "aligned" line and its wheel-handoff
+   keeps forwarding to the page instead of paging slides. */
 .st-key-tw_section_dashboard,
+.st-key-tw_section_examples {
+  min-height: calc(100vh - 80px);
+}
 .st-key-tw_section_examples {
   padding-top: 2.5rem;
   border-top: 1px solid var(--tw-card-border);
+}
+
+/* --- Examples: one example shown at a time, changed with the arrows -----
+   The panel renders like a real generated result -- description, flowchart
+   canvas, suggested-tool cards -- and fades in on each switch. Left/right
+   navigation is the on-screen chevrons + dots; vertical wheel is untouched
+   so it still scrolls the page out of this area. */
+.st-key-tw_section_examples {
+  position: relative;
+}
+[class*="st-key-tw_example_panel_"] {
+  animation: tw-ex-fade 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes tw-ex-fade {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* nav row: prev / dots + counter / next, centred under the "Examples" heading */
+.st-key-tw_examples_nav {
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  margin: 0.25rem 0 1.25rem;
+}
+.tw-ex-dots {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.tw-ex-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tw-hair-strong);
+  transition: background 0.2s var(--ease, ease), transform 0.2s var(--ease, ease);
+}
+.tw-ex-dot.on {
+  background: var(--tw-accent);
+  transform: scale(1.35);
+}
+.tw-ex-count {
+  font-size: 0.82rem;
+  color: var(--tw-muted);
+  text-align: center;
+  margin-top: 0.35rem;
+}
+
+/* --- Left-edge page rail: app | slide 1..N | examples ------------------
+   Built onto document.body by app.py render_nav_rail(). Minimal stripes;
+   the first (app) and last (examples) are longer/thicker so the ends are
+   obvious. Faint until hovered. Click any stripe to jump straight there. */
+#tw-navrail {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.42rem;
+  padding: 0.75rem 1.1rem 0.75rem 0.6rem;   /* generous right pad = easy hit target */
+  opacity: 0.3;
+  transition: opacity 0.25s ease;
+}
+#tw-navrail:hover {
+  opacity: 1;
+}
+.tw-navrail-dot {
+  width: 14px;
+  height: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 1px;
+  background: var(--tw-hair-strong);
+  cursor: pointer;
+  transition: width 0.16s ease, background 0.2s ease;
+}
+.tw-navrail-dot:hover {
+  width: 22px;
+}
+.tw-navrail-dot.on {
+  background: var(--tw-accent);
+}
+.tw-navrail-dot.edge {
+  width: 26px;
+  height: 3px;
+  margin: 0.18rem 0;
+}
+.tw-navrail-dot.edge:hover {
+  width: 34px;
+}
+.tw-navrail-dot:focus-visible {
+  outline: 2px solid var(--tw-accent);
+  outline-offset: 3px;
 }
 
 /* Workflow canvas: full-bleed horizontally (no side boundary) -- break out

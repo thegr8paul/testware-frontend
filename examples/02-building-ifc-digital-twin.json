@@ -1,0 +1,211 @@
+{
+  "query": "Operational digital twin of an office building generated from its IFC/BIM model",
+  "categories": {
+    "industry": "Built Environment & Infrastructure",
+    "application": "Building performance & energy",
+    "nature_of_project": "Consulting / services"
+  },
+  "description": "Starting from the building's IFC model, IfcOpenShell extracts the geometry, spaces and construction build-ups; a zone take-off turns those into an EnergyPlus whole-building model for design-grade energy and comfort, plus a parallel Modelica RC reduced-order model that is fast enough to run in the loop. Both are calibrated against a few weeks of BMS and sub-metering data with a Bayesian step, so the twin tracks the building as operated rather than as drawn.\n\nThe calibrated twin drives a model-predictive controller that proposes HVAC set-points from forecast weather and occupancy, and raises an alert when measured behaviour drifts from prediction. Everything lands in a historian for continuous re-calibration. Budget roughly EUR 40-90k for a single mid-size building (IFC clean-up, calibration campaign, BMS integration); expect 10-16 weeks to a live twin giving read-only control advice, longer for closed-loop write-back.\n\nIllustrative output — a saved generation shown for display only, not a delivered project.",
+  "tools": [
+    {
+      "catalogue_id": "ifcopenshell",
+      "name": "IfcOpenShell",
+      "rationale": "Parses the IFC model into usable geometry, spaces and construction layers; the bridge from the BIM deliverable to anything simulable.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "geometric / semantic",
+      "spatial_scale": "~10 mm - ~200 m",
+      "temporal_scale": "static",
+      "validation_level": "widely used; conformance-tested against IFC schemas",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (LGPL).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Garbage in, garbage out — mislabelled spaces or missing IfcSpace break the zone take-off",
+        "Second-level space boundaries often need repair before energy use"
+      ],
+      "inputs": [
+        "IFC / BIM model"
+      ],
+      "outputs": [
+        "Geometry",
+        "Spaces & zones",
+        "Construction build-ups"
+      ],
+      "standards": [
+        "IFC4",
+        "ISO 16739"
+      ],
+      "docs_url": "https://example.com/catalogue/ifcopenshell",
+      "alternatives": [
+        "xbim",
+        "ifc-tools"
+      ]
+    },
+    {
+      "catalogue_id": "energyplus",
+      "name": "EnergyPlus",
+      "rationale": "Whole-building energy and comfort engine; the design-grade reference the faster models are calibrated to track.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "physics-based",
+      "spatial_scale": "zone - whole building",
+      "temporal_scale": "~1 min - ~1 year",
+      "validation_level": "ASHRAE 140 tested; extensive field validation",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (DOE / BSD-style).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Slower than real time — not usable directly in a control loop",
+        "Results only as good as the assumed schedules and infiltration"
+      ],
+      "inputs": [
+        "Zones & constructions",
+        "Weather file",
+        "Schedules / loads"
+      ],
+      "outputs": [
+        "Zone temperatures",
+        "Energy end-uses",
+        "Comfort metrics"
+      ],
+      "standards": [
+        "ASHRAE 140",
+        "EPW"
+      ],
+      "docs_url": "https://example.com/catalogue/energyplus",
+      "alternatives": [
+        "ida-ice",
+        "trnsys"
+      ]
+    },
+    {
+      "catalogue_id": "modelica-buildings",
+      "name": "Modelica Buildings Library",
+      "rationale": "Supplies the RC reduced-order envelope and HVAC components; runs far faster than real time, so the twin can predict ahead in the control loop.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "reduced-order",
+      "spatial_scale": "zone - whole building",
+      "temporal_scale": "~1 s - ~1 week",
+      "validation_level": "validated against BOPTEST and measured buildings",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (modified BSD); a Modelica tool is needed to run it.",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "RC parameters need calibration or the fast model diverges from EnergyPlus",
+        "Simplified airflow — poor for naturally ventilated or atrium spaces"
+      ],
+      "inputs": [
+        "Zones & constructions",
+        "Calibration data"
+      ],
+      "outputs": [
+        "Fast thermal state",
+        "HVAC response"
+      ],
+      "standards": [
+        "Modelica 3.4",
+        "FMI 2.0"
+      ],
+      "docs_url": "https://example.com/catalogue/modelica-buildings",
+      "alternatives": [
+        "rc-buildingsimulator",
+        "energyplus-fmu"
+      ]
+    },
+    {
+      "catalogue_id": "do-mpc",
+      "name": "do-mpc",
+      "rationale": "Builds the model-predictive controller around the calibrated fast model; turns the twin into set-point advice rather than just a picture.",
+      "development_status": "actively maintained",
+      "access_type": "open source",
+      "fidelity_tier": "optimisation",
+      "spatial_scale": "whole building",
+      "temporal_scale": "~15 min horizon steps",
+      "validation_level": "demonstrated on building-control case studies",
+      "pricing": {
+        "estimate_low": 0.0,
+        "estimate_high": 0.0,
+        "currency": "EUR",
+        "unit": "free",
+        "notes": "Open source (LGPL).",
+        "estimated": true
+      },
+      "known_fail_modes": [
+        "Only as good as the prediction model it is handed",
+        "Needs a fallback controller for solver failures or bad forecasts"
+      ],
+      "inputs": [
+        "Fast thermal state",
+        "Weather / occupancy forecast"
+      ],
+      "outputs": [
+        "HVAC set-points",
+        "Predicted cost / comfort"
+      ],
+      "standards": [
+        "BACnet (via gateway)"
+      ],
+      "docs_url": "https://example.com/catalogue/do-mpc",
+      "alternatives": [
+        "casadi-mpc",
+        "vendor-optimising-controller"
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      { "id": "ifc", "type": "input", "label": "IFC / BIM model", "inputs": [], "outputs": ["ifc"] },
+      { "id": "bms", "type": "input", "label": "BMS + IoT telemetry", "inputs": [], "outputs": ["telemetry"] },
+      { "id": "wx", "type": "input", "label": "Weather feed", "inputs": [], "outputs": ["weather"] },
+      { "id": "cat", "type": "database", "label": "Model catalogue", "inputs": [], "outputs": ["records"] },
+      { "id": "parse", "type": "process", "label": "IfcOpenShell: geometry + spaces", "inputs": ["ifc"], "outputs": ["geom"], "catalogue_id": "ifcopenshell" },
+      { "id": "takeoff", "type": "process", "label": "Zone & construction take-off", "inputs": ["geom"], "outputs": ["zones"] },
+      { "id": "eplus", "type": "model", "label": "EnergyPlus whole-building", "inputs": ["zones", "weather", "records"], "outputs": ["eplus_state"], "catalogue_id": "energyplus" },
+      { "id": "rc", "type": "model", "label": "Modelica RC reduced-order", "inputs": ["zones"], "outputs": ["rc_model"], "catalogue_id": "modelica-buildings" },
+      { "id": "calib", "type": "process", "label": "Bayesian calibration to BMS", "inputs": ["eplus_state", "rc_model", "telemetry"], "outputs": ["calibrated"] },
+      { "id": "state", "type": "merge", "label": "Live state estimate", "inputs": ["calibrated", "telemetry"], "outputs": ["state"] },
+      { "id": "mpc", "type": "model", "label": "MPC set-point optimiser", "inputs": ["state", "weather"], "outputs": ["setpoints"], "catalogue_id": "do-mpc" },
+      { "id": "gate", "type": "decision", "label": "Comfort & energy within bounds?", "inputs": ["state"], "outputs": ["yes", "no"] },
+      { "id": "push", "type": "output", "label": "Push set-points to BMS", "inputs": ["setpoints", "ok"], "outputs": [] },
+      { "id": "alert", "type": "output", "label": "Fault / drift alert", "inputs": ["fault"], "outputs": [] },
+      { "id": "hist", "type": "database", "label": "Building data historian", "inputs": ["log"], "outputs": [] }
+    ],
+    "edges": [
+      { "source": "ifc", "target": "parse" },
+      { "source": "parse", "target": "takeoff" },
+      { "source": "takeoff", "target": "eplus", "target_port": 0 },
+      { "source": "wx", "target": "eplus", "target_port": 1 },
+      { "source": "cat", "target": "eplus", "target_port": 2 },
+      { "source": "takeoff", "target": "rc" },
+      { "source": "eplus", "target": "calib", "target_port": 0 },
+      { "source": "rc", "target": "calib", "target_port": 1 },
+      { "source": "bms", "target": "calib", "target_port": 2 },
+      { "source": "calib", "target": "state", "target_port": 0 },
+      { "source": "bms", "target": "state", "target_port": 1 },
+      { "source": "state", "target": "mpc", "target_port": 0 },
+      { "source": "wx", "target": "mpc", "target_port": 1 },
+      { "source": "mpc", "target": "push", "target_port": 0 },
+      { "source": "state", "target": "gate" },
+      { "source": "gate", "target": "push", "source_port": 0, "target_port": 1, "label": "yes" },
+      { "source": "gate", "target": "alert", "source_port": 1, "label": "no" },
+      { "source": "state", "target": "hist" }
+    ]
+  }
+}

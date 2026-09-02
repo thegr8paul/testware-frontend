@@ -221,14 +221,16 @@
     transition-delay: calc(var(--i, 0) * 70ms);
   }
 
-  /* ---- chrome: dot-nav only, fixed within this iframe's own (real again)
-     viewport -- floats above every slide as you scroll, exactly like the
-     original pre-redesign deck. */
+  /* ---- chrome: the deck's own dot-nav is retired -- the page now has a
+     single left-edge rail (app | slide | ... | examples) rendered by the
+     PARENT (styles.css #tw-navrail + app.py render_nav_rail), which drives
+     this deck through window.__deckAPI below. Kept in the DOM but hidden so
+     renderChrome()/updateChrome() stay harmless no-ops. */
   #topbar {
+    display: none;
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 3;
-    display: flex;
     justify-content: center;
     padding: clamp(1rem, 3vw, 1.5rem) 1rem;
     transition: opacity .35s var(--ease);
@@ -475,14 +477,25 @@
   function scrollToSlide(k) {
     var el = slides[k];
     if (!el) return;
+    idx = k;                 // optimistic -- the IntersectionObserver re-confirms
+    updateChrome();
+    try { if (window.parent && window.parent.__twRailSync) window.parent.__twRailSync(); } catch (e) {}
     el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   }
 
+  // Keyboard paging while focus is inside the deck. The parent page runs the
+  // same Arrow handling for when focus is on the page (app.py _NAV_RAIL_JS).
   window.addEventListener("keydown", function (e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var k = e.key;
     if (k === "Home") { e.preventDefault(); scrollToSlide(0); }
     else if (k === "End") { e.preventDefault(); scrollToSlide(slides.length - 1); }
+    else if (k === "ArrowDown" || k === "PageDown") {
+      if (idx < slides.length - 1) { e.preventDefault(); scrollToSlide(idx + 1); }
+    }
+    else if (k === "ArrowUp" || k === "PageUp") {
+      if (idx > 0) { e.preventDefault(); scrollToSlide(idx - 1); }
+    }
   });
 
   // Reveal each slide (staged entrance) the first time it scrolls into
@@ -503,7 +516,12 @@
         var k = slides.indexOf(entry.target);
         if (k !== -1 && entry.intersectionRatio > bestRatio) { bestRatio = entry.intersectionRatio; bestK = k; }
       });
-      if (bestK !== -1) { idx = bestK; updateChrome(); }
+      if (bestK !== -1) {
+        idx = bestK;
+        updateChrome();
+        // let the parent's left rail follow the current slide
+        try { if (window.parent && window.parent.__twRailSync) window.parent.__twRailSync(); } catch (e) {}
+      }
     }, { root: scroller, threshold: [0, 0.25, 0.5, 0.75, 1] });
     slides.forEach(function (s) { io.observe(s); });
   }
@@ -529,6 +547,86 @@
       rt = setTimeout(setViewportHeight, 150);
     }, { passive: true });
   } catch (e) { /* cross-origin -- height just won't track a parent resize */ }
+
+  // ---- outer-page scroll handoff -----------------------------------------
+  // The deck is the middle of three page areas (app -> presentation ->
+  // examples). Without this, the moment the cursor crosses into this iframe
+  // the wheel is captured here and the outer page stops -- even though the
+  // deck may only be half-aligned ("scrolling stopped too early"). So:
+  //   * while the iframe is NOT yet aligned under the outer header, forward
+  //     every wheel tick to the outer scroller so the page keeps moving
+  //     until the deck snaps to full-canvas;
+  //   * once aligned, the deck pages slide-by-slide on its own (native
+  //     #scroller scrolling), EXCEPT at the very top (scroll up -> hand back
+  //     to the app area) and the very bottom (scroll down -> hand forward to
+  //     the examples area).
+  // Same-origin access to window.parent, exactly like setViewportHeight();
+  // a cross-origin deploy just skips this and keeps the old behaviour.
+  (function () {
+    var frameEl, parentDoc, parentWin;
+    try {
+      frameEl = window.frameElement;
+      parentWin = window.parent;
+      parentDoc = parentWin.document;
+    } catch (e) { return; }
+    if (!frameEl || !parentDoc) return;
+
+    // Generous tolerance: after the outer page snaps the deck area to the
+    // top there can still be ~1rem of Streamlit element gap above the
+    // iframe, so "aligned" means "top edge within ~2rem of the header line".
+    var ALIGN_SLOP = 34;
+    var cachedScroller = null;
+
+    function outerScroller() {
+      if (cachedScroller &&
+          cachedScroller.scrollHeight - cachedScroller.clientHeight > 4) {
+        return cachedScroller;
+      }
+      var cands = [];
+      ["stAppViewContainer", "stMain", "stApp"].forEach(function (t) {
+        var el = parentDoc.querySelector('[data-testid="' + t + '"]');
+        if (el) cands.push(el);
+      });
+      if (parentDoc.scrollingElement) cands.push(parentDoc.scrollingElement);
+      for (var i = 0; i < cands.length; i++) {
+        if (cands[i].scrollHeight - cands[i].clientHeight > 4) {
+          cachedScroller = cands[i];
+          return cachedScroller;
+        }
+      }
+      return parentDoc.scrollingElement || parentDoc.documentElement;
+    }
+
+    function forwardScroll(delta) {
+      var el = outerScroller();
+      if (el === parentDoc.scrollingElement || el === parentDoc.documentElement) {
+        parentWin.scrollBy(0, delta);
+      } else {
+        el.scrollTop += delta;
+      }
+    }
+
+    function atTop() { return scroller.scrollTop <= 0; }
+    function atBottom() {
+      return scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    }
+
+    window.addEventListener("wheel", function (e) {
+      var rect = frameEl.getBoundingClientRect();
+      // "aligned" == the iframe's top has reached the outer header line.
+      var aligned = rect.top <= HEADER_OFFSET + ALIGN_SLOP;
+      var down = e.deltaY > 0;
+      var handBack =
+        !aligned ||
+        (down && atBottom()) ||
+        (!down && aligned && rect.top >= HEADER_OFFSET - ALIGN_SLOP && atTop());
+      if (handBack) {
+        e.preventDefault();
+        forwardScroll(e.deltaY);
+      }
+      // otherwise: let the deck's own #scroller page slide-by-slide.
+    }, { passive: false });
+  })();
 
   var idleT;
   function wake() {
@@ -674,6 +772,21 @@
     build(md);
     requestAnimationFrame(function () { requestAnimationFrame(resize); });
   });
+
+  // ---- external nav API ------------------------------------------------
+  // The parent page's left rail (styles.css #tw-navrail) calls these to
+  // read the slide count / current slide and to jump to a slide. Same-origin
+  // access, like setViewportHeight(); a cross-origin deploy just means the
+  // rail can't drive slide changes (its app / examples ends still work).
+  window.__deckAPI = {
+    count: function () { return slides.length; },
+    index: function () { return idx; },
+    goto: function (k) {
+      if (!slides.length) return;
+      k = Math.max(0, Math.min(k | 0, slides.length - 1));
+      scrollToSlide(k);
+    }
+  };
 
   send("streamlit:componentReady", { apiVersion: 1 });
   setViewportHeight();
