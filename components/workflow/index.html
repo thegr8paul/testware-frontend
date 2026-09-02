@@ -2,9 +2,6 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" />
 <link rel="stylesheet" href="drawflow.min.css" />
 <style>
   /* Colours as CSS variables so applyTheme() (see the script below) can flip
@@ -12,15 +9,9 @@
      each iframe is a separate document, so it can't just inherit the parent
      page's CSS. Dark keeps the same relationships as light (translucent
      node fill lighter than the panel behind it, wires/textures readable at
-     the same low opacity against the new ground).
-
-     NOTE: these are hand-copied from styles.css's --tw-* tokens (and
-     components/deck/index.html's --* tokens) under a different naming
-     convention -- there is no single source of truth across the three
-     files, so a palette change here must be mirrored in both of them by
-     hand. --wf-ink light must match --tw-ink / --ink (#1A1A1A). */
+     the same low opacity against the new ground). */
   :root {
-    --wf-ink: #1A1A1A;
+    --wf-ink: #111111;
     --wf-node-bg: rgba(255, 255, 255, 0.55);
     --wf-node-border: rgba(120, 120, 120, 0.55);
     --wf-node-shadow: rgba(0, 0, 0, 0.12);
@@ -77,7 +68,7 @@
   }
   html, body {
     margin: 0; height: 100%; min-height: 520px; overflow: hidden; background: transparent;
-    font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, sans-serif;
     color: var(--wf-ink);
   }
   /* No panel chrome -- the canvas sits directly on the page's beige ground.
@@ -123,7 +114,6 @@
     font-size: 13px;
     background: var(--wf-node-bg);
     box-shadow: 0 8px 18px var(--wf-node-shadow);
-    color: var(--wf-ink);
   }
   /* draggable affordance only -- no colour / outline change while grabbed
      (Drawflow's own .selected{background:red} is neutralised in drawflow.min.css) */
