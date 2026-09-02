@@ -339,11 +339,13 @@ def _iter_ndjson(resp):
 
 
 def run_query_stream(query: str, categories: dict, status_slot):
-    """Streaming replacement for run_query(). Same contract — returns
-    (description, tools, workflow) — but renders the description
+    """Streaming replacement for run_query(). Returns
+    (description, tools, workflow, ok) -- renders the description
     progressively via st.write_stream() instead of blocking on the whole
     response, and clears the search-bar shimmer as soon as real content
-    starts arriving instead of only once everything is done.
+    starts arriving instead of only once everything is done. `ok` is False
+    whenever the connection dropped at any point, so the caller knows this
+    result is degraded rather than a clean, cacheable success.
     """
     try:
         resp = requests.post(
@@ -366,33 +368,48 @@ def run_query_stream(query: str, categories: dict, status_slot):
 
         status_slot.empty()  # stop the shimmer now that real content is arriving
         description = st.write_stream(_answer_tokens())
+    except requests.RequestException as exc:
+        # Nothing streamed yet -- the connection itself never came up.
+        status_slot.empty()
+        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
+        st.write(msg)
+        return msg, [], {"nodes": [], "edges": []}, False
 
-        tools: list = []
-        workflow: dict = {"nodes": [], "edges": []}
+    tools: list = []
+    workflow: dict = {"nodes": [], "edges": []}
 
-        st.write("")  # spacing so these read as separate from the answer above
-        tools_status = st.status("Building tool suggestions…")
-        workflow_status = st.status("Building workflow diagram…")
+    st.write("")  # spacing so these read as separate from the answer above
+    tools_status = st.status("Building tool suggestions…")
+    workflow_status = st.status("Building workflow diagram…")
 
+    tools_done = False
+    workflow_done = False
+    try:
         for chunk in chunks:
             if chunk["stage"] == "tools":
                 tools = chunk["tools"]
                 if chunk.get("error"):
                     st.caption(chunk["error"])
                 tools_status.update(label="Tool suggestions ready", state="complete")
+                tools_done = True
             elif chunk["stage"] == "workflow":
                 workflow = chunk.get("workflow") or {"nodes": [], "edges": []}
                 if chunk.get("error"):
                     st.caption(chunk["error"])
                 workflow_status.update(label="Workflow diagram ready", state="complete")
+                workflow_done = True
+    except requests.RequestException:
+        # The answer already streamed fine -- keep it, don't discard it for a
+        # generic connection-error message. Only tools/workflow are lost, so
+        # finalize whichever status is still spinning instead of leaving it
+        # stuck, and tell the caller this run shouldn't be treated as done.
+        if not tools_done:
+            tools_status.update(label="Tool suggestions unavailable — connection dropped", state="error")
+        if not workflow_done:
+            workflow_status.update(label="Workflow diagram unavailable — connection dropped", state="error")
+        return description, tools, workflow, False
 
-        return description, tools, workflow
-
-    except requests.RequestException as exc:
-        status_slot.empty()
-        msg = f"Couldn't reach the RAG API at {api_url} — is it running? ({exc})"
-        st.write(msg)
-        return msg, [], {"nodes": [], "edges": []}
+    return description, tools, workflow, True
 
 
 def _pop_label(field_name: str, value: str) -> str:
@@ -414,22 +431,25 @@ def render_search_bar(mode: str):
         st.session_state.query_input = st.session_state.query
 
     with st.container(key=f"tw_searchbar_{mode}"):
-        # Row 1: the text field. The Search icon-button is rendered right
-        # after it and then CSS-positioned to sit *inside* the field on the
-        # right (Streamlit can't put a widget inside st.text_input directly).
-        query_text = st.text_input(
-            "Describe your digital twin problem",  # kept for a11y; hidden below
-            key="query_input",
-            label_visibility="collapsed",
-            placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
-        )
-        submitted = st.button(
-            "",
-            icon=":material/search:",
-            type="primary",
-            key="tw_search_btn",
-            help="Search",
-        )
+        # Row 1: the text field + submit button, batched inside a form so a
+        # value only commits (and triggers a search) on an actual submit --
+        # Enter in the field or the button click -- never on merely losing
+        # focus (e.g. clicking a popover), which a bare st.text_input would
+        # also treat as a commit and search on.
+        with st.form(key=f"tw_searchform_{mode}", border=False):
+            query_text = st.text_input(
+                "Describe your digital twin problem",  # kept for a11y; hidden below
+                key="query_input",
+                label_visibility="collapsed",
+                placeholder="e.g. Digital twin for a hydraulic press with predictive maintenance",
+            )
+            submitted = st.form_submit_button(
+                "",
+                icon=":material/search:",
+                type="primary",
+                key="tw_search_btn",
+                help="Search",
+            )
 
         # Row 2: Industry / Application / Nature-of-project icon popovers, plus the
         # empty area the caller uses to trigger the loading shimmer
@@ -484,11 +504,10 @@ def render_search_bar(mode: str):
 
         status_slot = btn_cols[3].empty()
 
-    # Submit on the Search button OR on Enter. Pressing Enter in the text
-    # field commits `query_input` and reruns, so a non-empty value that
-    # differs from the last executed query means the user hit Enter -- run it.
+    # Inside a form, `submitted` is only True on an actual submit (button
+    # click or Enter in the field) -- never on the field merely losing focus.
     typed = query_text.strip()
-    if typed and (submitted or query_text != (st.session_state.get("query") or "")):
+    if typed and submitted:
         st.session_state.query = query_text
         st.session_state.categories = _current_categories()
         st.rerun()
@@ -523,11 +542,11 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
             with status_slot:
                 st.markdown(_BAR_LOADING_CSS, unsafe_allow_html=True)  # shimmer only on a real fetch
         st.header("Workflow Description")
-        description, tools, workflow = run_query_stream(
+        description, tools, workflow, ok = run_query_stream(
             st.session_state.query, st.session_state.categories, status_slot
         )
         _cache = {"key": _cache_key, "description": description,
-                  "tools": tools, "workflow": workflow}
+                  "tools": tools, "workflow": workflow, "ok": ok}
         st.session_state.results = _cache
     else:
         # Cache hit -- nothing was fetched this rerun, so there's nothing left
@@ -535,6 +554,12 @@ def _render_workflow_result(*, allow_search: bool, allow_save: bool) -> None:
         description = _cache["description"]
         st.header("Workflow Description")
         st.write(description)
+        # A previous fetch dropped mid-stream -- offer an explicit retry
+        # instead of forcing a full page refresh to try again.
+        if allow_search and _cache.get("ok") is False:
+            if st.button("Retry", icon=":material/refresh:", key="tw_retry"):
+                st.session_state.pop("results", None)
+                st.rerun()
 
     tools = _cache["tools"]
     workflow = _cache["workflow"]
