@@ -93,7 +93,11 @@
     scroll-snap-align: start;
     scroll-snap-stop: always;
     display: grid;
-    place-items: center;
+    /* `safe`: centre the frame while it fits, but as soon as the content is
+       taller than the slide, align it to the TOP instead of clipping the
+       headline off the top edge (the overflow is then scrollable within the
+       slide's own snap area). */
+    place-items: safe center;
     padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 4vw, 3rem);
   }
 
@@ -145,7 +149,7 @@
     text-wrap: balance;
     max-width: 22ch;
   }
-  .slide[data-layout="title"] .headline { font-size: clamp(3.4rem, 8vw, 6rem); margin-inline: auto; }
+  .slide[data-layout="title"] .headline { font-size: clamp(3rem, 6.6vw, 5rem); margin-inline: auto; }
   .slide[data-layout="section"] .headline { font-size: clamp(3rem, 6.8vw, 5.2rem); max-width: 18ch; margin-inline: auto; }
   .headline i, .headline em { font-style: normal; color: var(--accent); }
   .subhead {
@@ -207,7 +211,7 @@
     display: block;
     width: 100%;
     height: auto;
-    max-height: 66vh;   /* bigger illustration, still fits one screen */
+    max-height: 56vh;   /* big, but leaves room for the headline above it on one screen */
     border-radius: 14px;
     border: 1px solid var(--hair);
     background: var(--panel-2);
