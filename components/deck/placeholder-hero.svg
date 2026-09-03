@@ -1,25 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" role="img"
-     aria-label="A tree of workflow nodes, in the app's own node style, assembling from real-world data sources — a car, a factory, a live sensor feed — into the testware.dev digital twin">
+     aria-label="A tree of workflow nodes, in the app's own node shapes, assembling from real-world data sources — a car, a factory, a live sensor feed — into the testware.dev digital twin">
 <style>
   text { font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif; }
 
-  /* -- palette: the same tokens the real workflow canvas uses -------------- */
-  .card   { fill: rgba(255,255,255,0.55); stroke: rgba(120,120,120,0.55); }
-  .skel   { fill: rgba(26,26,26,0.14); }
-  .dot    { fill: #FFFFFF; stroke: #6A6A6A; }
-  .wire   { stroke: rgba(17,17,17,0.32); }
+  /* -- palette: the same tokens the real workflow canvas uses, light mode
+     only, deliberately -- this is a static image with no way to see the
+     app's own light/dark toggle (that's in-app state, not OS state), so it
+     used to instead follow the *viewer's* OS colour-scheme preference via
+     @media (prefers-color-scheme: dark). That let it drift out of sync with
+     the app around it (light app, dark image, on the same page, whenever a
+     viewer's OS happened to prefer dark). Fixed light colours keep it
+     predictable everywhere instead. */
+  .card   { fill: rgba(255,255,255,0.92); stroke: rgba(26,26,26,0.4); }
+  .skel   { fill: rgba(26,26,26,0.26); }
+  .dot    { fill: #FFFFFF; stroke: #454542; }
+  .wire   { stroke: rgba(17,17,17,0.5); }
+  .pulse  { fill: rgba(17,17,17,0.88); }
   .icon   { fill: #1A1A1A; stroke: #1A1A1A; }
   .ring   { stroke: #3F7D78; }
   .mark   { stroke: #1A1A1A; }
-  @media (prefers-color-scheme: dark) {
-    .card { fill: rgba(40,37,26,0.65); stroke: rgba(180,175,155,0.35); }
-    .skel { fill: rgba(243,241,234,0.16); }
-    .dot  { fill: #1E1C16; stroke: #8A8570; }
-    .wire { stroke: rgba(243,241,234,0.32); }
-    .icon { fill: #F3F1EA; stroke: #F3F1EA; }
-    .ring { stroke: #5AA39C; }
-    .mark { stroke: #F3F1EA; }
-  }
 
   /* -- assembly: fade/scale in, left to right -------------------------------- */
   @keyframes popIn { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
@@ -30,23 +29,26 @@
 
   .node { transform-box: fill-box; transform-origin: center; opacity: 0; animation: popIn .45s cubic-bezier(.2,.7,.2,1) both; }
   .n-icon1 { animation-delay: .05s }
-  .n-icon2 { animation-delay: .20s }
-  .n-icon3 { animation-delay: .35s }
-  .n-model1{ animation-delay: .85s }
-  .n-model2{ animation-delay: 1.05s }
-  .n-root  { animation: settle .6s cubic-bezier(.2,.7,.2,1) both; animation-delay: 1.55s; }
+  .n-icon2 { animation-delay: .18s }
+  .n-icon3 { animation-delay: .31s }
+  .n-mid1  { animation-delay: .95s }
+  .n-mid2  { animation-delay: 1.10s }
+  .n-mid3  { animation-delay: 1.25s }
+  .n-root  { animation: settle .6s cubic-bezier(.2,.7,.2,1) both; animation-delay: 1.85s; }
 
-  .path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .4s ease-out both; }
+  .path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .35s ease-out both; }
   .w1 { animation-delay: .35s } .w2 { animation-delay: .45s }
   .w3 { animation-delay: .55s } .w4 { animation-delay: .65s }
-  .w5 { animation-delay: 1.05s } .w6 { animation-delay: 1.2s }
+  .w5 { animation-delay: .75s }
+  .w6 { animation-delay: 1.35s } .w7 { animation-delay: 1.48s } .w8 { animation-delay: 1.61s }
 
   .ring { fill: none; stroke-width: 2.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
-  .n-root .ring { animation: ringPulse 2.6s ease-in-out 2.2s infinite; }
+  .n-root .ring { animation: ringPulse 2.6s ease-in-out 2.5s infinite; }
 
   .flow { offset-rotate: 0deg; opacity: 0; animation: flow 2.6s linear infinite; }
-  .f1 { offset-path: path("M385,120 C450,120 450,166 495,166"); animation-delay: 2.3s; }
-  .f2 { offset-path: path("M385,240 C450,240 450,194 495,194"); animation-delay: 3.5s; }
+  .f1 { offset-path: path("M385,80  C450,80  450,160 495,160"); animation-delay: 2.6s; }
+  .f2 { offset-path: path("M385,180 C450,180 450,180 495,180"); animation-delay: 3.5s; }
+  .f3 { offset-path: path("M385,280 C450,280 450,200 495,200"); animation-delay: 4.4s; }
 
   @media (prefers-reduced-motion: reduce) {
     .node, .path, .ring, .flow { animation: none !important; }
@@ -57,23 +59,28 @@
   }
 </style>
 
-<!-- wires: data flowing right, from the real world into the model, then into the twin -->
-<path class="path wire w1" d="M116,90  C195,90  195,110 275,110" pathLength="1"/>
-<path class="path wire w2" d="M116,180 C195,180 195,130 275,130" pathLength="1"/>
-<path class="path wire w3" d="M116,180 C195,180 195,230 275,230" pathLength="1"/>
-<path class="path wire w4" d="M116,270 C195,270 195,250 275,250" pathLength="1"/>
-<path class="path wire w5" d="M385,120 C450,120 450,166 495,166" pathLength="1"/>
-<path class="path wire w6" d="M385,240 C450,240 450,194 495,194" pathLength="1"/>
+<!-- wires: data flowing right, from the real world into the models, then into the twin -->
+<path class="path wire w1" d="M116,80  C195,80  195,70  275,70"  pathLength="1"/>
+<path class="path wire w2" d="M116,180 C195,180 195,90  275,90"  pathLength="1"/>
+<path class="path wire w3" d="M116,180 C195,180 195,170 275,170" pathLength="1"/>
+<path class="path wire w4" d="M116,280 C195,280 195,190 275,190" pathLength="1"/>
+<path class="path wire w5" d="M116,280 C195,280 195,280 275,280" pathLength="1"/>
+<path class="path wire w6" d="M385,80  C450,80  450,160 495,160" pathLength="1"/>
+<path class="path wire w7" d="M385,180 C450,180 450,180 495,180" pathLength="1"/>
+<path class="path wire w8" d="M385,280 C450,280 450,200 495,200" pathLength="1"/>
 
-<!-- two little pulses of live data, once everything has settled -->
-<circle class="flow f1" r="3.5" fill="#3F7D78"/>
-<circle class="flow f2" r="3.5" fill="#A9822F"/>
+<!-- three little pulses of live data, once everything has settled: the same
+     neutral ink as the wires themselves, just more opaque, matching the
+     real canvas's own connection colour rather than inventing a new one -->
+<circle class="flow pulse f1" r="3.5"/>
+<circle class="flow pulse f2" r="3.5"/>
+<circle class="flow pulse f3" r="3.5"/>
 
 <!-- LEFT: the real objects the models pull data from -->
 <g class="node n-icon1">
-  <rect class="card" x="40" y="67" width="76" height="46" rx="23" stroke-width="1.3"/>
-  <circle class="dot" cx="116" cy="90" r="3.6" stroke-width="1.3"/>
-  <g transform="translate(78,90) scale(0.82) translate(-12,-12)">
+  <rect class="card" x="40" y="57" width="76" height="46" rx="23" stroke-width="1.3"/>
+  <circle class="dot" cx="116" cy="80" r="3.6" stroke-width="1.3"/>
+  <g transform="translate(78,80) scale(0.82) translate(-12,-12)">
     <path class="icon" fill="none" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"
           d="M5,11 L6.5,6.5 C6.7,5.9 7.3,5.5 8,5.5 H16 C16.7,5.5 17.3,5.9 17.5,6.5 L19,11
              M3,11 H21 A1,1 0 0 1 22,12 V16 A1,1 0 0 1 21,17 H19
@@ -91,41 +98,52 @@
 </g>
 
 <g class="node n-icon3">
-  <rect class="card" x="40" y="247" width="76" height="46" rx="23" stroke-width="1.3"/>
-  <circle class="dot" cx="116" cy="270" r="3.6" stroke-width="1.3"/>
-  <g transform="translate(78,270)">
+  <rect class="card" x="40" y="257" width="76" height="46" rx="23" stroke-width="1.3"/>
+  <circle class="dot" cx="116" cy="280" r="3.6" stroke-width="1.3"/>
+  <g transform="translate(78,280)">
     <polyline class="icon" fill="none" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"
               points="-12,0 -6,0 -2,-9 3,10 7,0 12,0"/>
   </g>
 </g>
 
-<!-- MIDDLE: the models, each fed by one or two real-world sources -->
-<g class="node n-model1">
-  <rect class="card" x="275" y="88" width="110" height="64" rx="10" stroke-width="1.3"/>
-  <circle class="dot" cx="275" cy="110" r="3.6" stroke-width="1.3"/>
-  <circle class="dot" cx="275" cy="130" r="3.6" stroke-width="1.3"/>
-  <circle class="dot" cx="385" cy="120" r="3.6" stroke-width="1.3"/>
-  <rect class="skel" x="291" y="107" width="46" height="6" rx="3"/>
-  <rect class="skel" x="291" y="121" width="30" height="6" rx="3"/>
-  <rect class="skel" x="291" y="135" width="60" height="6" rx="3"/>
+<!-- MIDDLE: three of the app's own node shapes: process (sharp box), database
+     (cylinder), output (footed card), each fed by the real-world sources above -->
+<g class="node n-mid1">
+  <rect class="card" x="275" y="38" width="110" height="64" rx="2" stroke-width="1.3"/>
+  <circle class="dot" cx="275" cy="70" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="275" cy="90" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="385" cy="80" r="3.6" stroke-width="1.3"/>
+  <rect class="skel" x="291" y="57" width="46" height="6" rx="3"/>
+  <rect class="skel" x="291" y="71" width="30" height="6" rx="3"/>
+  <rect class="skel" x="291" y="85" width="60" height="6" rx="3"/>
 </g>
 
-<g class="node n-model2">
-  <rect class="card" x="275" y="208" width="110" height="64" rx="10" stroke-width="1.3"/>
-  <circle class="dot" cx="275" cy="230" r="3.6" stroke-width="1.3"/>
-  <circle class="dot" cx="275" cy="250" r="3.6" stroke-width="1.3"/>
-  <circle class="dot" cx="385" cy="240" r="3.6" stroke-width="1.3"/>
-  <rect class="skel" x="291" y="227" width="46" height="6" rx="3"/>
-  <rect class="skel" x="291" y="241" width="30" height="6" rx="3"/>
-  <rect class="skel" x="291" y="255" width="60" height="6" rx="3"/>
+<g class="node n-mid2">
+  <rect class="card" x="275" y="148" width="110" height="64" rx="55" ry="20" stroke-width="1.3"/>
+  <circle class="dot" cx="275" cy="170" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="275" cy="190" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="385" cy="180" r="3.6" stroke-width="1.3"/>
+  <rect class="skel" x="291" y="171" width="46" height="6" rx="3"/>
+  <rect class="skel" x="291" y="185" width="30" height="6" rx="3"/>
+</g>
+
+<g class="node n-mid3">
+  <path class="card" stroke-width="1.3"
+        d="M278,258 H382 A3,3 0 0 1 385,261 V294 A18,18 0 0 1 367,312 H293
+           A18,18 0 0 1 275,294 V261 A3,3 0 0 1 278,258 Z"/>
+  <circle class="dot" cx="275" cy="280" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="385" cy="280" r="3.6" stroke-width="1.3"/>
+  <rect class="skel" x="291" y="277" width="46" height="6" rx="3"/>
+  <rect class="skel" x="291" y="291" width="30" height="6" rx="3"/>
 </g>
 
 <!-- RIGHT: the twin they converge into -->
 <g class="node n-root">
   <rect class="ring" x="482" y="127" width="156" height="106" rx="22"/>
   <rect class="card" x="495" y="138" width="130" height="84" rx="18" stroke-width="1.5"/>
-  <circle class="dot" cx="495" cy="166" r="3.6" stroke-width="1.3"/>
-  <circle class="dot" cx="495" cy="194" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="495" cy="160" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="495" cy="180" r="3.6" stroke-width="1.3"/>
+  <circle class="dot" cx="495" cy="200" r="3.6" stroke-width="1.3"/>
   <path class="mark" fill="none" stroke-width="2.6" stroke-linejoin="miter" stroke-linecap="square"
         d="M580,172.5 V160 H540 V200 H580 V187.5"/>
 </g>

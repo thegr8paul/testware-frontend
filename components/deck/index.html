@@ -541,12 +541,35 @@
     setHeight(h);
   }
   var rt;
+  function scheduleHeight() {
+    clearTimeout(rt);
+    rt = setTimeout(setViewportHeight, 150);
+  }
   try {
-    window.parent.addEventListener("resize", function () {
-      clearTimeout(rt);
-      rt = setTimeout(setViewportHeight, 150);
-    }, { passive: true });
+    window.parent.addEventListener("resize", scheduleHeight, { passive: true });
+    window.parent.addEventListener("load", scheduleHeight, { passive: true });
   } catch (e) { /* cross-origin -- height just won't track a parent resize */ }
+
+  // `resize` only fires on a real viewport-size change -- it never fires for
+  // the outer page simply reflowing (fonts finishing, Streamlit's own
+  // "app is running" chrome collapsing, a rerun changing content height
+  // above this component). On first load that reflow can land AFTER our one
+  // early measurement, leaving the deck short until something else forces a
+  // recompute (a click/scroll happening to coincide with a real resize) --
+  // this is what fixed-only-after-interaction looked like. A ResizeObserver
+  // on the outer document catches that reflow directly, no interaction
+  // needed. Same-origin only; harmless no-op otherwise.
+  try {
+    if ("ResizeObserver" in window.parent) {
+      new window.parent.ResizeObserver(scheduleHeight)
+        .observe(window.parent.document.documentElement);
+    }
+  } catch (e) { /* cross-origin -- covered by the retries below instead */ }
+
+  // Belt-and-suspenders: a few staggered retries after boot, since the very
+  // first measurement can race the outer page's own layout/font settling
+  // regardless of which observers are available.
+  [50, 200, 500, 1200, 2500].forEach(function (ms) { setTimeout(setViewportHeight, ms); });
 
   // ---- outer-page scroll handoff -----------------------------------------
   // The deck is the middle of three page areas (app -> presentation ->

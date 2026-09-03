@@ -27,22 +27,22 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  --tw-bg: #FBFAF7;
+  --tw-bg: #FAFAFA;
   --tw-bg-elevated: #FFFFFF;
-  --tw-panel-2: #F1EFE9;
+  --tw-panel-2: #F0F0F0;
   --tw-ink: #1A1A1A;
-  --tw-ink-2: #3A3A36;
-  --tw-muted: #6B6B66;
-  --tw-muted-2: #9A968C;
-  --tw-hair: #E7E3DA;
-  --tw-hair-strong: #C9C3B6;
+  --tw-ink-2: #3A3A3A;
+  --tw-muted: #6B6B6B;
+  --tw-muted-2: #9A9A9A;
+  --tw-hair: #E3E3E3;
+  --tw-hair-strong: #C7C7C7;
   --tw-accent: #111111;
   --tw-accent-hover: #000000;
   --tw-accent-ink: #FFFFFF;
-  --tw-chip-bg: #F4F2EC;
-  --tw-chip-border: #E0DBCF;
-  --tw-hover-fill: #ECE8DE;
-  --tw-disabled-ink: #A6A299;
+  --tw-chip-bg: #F2F2F2;
+  --tw-chip-border: #DFDFDF;
+  --tw-hover-fill: #EAEAEA;
+  --tw-disabled-ink: #A3A3A3;
   --tw-shimmer: rgba(17, 17, 17, 0.10);
   --tw-shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.12), 0 14px 34px rgba(0, 0, 0, 0.14);
   --tw-shadow-sm-focus: 0 2px 6px rgba(0, 0, 0, 0.14), 0 16px 38px rgba(0, 0, 0, 0.18);
@@ -52,45 +52,45 @@
      after screenshot. Going for unmistakable rather than subtle this time. */
   /* Search-bar card -- a clear grey tone (was a tan #D4CCBA that read as
      nearly invisible against the cream page in light mode). */
-  --tw-card-border: #B3AEA2;
-  --tw-card-bg: #D8D5CD;
+  --tw-card-border: #AFAFAF;
+  --tw-card-bg: #D6D6D6;
   /* Answer bubble -- a deliberately darkish grey so it reads clearly against
      the cream page background (earlier, lighter values were too close to the
      bg to be visible at all). */
-  --tw-bubble-bg: #DAD6CD;
-  --tw-bubble-border: #B7B1A4;
+  --tw-bubble-bg: #D9D9D9;
+  --tw-bubble-border: #B6B6B6;
 }
 
 /* app.py's theme bootstrap stamps data-theme on <html> every rerun (see
    render_header()'s toggle + the theme_bridge component for the persisted
    choice), so this is the only place dark values are defined. */
 [data-theme="dark"] {
-  --tw-bg: #15140F;
-  --tw-bg-elevated: #1E1C16;
-  --tw-panel-2: #262319;
-  --tw-ink: #F3F1EA;
-  --tw-ink-2: #D8D4C6;
-  --tw-muted: #9C9788;
-  --tw-muted-2: #726D5E;
-  --tw-hair: #34311F;
-  --tw-hair-strong: #4A4530;
-  --tw-accent: #F3F1EA;
+  --tw-bg: #141414;
+  --tw-bg-elevated: #1D1D1D;
+  --tw-panel-2: #242424;
+  --tw-ink: #F2F2F2;
+  --tw-ink-2: #D6D6D6;
+  --tw-muted: #9C9C9C;
+  --tw-muted-2: #707070;
+  --tw-hair: #333333;
+  --tw-hair-strong: #494949;
+  --tw-accent: #F2F2F2;
   --tw-accent-hover: #FFFFFF;
-  --tw-accent-ink: #14130E;
-  --tw-chip-bg: #201E15;
-  --tw-chip-border: #3A3626;
-  --tw-hover-fill: #2A2718;
-  --tw-disabled-ink: #6E6A5B;
+  --tw-accent-ink: #131313;
+  --tw-chip-bg: #1F1F1F;
+  --tw-chip-border: #383838;
+  --tw-hover-fill: #292929;
+  --tw-disabled-ink: #6C6C6C;
   --tw-shimmer: rgba(255, 255, 255, 0.08);
   --tw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.45);
-  --tw-shadow-sm-focus: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.55);
+  --tw-shadow-sm-focus: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 36px rgba(0, 0, 0, 0.55);
   /* Same "unmistakable, not subtle" intent as the light card above -- an
      earlier value here (#1E1C16, ~2% lighter than --tw-bg) was too close to
      the page background to read as a card at all in dark mode. */
-  --tw-card-border: #5C5138;
-  --tw-card-bg: #332C1D;
-  --tw-bubble-bg: #33302A;
-  --tw-bubble-border: #55503F;
+  --tw-card-border: #5A5A5A;
+  --tw-card-bg: #333333;
+  --tw-bubble-bg: #323232;
+  --tw-bubble-border: #545454;
   color-scheme: dark;
 }
 
