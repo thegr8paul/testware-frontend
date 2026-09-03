@@ -995,6 +995,55 @@ _NAV_RAIL_JS = """
   (document.body || document.documentElement).appendChild(rail);
 
   function q(s) { return document.querySelector(s); }
+
+  // --- cold-load layout kick ---------------------------------------------
+  // Streamlit bakes each custom-component iframe's *width* to whatever the
+  // content column measures at the instant the component first renders, and
+  // only re-sends it on an app rerun or a real window `resize`. On a cold
+  // reload the deck / workflow iframes routinely mount before the layout has
+  // settled (web font swap, custom CSS max-width + header padding applying a
+  // tick late, Streamlit's own "running" chrome collapsing), so they latch a
+  // too-narrow width and never widen -- the deck shows a blank strip on the
+  // right, the workflow canvas frames its graph to a narrow box and parks it
+  // top-left with dead space to the right and below. A synthetic `resize`
+  // once the width actually changes makes Streamlit re-measure and re-push
+  // the correct width to every component (and the deck re-runs its own
+  // height calc, which already listens on `resize`). Bounded so it can't
+  // feed back on itself. Content-only; no backend involvement.
+  if (!window.__twLayoutKick) {
+    window.__twLayoutKick = true;
+    var kicks = 0, KICK_MAX = 24, kickDeadline = Date.now() + 12000;
+    function widthNow() {
+      var el = document.querySelector('[data-testid="stAppViewContainer"]')
+            || document.querySelector('[data-testid="stMain"]')
+            || document.documentElement;
+      return el ? el.clientWidth : 0;
+    }
+    var lastW = widthNow();
+    function kick(force) {
+      if (kicks >= KICK_MAX || Date.now() > kickDeadline) return;
+      var w = widthNow();
+      if (!force && w === lastW) return;
+      lastW = w;
+      kicks++;
+      try { window.dispatchEvent(new Event("resize")); } catch (e) {}
+    }
+    [0, 150, 400, 900, 1800, 3500, 6000].forEach(function (ms) {
+      setTimeout(function () { kick(true); }, ms);
+    });
+    window.addEventListener("load", function () { kick(true); }, { once: true });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { kick(true); });
+    }
+    try {
+      var kro = new ResizeObserver(function () { kick(false); });
+      var kt = document.querySelector('[data-testid="stAppViewContainer"]')
+            || document.documentElement;
+      if (kt) kro.observe(kt);
+      setTimeout(function () { try { kro.disconnect(); } catch (e) {} }, 12000);
+    } catch (e) { /* no ResizeObserver -- the timed kicks cover it */ }
+  }
+
   function scroller() {
     var c = [q('[data-testid="stAppViewContainer"]'), q('[data-testid="stMain"]'),
              document.scrollingElement, document.documentElement, document.body];

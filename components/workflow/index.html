@@ -280,6 +280,9 @@
     var settleUntil = 0;      // rAF wire-redraw deadline after a build
     var wheelBound = false;    // our smooth wheel handler is installed once
     var wiringBound = false;   // our connection-editing handlers are installed once
+    var userAdjusted = false;  // user has zoomed / panned -> stop auto-refitting on resize
+    var fitW = 0, fitH = 0;    // #panel size the last autoFit() was computed for
+    var refitT = null;         // debounce timer for the resize-driven re-fit
 
     function panel() { return document.getElementById("panel"); }
     function sized() {
@@ -644,7 +647,26 @@
         editor.precanvas.style.transform =
           "translate(" + dx + "px, " + dy + "px) scale(" + z + ")";
       } catch (e) { /* leave view as-is */ }
+      var pp = panel();
+      if (pp) { fitW = pp.clientWidth; fitH = pp.clientHeight; }
       drawWires();
+    }
+
+    // Re-fit the view when #panel's own size changes -- this is exactly what
+    // happens when Streamlit finally hands the iframe its correct pixel width
+    // a beat after a cold page load (until then the canvas is framed to a
+    // too-narrow box and sits in the top-left with dead space to the right /
+    // below). Skipped once the user has zoomed or panned, so it never fights
+    // a deliberate view. Debounced; ignores sub-pixel / tiny jitter.
+    function maybeRefit() {
+      if (userAdjusted || !editor) return;
+      var p = panel();
+      if (!p) return;
+      var w = p.clientWidth, h = p.clientHeight;
+      if (w < 40 || h < 40) return;
+      if (Math.abs(w - fitW) < 8 && Math.abs(h - fitH) < 8) return;
+      clearTimeout(refitT);
+      refitT = setTimeout(autoFit, 80);
     }
 
     // --- smooth, cursor-anchored wheel zoom + two-finger-scroll pan ---------
@@ -669,6 +691,7 @@
         if (!(e.ctrlKey || e.metaKey)) return;   // let the page scroll
         e.preventDefault();
         e.stopImmediatePropagation();
+        userAdjusted = true;   // deliberate zoom -> don't auto-refit on resize
 
         var rect = panel().getBoundingClientRect();
         var px = e.clientX - rect.left, py = e.clientY - rect.top;
@@ -697,6 +720,7 @@
     }
 
     function build(args) {
+      userAdjusted = false;   // fresh graph -> auto-fit is back in charge
       var wf = args.workflow || {};
       var nodes = wf.nodes || [];
       var edges = wf.edges || [];
@@ -786,8 +810,10 @@
       // handled by installWiring() (Drawflow's own port dots stay hidden --
       // we drive the drag from our .dot anchors and render #wires ourselves).
       editor.editor_mode = "edit";
-      // redraw our wires whenever Drawflow pans or zooms
-      editor.on("translate", drawWires);
+      // redraw our wires whenever Drawflow pans or zooms; a Drawflow-driven
+      // translate is the user dragging the canvas background -> lock out the
+      // resize auto-refit so it never yanks their view back.
+      editor.on("translate", function () { userAdjusted = true; drawWires(); });
       editor.on("zoom", drawWires);
       // ...and live, while a node is being dragged; persist the new position
       editor.on("nodeMoved", function () { drawWires(); emitEdit(); });
@@ -820,9 +846,12 @@
         _downId = null;
       });
 
-      // keep wires glued through later layout changes (tab shown, resize)
+      // keep wires glued through later layout changes (tab shown, resize),
+      // and re-frame the graph if the panel itself was resized (e.g. Streamlit
+      // pushing the real iframe width after a cold load) -- unless the user
+      // has taken over the view.
       if (panelRO) { panelRO.disconnect(); }
-      panelRO = new ResizeObserver(function () { drawWires(); });
+      panelRO = new ResizeObserver(function () { drawWires(); maybeRefit(); });
       panelRO.observe(panel());
 
       // and follow the layout as it settles for ~1.2s after the build
@@ -867,7 +896,10 @@
     }
 
     var fitBtn = document.getElementById("tw-fit");
-    if (fitBtn) fitBtn.addEventListener("click", autoFit);
+    if (fitBtn) fitBtn.addEventListener("click", function () {
+      userAdjusted = false;   // explicit "fit" -> hand the view back to auto-fit
+      autoFit();
+    });
 
     window.addEventListener("message", function (event) {
       var d = event.data || {};
