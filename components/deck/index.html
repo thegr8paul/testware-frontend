@@ -286,6 +286,15 @@
     stroke-linejoin: round;
     overflow: visible;
   }
+  /* Context-1 centrepiece: a big blue-highlighted car */
+  .bubble-hero {
+    border-color: #2F6BFF;
+    border-width: 3px;
+    color: #2F6BFF;
+    z-index: 2;
+    box-shadow: 0 3px 10px rgba(47, 107, 255, .20), 0 14px 32px rgba(47, 107, 255, .16);
+  }
+  .bubble-hero svg { width: 58%; height: 58%; stroke-width: 1.6; }
 
   /* Context-3 split real-car / digital-twin pictogram (its own colours are
      inside the inline <svg>). Framed like the other media images. */
@@ -492,11 +501,22 @@
     space:           "<circle cx='12' cy='12' r='5'/><ellipse cx='12' cy='12' rx='10' ry='3.6' transform='rotate(-22 12 12)'/>",
     nuclear:         "<circle cx='12' cy='12' r='2'/><ellipse cx='12' cy='12' rx='9' ry='3.6'/><ellipse cx='12' cy='12' rx='9' ry='3.6' transform='rotate(60 12 12)'/><ellipse cx='12' cy='12' rx='9' ry='3.6' transform='rotate(120 12 12)'/>",
     metals:          "<path d='M6 5h12M6 19h12M9 5v2h6V5M9 19v-2h6v2M12 7v10'/>",
-    mining:          "<path d='M5 19l9-9'/><path d='M8 6c4-1 8.5 1.5 10 5M18 6c-1.5 4-4 6.5-7.5 8'/>"
+    mining:          "<path d='M5 19l9-9'/><path d='M8 6c4-1 8.5 1.5 10 5M18 6c-1.5 4-4 6.5-7.5 8'/>",
+    grid:            "<path d='M12 3l7 17M12 3L5 20M5 20h14M8 9h8M7 13.5h10'/>",
+    ports:           "<path d='M5 20V4h9l5 5M5 9h9M9 9v11M15 13.5V20'/>",
+    datacenter:      "<rect x='5' y='4' width='14' height='16' rx='1'/><path d='M8 8h8M8 12h8M8 16h5'/><circle cx='16' cy='16' r='1'/>",
+    mobility:        "<path d='M5 20 9 4M19 20 15 4M12 6v2M12 11v2M12 16v2'/>",
+    textiles:        "<rect x='7' y='4' width='10' height='16' rx='1'/><path d='M7 8h10M7 16h10M4 6v12M20 6v12'/>",
+    forestry:        "<path d='M12 21v-6M12 15l-4-3 4-1M12 15l4-3-4-1M12 11l-3-3 3-1 3 1-3 3'/>",
+    retail:          "<path d='M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2'/>",
+    oilgas:          "<path d='M6 9c0-3 12-3 12 0v9c0 2-12 2-12 0zM6 13.5c0 2 12 2 12 0'/>",
+    wind:            "<path d='M12 13v8M9 21h6M12 13l1.5-8 3.5 3.5M12 13l-6.5 2.5-1-4.5M12 13l5.5 5.5-4.5 1'/>",
+    hydro:           "<path d='M4 6c4 3 4-3 8 0s4-3 8 0M4 6v14h16V6M9 12v8M14.5 10v10'/>",
+    car:             "<path d='M3 13l2-5h11l3 4h1.5a1.5 1.5 0 0 1 1.5 1.5V16h-3M3 13v3h4'/><path d='M11 16h5'/><circle cx='8' cy='16.5' r='2'/><circle cx='16' cy='16.5' r='2'/>"
   };
   // just {icon key, name} -- positions are computed as a round cluster below
   var BUBBLES = [
-    { ic: "automotive", n: "Automotive" }, { ic: "aerospace", n: "Aerospace" },
+    { ic: "aerospace", n: "Aerospace" },
     { ic: "renewables", n: "Renewables" }, { ic: "batteries", n: "Batteries" },
     { ic: "energy", n: "Energy" }, { ic: "infrastructure", n: "Infrastructure" },
     { ic: "manufacturing", n: "Manufacturing" }, { ic: "healthcare", n: "Healthcare" },
@@ -508,24 +528,41 @@
     { ic: "water", n: "Water" }, { ic: "logistics", n: "Logistics" },
     { ic: "telecom", n: "Telecom" }, { ic: "space", n: "Space" },
     { ic: "nuclear", n: "Nuclear" }, { ic: "metals", n: "Metals" },
-    { ic: "mining", n: "Mining" }
+    { ic: "mining", n: "Mining" }, { ic: "grid", n: "Power Grid" },
+    { ic: "ports", n: "Ports" }, { ic: "datacenter", n: "Data Centres" },
+    { ic: "mobility", n: "Mobility" }, { ic: "textiles", n: "Textiles" },
+    { ic: "forestry", n: "Forestry" }, { ic: "retail", n: "Retail" },
+    { ic: "oilgas", n: "Oil & Gas" }, { ic: "wind", n: "Wind" },
+    { ic: "hydro", n: "Hydro" }
   ];
   function buildBubbles() {
     var wrap = document.createElement("div");
     wrap.className = "bubbles";
     wrap.setAttribute("role", "img");
     wrap.setAttribute("aria-label", "Industry verticals: " + BUBBLES.map(function (b) { return b.n; }).join(", "));
+    // a big, blue-highlighted car at the centre -- automotive as the hero
+    var hero = document.createElement("div");
+    hero.className = "bubble bubble-hero";
+    hero.setAttribute("data-anim", "");
+    hero.style.setProperty("--i", 0);
+    hero.style.left = "50%";
+    hero.style.top = "50%";
+    hero.style.width = "17%";
+    hero.title = "Automotive";
+    hero.innerHTML = "<svg viewBox='0 0 24 24' aria-hidden='true'>" + IND_ICONS.car + "</svg>";
+    wrap.appendChild(hero);
+
     var N = BUBBLES.length, GA = Math.PI * (3 - Math.sqrt(5));   // golden angle -> even round cluster
     BUBBLES.forEach(function (b, i) {
-      var rn = Math.sqrt((i + 0.55) / N);          // 0..1 normalised radius
+      var rn = 0.24 + 0.76 * Math.sqrt((i + 0.55) / N);   // small clear centre for the hero
       var ang = i * GA;
       var cx = 50 + Math.cos(ang) * rn * 46;
-      var cy = 50 + Math.sin(ang) * rn * 41;
-      var size = 17.5 - rn * 6 + (((i * 7) % 5) - 2) * 0.9;   // larger in the centre + slight jitter
+      var cy = 50 + Math.sin(ang) * rn * 42;
+      var size = 11 + (((i * 7) % 5) - 2) * 0.5;   // near-uniform, faint jitter
       var d = document.createElement("div");
       d.className = "bubble";
       d.setAttribute("data-anim", "");
-      d.style.setProperty("--i", i);
+      d.style.setProperty("--i", i + 1);
       d.style.left = cx.toFixed(2) + "%";
       d.style.top = cy.toFixed(2) + "%";
       d.style.width = Math.max(10, size).toFixed(2) + "%";
@@ -751,24 +788,26 @@
       "<circle cx='64' cy='89' r='9'/>" +                                          // head
       "<circle cx='60.5' cy='89' r='2'/><circle cx='67.5' cy='89' r='2'/><path d='M62.5 89h3'/>" + // glasses
       "<path d='M64 98v22'/>" +                                                    // torso
-      "<path d='M64 104 84 111M64 110 82 121'/>" +                                 // arms to panel
+      "<path d='M64 104 81 109M64 110 79 118'/>" +                                 // arms gesturing at the mess
       "<path d='M64 120 56 136M64 120 72 136'/>" +                                 // legs
     "</g>" +
-    "<path class='ee-l' d='M76 78c2 2 2 5-1 5s-3-3-1-5z'/>" +                       // sweat drop
-    // scattered nodes the expert is struggling to organise
-    "<g class='ee-l'>" +
+    "<path class='ee-l' d='M80 85c2 2 2 5-1 5s-3-3-1-5z'/>" +                       // sweat drop
+    // tangled wires FIRST so they sit behind the scattered nodes
+    "<g class='ee-s'>" +
+      "<path d='M99 107C106 119 120 99 125 117'/>" +
+      "<path d='M118 104C108 120 132 128 125 123'/>" +
+      "<path d='M104 124C114 132 98 140 110 143'/>" +
+      "<path d='M103 101C95 108 95 116 100 118'/>" +
+    "</g>" +
+    // scattered nodes the expert is struggling to organise -- opaque fill so
+    // the tangled wires behind them are masked, not drawn over
+    "<g class='ee-l' style='fill:var(--bg)'>" +
       "<circle cx='97' cy='101' r='6'/>" +
       "<rect x='112' y='94' width='16' height='10' rx='3' transform='rotate(-13 120 99)'/>" +
       "<rect x='89' y='117' width='18' height='9' rx='4.5' transform='rotate(9 98 121)'/>" +
       "<circle cx='125' cy='123' r='6'/>" +
       "<rect x='103' y='135' width='15' height='9' rx='2' transform='rotate(-7 110 139)'/>" +
       "<circle cx='134' cy='108' r='4'/>" +
-    "</g>" +
-    "<g class='ee-s'>" +                                                            // tangled, crossing wires
-      "<path d='M99 107C106 119 120 99 125 117'/>" +
-      "<path d='M118 104C108 120 132 128 125 123'/>" +
-      "<path d='M104 124C114 132 98 140 110 143'/>" +
-      "<path d='M103 101C95 108 95 116 100 118'/>" +
     "</g>" +
     // --- right scene: a baby taps one big button ---
     "<circle class='ee-l' cx='228' cy='96' r='16'/>" +                             // head
@@ -1549,6 +1588,11 @@
     var jumping = false;
 
     window.addEventListener("wheel", function (e) {
+      // While a one-shot handoff smooth-scroll is running, swallow every
+      // wheel tick -- forwarding them would fight the animation and make the
+      // landing (e.g. onto the Examples heading) judder.
+      if (jumping) { e.preventDefault(); return; }
+
       var rect = frameEl.getBoundingClientRect();
       // "aligned" == the iframe's top has reached the outer header line.
       var aligned = rect.top <= HEADER_OFFSET + ALIGN_SLOP;
@@ -1572,7 +1616,7 @@
         } else if (!jumping) {
           jumping = true;
           outerSmoothBy(exTop - HEADER_OFFSET);
-          setTimeout(function () { jumping = false; }, 650);
+          setTimeout(function () { jumping = false; }, 820);
         }
         return;
       }
@@ -1701,29 +1745,24 @@
     /* output */              return rrect(x, y, w, h, [1, 1, s * 0.5, s * 0.5]);
   }
 
-  // Flowchart-style routing between two node centres: leave one node, make a
-  // right-angle elbow at the midpoint, arrive at the other -- like the
-  // workflow-canvas connectors, not a straight diagonal.
-  function elbowPts(a, b, horiz) {
-    if (horiz) { var mx = (a[0] + b[0]) / 2; return [a, [mx, a[1]], [mx, b[1]], b]; }
-    var my = (a[1] + b[1]) / 2; return [a, [a[0], my], [b[0], my], b];
-  }
-  function polyLen(p) {
-    var L = 0;
-    for (var i = 1; i < p.length; i++) L += Math.abs(p[i][0] - p[i - 1][0]) + Math.abs(p[i][1] - p[i - 1][1]);
-    return L;
-  }
-  function polyAt(p, t) {
-    var d = t * polyLen(p);
-    for (var i = 1; i < p.length; i++) {
-      var seg = Math.abs(p[i][0] - p[i - 1][0]) + Math.abs(p[i][1] - p[i - 1][1]);
-      if (d <= seg || i === p.length - 1) {
-        var f = seg ? d / seg : 0;
-        return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * f, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * f];
-      }
-      d -= seg;
+  // Connection routing in the title-hero's principle: leave a node along one
+  // axis, ease through an S-bend, arrive along the same axis -- a cubic
+  // Bezier whose control handles sit at the midpoint (mid-x for a mostly-
+  // horizontal link, mid-y otherwise).
+  function edgeCurve(a, b) {
+    if (Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1])) {
+      var mx = (a[0] + b[0]) / 2;
+      return [a, [mx, a[1]], [mx, b[1]], b];
     }
-    return p[p.length - 1];
+    var my = (a[1] + b[1]) / 2;
+    return [a, [a[0], my], [b[0], my], b];
+  }
+  function bezAt(c, t) {
+    var u = 1 - t, a = u * u * u, bb = 3 * u * u * t, cc = 3 * u * t * t, d = t * t * t;
+    return [
+      a * c[0][0] + bb * c[1][0] + cc * c[2][0] + d * c[3][0],
+      a * c[0][1] + bb * c[1][1] + cc * c[2][1] + d * c[3][1]
+    ];
   }
 
   function resize() {
@@ -1748,12 +1787,11 @@
 
     ctx.strokeStyle = NET_EDGE;
     ctx.lineWidth = 1;
-    ctx.lineJoin = "round";
     ctx.beginPath();
     for (var e = 0; e < edges.length; e++) {
-      var pp = elbowPts(S[edges[e][0]], S[edges[e][1]], (e & 1) === 0);
-      ctx.moveTo(pp[0][0], pp[0][1]);
-      for (var pi = 1; pi < pp.length; pi++) ctx.lineTo(pp[pi][0], pp[pi][1]);
+      var c = edgeCurve(S[edges[e][0]], S[edges[e][1]]);
+      ctx.moveTo(c[0][0], c[0][1]);
+      ctx.bezierCurveTo(c[1][0], c[1][1], c[2][0], c[2][1], c[3][0], c[3][1]);
     }
     ctx.stroke();
 
@@ -1764,7 +1802,7 @@
       for (var q = pulses.length - 1; q >= 0; q--) {
         var P = pulses[q]; P.t += 0.02;
         if (P.t >= 1) { pulses.splice(q, 1); continue; }
-        var pt = polyAt(elbowPts(S[edges[P.e][0]], S[edges[P.e][1]], (P.e & 1) === 0), P.t);
+        var pt = bezAt(edgeCurve(S[edges[P.e][0]], S[edges[P.e][1]]), P.t);
         ctx.fillRect(pt[0] - 1.5, pt[1] - 1.5, 3, 3);
       }
     }

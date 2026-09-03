@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import random
@@ -537,39 +538,52 @@ def _render_tool_cards(tools: list, focus_id: str | None = None) -> None:
             st.subheader(tool["name"])  # tool name as subheading
             st.write(tool["rationale"])  # why this tool was suggested (explainability)
 
-            # tag row: fidelity tier / spatial scale / temporal scale / standards,
-            # each labeled so it's clear what kind of value each tag is. Real
-            # catalogue entries frequently leave these null, hence the fallback.
-            tag_parts = [
-                f"`Fidelity: {tool['fidelity_tier'] or '—'}`",
-                f"`Spatial: {tool['spatial_scale'] or '—'}`",
-                f"`Temporal: {tool['temporal_scale'] or '—'}`",
-            ]
-            tag_parts += [f"`Standard: {s}`" for s in tool["standards"]]  # one pill per standard
-            st.caption("  ·  ".join(tag_parts))
+            # tag row -- the only colour on the card. Each pill is "<label>
+            # value", one per meaningful attribute; nulls are simply dropped
+            # (real catalogue entries often leave these blank) rather than
+            # shown as a dash.
+            def _pill(label: str, value) -> str:
+                return (f"<span class='tw-tool-tag'><b>{html.escape(label)}</b>"
+                        f"{html.escape(str(value))}</span>")
 
-            # pricing + validation: the two numbers a lead engineer checks
-            # right after "does it fit" - can I afford it, can I trust it.
-            # Pricing is always model-estimated -- the catalogue has no pricing
-            # field at all -- so it's captioned as such, never shown as fact.
+            pills = []
+            if tool.get("fidelity_tier"):
+                pills.append(_pill("Fidelity", tool["fidelity_tier"]))
+            if tool.get("spatial_scale"):
+                pills.append(_pill("Spatial", tool["spatial_scale"]))
+            if tool.get("temporal_scale"):
+                pills.append(_pill("Temporal", tool["temporal_scale"]))
+            pills += [_pill("Standard", s) for s in tool["standards"]]
+            if pills:
+                st.markdown(f"<div class='tw-tool-tags'>{''.join(pills)}</div>",
+                            unsafe_allow_html=True)
+
+            # one quiet meta line: the two things a lead engineer checks right
+            # after "does it fit" -- can I afford it, can I trust it. Pricing
+            # is always model-estimated (the catalogue has no pricing field),
+            # flagged inline rather than in its own caption block.
             price = tool["pricing"]
-            price_line = f"{price['currency']} {price['estimate_low']:,.0f}-{price['estimate_high']:,.0f} {price['unit']}"
-            col3, col4 = st.columns(2)
-            with col3:
-                st.write(f"**Est. price:** {price_line}")
-                st.caption("AI estimate — not sourced from the catalogue")
-            with col4:
-                st.write(f"**Validation:** {tool['validation_level'] or '—'}")
+            price_line = (f"{price['currency']} {price['estimate_low']:,.0f}"
+                          f"–{price['estimate_high']:,.0f} {price['unit']}")
+            meta = [f"Est. price {html.escape(price_line)} "
+                    f"<span class='tw-tool-est'>AI estimate</span>"]
+            if tool.get("validation_level"):
+                meta.append(f"Validation {html.escape(str(tool['validation_level']))}")
+            st.markdown(f"<p class='tw-tool-meta'>{'  &nbsp;·&nbsp;  '.join(meta)}</p>",
+                        unsafe_allow_html=True)
 
-            with st.expander("Details", expanded=focused):  # full schema dump, collapsed by default
-                st.markdown("**Inputs**")
-                for i in tool["inputs"]:
-                    st.write(f"- {i}")
-                st.markdown("**Outputs**")
-                for o in tool["outputs"]:
-                    st.write(f"- {o}")
-                if tool["known_fail_modes"]:  # also always model-estimated, same as pricing
-                    st.markdown("**Known limitations** _(AI estimate — not sourced from the catalogue)_")
+            with st.expander("Details", expanded=focused):
+                if tool["inputs"]:
+                    st.markdown("<p class='tw-tool-io'><b>Inputs</b> "
+                                + html.escape(", ".join(map(str, tool["inputs"])))
+                                + "</p>", unsafe_allow_html=True)
+                if tool["outputs"]:
+                    st.markdown("<p class='tw-tool-io'><b>Outputs</b> "
+                                + html.escape(", ".join(map(str, tool["outputs"])))
+                                + "</p>", unsafe_allow_html=True)
+                if tool["known_fail_modes"]:  # also always model-estimated
+                    st.markdown("<p class='tw-tool-io'><b>Known limitations</b> "
+                                "<i>AI estimate</i></p>", unsafe_allow_html=True)
                     for f in tool["known_fail_modes"]:
                         st.write(f"- {f}")
                 if tool.get("docs_url"):
