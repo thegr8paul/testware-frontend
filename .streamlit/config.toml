@@ -11,7 +11,7 @@ runOnSave = true
 # Colour is used ONLY on tags / third-party tool logos -- never on chrome.
 base = "light"
 primaryColor = "#111111"
-backgroundColor = "#FAFAFA"
-secondaryBackgroundColor = "#F0F0F0"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#DBDBDB"
 textColor = "#1A1A1A"
 font = "sans serif"

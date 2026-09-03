@@ -27,9 +27,12 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  --tw-bg: #FAFAFA;
+  /* Page ground is white; the deck's slide cards are a clear grey step
+     below it so a projector can still tell one slide from the next.
+     Contoured elements (search bar, chips) don't depend on this. */
+  --tw-bg: #FFFFFF;
   --tw-bg-elevated: #FFFFFF;
-  --tw-panel-2: #F0F0F0;
+  --tw-panel-2: #DBDBDB;
   --tw-ink: #1A1A1A;
   --tw-ink-2: #3A3A3A;
   --tw-muted: #6B6B6B;
@@ -66,8 +69,8 @@
    choice), so this is the only place dark values are defined. */
 [data-theme="dark"] {
   --tw-bg: #141414;
-  --tw-bg-elevated: #1D1D1D;
-  --tw-panel-2: #242424;
+  --tw-bg-elevated: #242424;
+  --tw-panel-2: #333333;
   --tw-ink: #F2F2F2;
   --tw-ink-2: #D6D6D6;
   --tw-muted: #9C9C9C;

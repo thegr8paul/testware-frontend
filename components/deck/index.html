@@ -21,14 +21,18 @@
      components/workflow/index.html's --wf-* tokens) under yet another naming
      convention -- no single source of truth across the three files, so a
      palette change here must be mirrored in both of them by hand. */
+  /* White stage (--bg) AND white slide cards (--panel) -- the cards are told
+     apart by a firm grey boundary (--hair, drawn 2px on .frame) rather than a
+     fill difference, so a projector that crushes near-whites together still
+     shows each slide clearly. */
   :root {
-    --bg: #FAFAFA;
+    --bg: #FFFFFF;
     --bg-elevated: #FFFFFF;
-    --panel: rgba(255, 255, 255, .82);
-    --panel-2: #F0F0F0;
+    --panel: #FFFFFF;
+    --panel-2: #ECECEC;
     --ink: #1A1A1A;
     --muted: #6B6B6B;
-    --hair: #E3E3E3;
+    --hair: #A8A8A8;
     --accent: #111111;
     --font: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
     --ease: cubic-bezier(.2, .7, .2, 1);
@@ -37,12 +41,12 @@
      stamps this attribute on load and on every theme-only rerun. */
   :root[data-theme="dark"] {
     --bg: #141414;
-    --bg-elevated: #1D1D1D;
-    --panel: rgba(29, 29, 29, .82);
-    --panel-2: #242424;
+    --bg-elevated: #1E1E1E;
+    --panel: #1E1E1E;
+    --panel-2: #303030;
     --ink: #F2F2F2;
     --muted: #9C9C9C;
-    --hair: #333333;
+    --hair: #555555;
     --accent: #F2F2F2;
   }
 
@@ -110,12 +114,10 @@
   .slide[data-layout="split"] .frame,
   .slide[data-layout="quote"] .frame {
     background: var(--panel);
-    -webkit-backdrop-filter: blur(5px);
-    backdrop-filter: blur(5px);
-    border: 1px solid var(--hair);
+    border: 2px solid var(--hair);
     border-radius: 20px;
     padding: clamp(2rem, 4.5vw, 3.75rem);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 24px 60px rgba(0, 0, 0, .07);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .08), 0 24px 60px rgba(0, 0, 0, .13);
   }
   .slide[data-layout="title"] .frame,
   .slide[data-layout="section"] .frame,
@@ -824,7 +826,7 @@
     var dark = document.documentElement.getAttribute("data-theme") === "dark";
     NET_EDGE = dark ? "rgba(242,242,242,.13)" : "rgba(26,26,26,.11)";
     NET_PULSE = dark ? "rgba(242,242,242,.6)" : "rgba(17,17,17,.55)";
-    NET_NODE_FILL = dark ? "#1D1D1D" : "#fff";
+    NET_NODE_FILL = dark ? "#242424" : "#EDEDED";   // off the white/near-black stage so the shapes have a body
     NET_NODE_STROKE = dark ? "rgba(242,242,242,.34)" : "rgba(26,26,26,.30)";
   }
 
