@@ -374,7 +374,6 @@ def run_query_stream(query: str, categories: dict, status_slot):
         status_slot.empty()  # stop the shimmer now that real content is arriving
         with st.container(key="tw_answer"):
             description = st.write_stream(_answer_tokens())
-        description = st.write_stream(_answer_tokens())
     except requests.RequestException as exc:
         # Nothing streamed yet -- the connection itself never came up.
         status_slot.empty()
@@ -613,7 +612,6 @@ def _render_workflow_result() -> None:
         st.header("Digital Twin Specification")
         with st.container(key="tw_answer"):
             st.write(description)
-        st.write(description)
         # A previous fetch dropped mid-stream -- offer an explicit retry
         # instead of forcing a full page refresh to try again.
         if allow_search and _cache.get("ok") is False:
