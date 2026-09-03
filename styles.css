@@ -246,24 +246,34 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
   outline-offset: 3px;
 }
 
-/* Workflow canvas: full-bleed horizontally (no side boundary) -- break out
-   of the padded, max-width content column; only top/bottom stay in flow. */
-.st-key-tw_wf,
-[class*="st-key-tw_wf_ex_"] {
+/* Workflow canvas. The main result canvas (tw_wf) fills the content column.
+   The Examples canvases break out to the FULL browser width -- the left/right
+   column padding + max-width are gone; only top/bottom stay in normal flow. */
+.st-key-tw_wf {
   width: 100%;
 }
 .st-key-tw_wf iframe,
 .st-key-tw_wf [data-testid="stIFrame"],
-.st-key-tw_wf [data-testid="stCustomComponentV1"],
-[class*="st-key-tw_wf_ex_"] iframe,
-[class*="st-key-tw_wf_ex_"] [data-testid="stIFrame"],
-[class*="st-key-tw_wf_ex_"] [data-testid="stCustomComponentV1"] {
+.st-key-tw_wf [data-testid="stCustomComponentV1"] {
   width: 100% !important;
   min-width: 100% !important;   /* defeat a too-narrow width latched at cold-load first paint */
   max-width: none !important;
   display: block !important;
 }
-[class*="st-key-tw_wf_ex_"] { margin-bottom: 1.5rem; }
+[class*="st-key-tw_wf_ex_"] {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);   /* pull out of the padded, centred column */
+  margin-right: calc(50% - 50vw);
+  margin-bottom: 1.5rem;
+}
+[class*="st-key-tw_wf_ex_"] iframe,
+[class*="st-key-tw_wf_ex_"] [data-testid="stIFrame"],
+[class*="st-key-tw_wf_ex_"] [data-testid="stCustomComponentV1"] {
+  width: 100vw !important;
+  min-width: 100vw !important;
+  max-width: 100vw !important;
+  display: block !important;
+}
 
 /* headings a touch larger + tighter, matching the roomier body */
 [data-testid="stHeading"] h1 { font-size: 2.15rem; letter-spacing: -0.02em; color: var(--tw-ink); }
