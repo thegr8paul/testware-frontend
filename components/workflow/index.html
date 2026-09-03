@@ -25,10 +25,10 @@
     --wf-node-border: rgba(120, 120, 120, 0.55);
     --wf-node-shadow: rgba(0, 0, 0, 0.12);
     --wf-fit-bg: #ffffff;
-    --wf-fit-border: #E7E3DA;
+    --wf-fit-border: #E3E3E3;
     --wf-fit-ink: #333333;
-    --wf-fit-hover-bg: #F1EFE9;
-    --wf-fit-hover-border: #D6CFC0;
+    --wf-fit-hover-bg: #F0F0F0;
+    --wf-fit-hover-border: #C7C7C7;
     --wf-fit-hover-ink: #111111;
     --wf-badge-bg: #111111;
     --wf-badge-ink: #ffffff;
@@ -48,39 +48,39 @@
     --wf-del-ink: rgba(17, 17, 17, 0.75);
   }
   :root[data-theme="dark"] {
-    --wf-ink: #F3F1EA;
-    --wf-node-bg: rgba(40, 37, 26, 0.65);
-    --wf-node-border: rgba(180, 175, 155, 0.35);
+    --wf-ink: #F2F2F2;
+    --wf-node-bg: rgba(36, 36, 36, 0.65);
+    --wf-node-border: rgba(176, 176, 176, 0.35);
     --wf-node-shadow: rgba(0, 0, 0, 0.45);
-    --wf-fit-bg: #1E1C16;
-    --wf-fit-border: #34311F;
-    --wf-fit-ink: #D8D4C6;
-    --wf-fit-hover-bg: #262319;
-    --wf-fit-hover-border: #4A4530;
-    --wf-fit-hover-ink: #F3F1EA;
-    --wf-badge-bg: #F3F1EA;
-    --wf-badge-ink: #14130E;
-    --wf-port-label: #B9B4A2;
-    --wf-dot-bg: #1E1C16;
-    --wf-dot-border: #8A8570;
-    --wf-dot-hover: #F3F1EA;
+    --wf-fit-bg: #1D1D1D;
+    --wf-fit-border: #333333;
+    --wf-fit-ink: #D6D6D6;
+    --wf-fit-hover-bg: #242424;
+    --wf-fit-hover-border: #494949;
+    --wf-fit-hover-ink: #F2F2F2;
+    --wf-badge-bg: #F2F2F2;
+    --wf-badge-ink: #131313;
+    --wf-port-label: #B0B0B0;
+    --wf-dot-bg: #1D1D1D;
+    --wf-dot-border: #8A8A8A;
+    --wf-dot-hover: #F2F2F2;
     --wf-texture-dot: rgba(255, 255, 255, 0.10);
     --wf-texture-merge: rgba(255, 255, 255, 0.08);
     --wf-texture-decision: rgba(255, 255, 255, 0.09);
-    --wf-suggested-outline: rgba(243, 241, 234, 0.55);
-    --wf-wire: rgba(243, 241, 234, 0.32);
-    --wf-wire-sel: rgba(243, 241, 234, 0.85);
-    --wf-wire-pending: rgba(243, 241, 234, 0.55);
-    --wf-del-bg: #1E1C16;
-    --wf-del-border: rgba(243, 241, 234, 0.45);
-    --wf-del-ink: rgba(243, 241, 234, 0.8);
+    --wf-suggested-outline: rgba(242, 242, 242, 0.55);
+    --wf-wire: rgba(242, 242, 242, 0.32);
+    --wf-wire-sel: rgba(242, 242, 242, 0.85);
+    --wf-wire-pending: rgba(242, 242, 242, 0.55);
+    --wf-del-bg: #1D1D1D;
+    --wf-del-border: rgba(242, 242, 242, 0.45);
+    --wf-del-ink: rgba(242, 242, 242, 0.8);
   }
   html, body {
     margin: 0; height: 100%; min-height: 520px; overflow: hidden; background: transparent;
     font-family: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
     color: var(--wf-ink);
   }
-  /* No panel chrome -- the canvas sits directly on the page's beige ground.
+  /* No panel chrome -- the canvas sits directly on the page's neutral ground.
      min-height so the panel is measurable on the FIRST render (before
      Streamlit has resized the iframe) -> build() runs immediately, no delay. */
   #panel {

@@ -1,10 +1,10 @@
 /* ---------------------------------------------------------------------------
    Frontend styling. Loaded once by load_css() in app.py.
 
-   Perplexity-inspired: warm cream ground, near-black text, black accent,
-   generous whitespace, a large rounded search bar with a circular black
-   submit button, light-gray pill chips. Typeface is left to the Streamlit
-   theme (unchanged).
+   Minimalist / technical: neutral grayscale ground, near-black text, black
+   accent, generous whitespace, a large rounded search bar with a circular
+   black submit button, light-gray pill chips. Typeface is left to the
+   Streamlit theme (unchanged).
 
    Colours are CSS custom properties (:root = light, [data-theme="dark"] =
    dark) so the whole page -- plus the two iframe components, which read
@@ -419,8 +419,8 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 .st-key-tw_searchbar_hero,
 .st-key-tw_searchbar_compact {
   position: relative;
-  background: var(--tw-card-bg) !important;
-  border: 1.5px solid var(--tw-card-border) !important;
+  background: var(--tw-bg-elevated) !important;   /* white fill (light) */
+  border: 2px solid var(--tw-ink) !important;     /* clear near-black contour */
   border-radius: 26px !important;
   box-shadow: var(--tw-shadow-sm) !important;
   padding: 16px 18px 14px;
@@ -444,7 +444,7 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 }
 .st-key-tw_searchbar_hero:focus-within,
 .st-key-tw_searchbar_compact:focus-within {
-  border-color: var(--tw-hair-strong) !important;
+  border-color: var(--tw-ink) !important;
   box-shadow: var(--tw-shadow-sm-focus) !important;
 }
 .st-key-tw_searchbar_hero {

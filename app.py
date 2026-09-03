@@ -855,17 +855,24 @@ _SCROLL_SETTLE_JS = """
 
     // Per area: signed offset of its TOP from the header line, and how much
     // of the usable viewport it currently covers.
-    var info = areas.map(function (a) {
+    var info = areas.map(function (a, ai) {
       var r = a.getBoundingClientRect();
       var covTop = Math.max(r.top, HEADER);
       var covBot = Math.min(r.bottom, vh);
-      return { off: r.top - HEADER, frac: Math.max(0, covBot - covTop) / usable };
+      return { i: ai, off: r.top - HEADER, frac: Math.max(0, covBot - covTop) / usable };
     });
 
+    // The first area (the searchbar / chat) has nothing above it, so its
+    // rest position is scroll 0 -- the very top -- not "top aligned to the
+    // header line". Aligning it to HEADER like the other seams leaves you
+    // parked ~one header-height below 0 after scrolling back up. So the
+    // amount to move to settle onto area 0 is always "back to the top".
+    function seam(x) { return x.i === 0 ? -cur : x.off; }
+
     // Nearest seam to the header line.
-    var near = info[0].off;
+    var near = seam(info[0]);
     for (var i = 1; i < info.length; i++) {
-      if (Math.abs(info[i].off) < Math.abs(near)) near = info[i].off;
+      if (Math.abs(seam(info[i])) < Math.abs(near)) near = seam(info[i]);
     }
 
     // 1. A seam is essentially aligned -> nothing to do.
@@ -894,10 +901,11 @@ _SCROLL_SETTLE_JS = """
     //    of the area you're backing into (if it's within ~a screen).
     var target = null;
     info.forEach(function (x) {
+      var o = seam(x);
       if (down) {
-        if (x.off > 8 && x.off < vh && (target === null || x.off < target)) target = x.off;
+        if (o > 8 && o < vh && (target === null || o < target)) target = o;
       } else {
-        if (x.off <= 8 && x.off > -(usable + 40) && (target === null || x.off > target)) target = x.off;
+        if (o <= 8 && o > -(usable + 40) && (target === null || o > target)) target = o;
       }
     });
     if (target === null || Math.abs(target) <= 8) return;

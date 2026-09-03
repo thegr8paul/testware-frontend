@@ -12,7 +12,7 @@
      sequence -- this iframe owns its own bounded, internally-scrolling
      viewport (sized to ~the outer page's visible height, see setViewportHeight()
      below), independent of the rest of the (plain-scrolling) page. One
-     colour world: the app's own warm-cream / near-black palette and
+     colour world: the app's own neutral grayscale / near-black palette and
      typeface (Source Sans 3), with a little presentation flourish -- a
      faint connecting-node network and staged slide entrances. Edit slides
      in presentation.md, not here.
@@ -22,13 +22,13 @@
      convention -- no single source of truth across the three files, so a
      palette change here must be mirrored in both of them by hand. */
   :root {
-    --bg: #FBFAF7;
+    --bg: #FAFAFA;
     --bg-elevated: #FFFFFF;
     --panel: rgba(255, 255, 255, .82);
-    --panel-2: #F1EFE9;
+    --panel-2: #F0F0F0;
     --ink: #1A1A1A;
-    --muted: #6B6B66;
-    --hair: #E7E3DA;
+    --muted: #6B6B6B;
+    --hair: #E3E3E3;
     --accent: #111111;
     --font: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
     --ease: cubic-bezier(.2, .7, .2, 1);
@@ -36,14 +36,14 @@
   /* app.py passes theme= into deck_view(); applyTheme() (see script below)
      stamps this attribute on load and on every theme-only rerun. */
   :root[data-theme="dark"] {
-    --bg: #15140F;
-    --bg-elevated: #1E1C16;
-    --panel: rgba(30, 28, 22, .82);
-    --panel-2: #262319;
-    --ink: #F3F1EA;
-    --muted: #9C9788;
-    --hair: #34311F;
-    --accent: #F3F1EA;
+    --bg: #141414;
+    --bg-elevated: #1D1D1D;
+    --panel: rgba(29, 29, 29, .82);
+    --panel-2: #242424;
+    --ink: #F2F2F2;
+    --muted: #9C9C9C;
+    --hair: #333333;
+    --accent: #F2F2F2;
   }
 
   * { box-sizing: border-box; margin: 0; }
@@ -670,7 +670,7 @@
   var ctx = cv.getContext("2d");
   var W = 0, H = 0, DPR = 1, NODES = 40;
   var pts = [], edges = [], pulses = [], clock = 0;
-  var HUES = ["#3F7D78", "#A9822F", "#3F7D55", "#54628A"];
+  var HUES = ["#8A8A8A", "#6B6B6B", "#A0A0A0", "#555555"];
   var NET_EDGE = "rgba(26,26,26,.11)", NET_PULSE = "rgba(17,17,17,.55)",
       NET_NODE_FILL = "#fff", NET_NODE_STROKE = "rgba(26,26,26,.30)";
 
@@ -678,10 +678,10 @@
   // resolved colours here whenever the theme changes (see applyTheme below).
   function refreshNetColors() {
     var dark = document.documentElement.getAttribute("data-theme") === "dark";
-    NET_EDGE = dark ? "rgba(243,241,234,.13)" : "rgba(26,26,26,.11)";
-    NET_PULSE = dark ? "rgba(243,241,234,.6)" : "rgba(17,17,17,.55)";
-    NET_NODE_FILL = dark ? "#1E1C16" : "#fff";
-    NET_NODE_STROKE = dark ? "rgba(243,241,234,.34)" : "rgba(26,26,26,.30)";
+    NET_EDGE = dark ? "rgba(242,242,242,.13)" : "rgba(26,26,26,.11)";
+    NET_PULSE = dark ? "rgba(242,242,242,.6)" : "rgba(17,17,17,.55)";
+    NET_NODE_FILL = dark ? "#1D1D1D" : "#fff";
+    NET_NODE_STROKE = dark ? "rgba(242,242,242,.34)" : "rgba(26,26,26,.30)";
   }
 
   // Re-skins this iframe's own --bg/--ink/etc. palette (see :root /
