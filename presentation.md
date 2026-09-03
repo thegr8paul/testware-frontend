@@ -24,8 +24,8 @@
   everything else, including all visuals, is done.
 -->
 
-## Kickstart Digital Twin-Based Testing with testware 
-### Plan End-to-End Workflows in Minutes (Not Weeks)
+## Plan Digital Twin Workflows in Minutes (Not Weeks)
+### Digital Twin Engine
 
 ![Hero visual](placeholder-hero.svg)
 
@@ -72,12 +72,12 @@
 
 <!-- layout: media -->
 
-#### Challenge
+#### Challenge - 4
 ## Too Expert-Friendly
 
-- Where to get started?
-- What methods and tools are needed?
-- How much will it cost and how long will it take?
+- Where to get started ?
+- What methods and tools are needed ?
+- How much will it cost and how long will it take ?
 
 ![The X-in-the-Loop test setup](placeholder-xil.svg)
 
@@ -85,12 +85,12 @@
 
 <!-- layout: media -->
 
-#### Solution
-## testware.dev
+#### Solution - 5
+## Prompt to Workflow
 
-- Expert-Curated Catalogue of Models
-- RAG System Grounded in Truth
-- Chat to Workflow in Seconds
+- Expert-Curated Catalogue of Tools/Techniques
+- AI/RAG Research Grounded in Truth
+- Make Reliable Decisions Quickly
 
 ![Three illustrative generated flowcharts](placeholder-cases.svg)
 
@@ -98,12 +98,12 @@
 
 <!-- layout: media -->
 
-#### The problem
-## The on-ramp is missing
+#### Solution - 6
+## Expansive Knowledgebase
 
-- Digital-twin know-how is niche — few people can start from scratch
-- Tools are proprietary, expensive, rarely open-source
-- Real systems span verticals — materials, building, patient in one place — and integration is hard
+- Various Verticals and Use Cases
+- Aligned with Regulations
+- Interactive and Customisable
 
 ![Pictogram — the missing on-ramp](placeholder-gap.svg)
 
@@ -111,41 +111,12 @@
 
 <!-- layout: media -->
 
-#### The solution
-## A fast, accessible on-ramp
+#### Solution - 7
+## Upcoming Features
 
-- A structured prompt — industry, application, nature of the project
-- LLM+RAG generates a workflow description, a flowchart, and tool suggestions from our curated database
-- Edit the flowchart, save it as your own workflow
+- User Profiles + Dashboard + Templates
+- 3P Integration with Tool Providers (DTaaS / DTOps)
+- Simulation Target Builder
 
-![From prompt to workflow, flowchart and tools](placeholder-solution.svg)
+![Pictogram — the missing on-ramp](placeholder-gap.svg)
 
----
-
-<!-- layout: media -->
-
-#### Product · now & next
-## Working today — and where it goes
-
-- **Now:** prompt bar + category tags → enhanced prompt → generated workflow description, flowchart and suggested tools → edit and save; every save grows our workflow dataset
-- **Next:** individual tools connect as live, executable nodes inside a saved flowchart — e.g. an Airflow-based car simulation
-- **Next:** visualise, understand and eventually run full digital-twin workflows in the tool
-
-![Diagram — now to later, suggestion to executable node](placeholder-roadmap.svg)
-
----
-
-<!-- layout: media -->
-
-#### Business model & ask
-## Grow now, monetise later
-
-- **Today:** growth over revenue — maximise users creating and saving workflows; build traffic and the dataset
-- **Later:** monthly subscription to understand, visualise and execute digital-twin workflows
-- **Later:** vendor lead-gen — tools plugged in as nodes become qualified leads — and the workflow dataset as an asset in its own right
-
-> We're looking for early users and honest feedback — and open to partnership and investment conversations.
-
-[NEEDS INPUT — confirm exact ask phrasing]
-
-![Pictogram — growth now, monetise later](placeholder-model.svg)
