@@ -274,6 +274,21 @@
     overflow: visible;
   }
 
+  /* Context-3 split real-car / digital-twin pictogram (its own colours are
+     inside the inline <svg>). Framed like the other media images. */
+  .cartwin { margin: 0; display: grid; place-items: center; }
+  .cartwin svg,
+  .lifecycle svg {
+    display: block;
+    width: 100%;
+    max-height: 54vh;
+    border-radius: 14px;
+    border: 1px solid var(--hair);
+    background: var(--bg);
+  }
+  /* Context-4 R&D -> V&V -> Prod timeline (monochrome, contour only). */
+  .lifecycle { margin: 0; display: grid; place-items: center; }
+
   /* ---- chrome: the deck's own dot-nav is retired -- the page now has a
      single left-edge rail (app | slide | ... | examples) rendered by the
      PARENT (styles.css #tw-navrail + app.py render_nav_rail), which drives
@@ -483,6 +498,225 @@
     return wrap;
   }
 
+  // ---- Context-3 pictogram: a car driving RIGHT along a racetrack --------
+  // Top-down. Left of the divider line = the real car on a red/white kerbed
+  // track; once it crosses the line (right side) it becomes the single-blue
+  // wireframe digital twin and the kerbs turn blue. Colour is intentional
+  // here, unlike the rest of the deck.
+  var CT_XD = 172;   // the divider the car is crossing
+  // Car body + parts, nose pointing right, centred on y=100.
+  var CT_BODY =
+    "M104 74 L214 74 C233 74 249 82 253 100 C249 118 233 126 214 126 L104 126 " +
+    "C92 126 86 116 86 100 C86 84 92 74 104 74 Z";
+  var CT_SHAPES =
+    "<rect class='w' x='104' y='61' width='22' height='14' rx='4'/>" +
+    "<rect class='w' x='104' y='125' width='22' height='14' rx='4'/>" +
+    "<rect class='w' x='192' y='61' width='22' height='14' rx='4'/>" +
+    "<rect class='w' x='192' y='125' width='22' height='14' rx='4'/>" +
+    "<path class='bd' d='" + CT_BODY + "'/>" +
+    "<path class='ln' d='M214 80v40M226 86v28'/>" +
+    "<rect class='cp' x='136' y='82' width='60' height='36' rx='11'/>" +
+    "<rect class='rf' x='146' y='90' width='42' height='20' rx='7'/>" +
+    "<path class='gl' d='M196 84l12 6v20l-12 6z'/>" +
+    "<path class='gl' d='M136 84l-10 6v20l10 6z'/>" +
+    "<path class='mr' d='M186 74l6-5 3 5z'/>" +
+    "<path class='mr' d='M186 126l6 5 3-5z'/>" +
+    "<rect class='hl' x='243' y='85' width='9' height='9' rx='2'/>" +
+    "<rect class='hl' x='243' y='106' width='9' height='9' rx='2'/>";
+  var CT_MESH = (function () {
+    var s = "";
+    [82, 94, 106, 118].forEach(function (y) { s += "<line x1='86' y1='" + y + "' x2='253' y2='" + y + "'/>"; });
+    [130, 150, 170, 190, 210, 230].forEach(function (x) { s += "<line x1='" + x + "' y1='74' x2='" + x + "' y2='126'/>"; });
+    return s;
+  })();
+  function ctKerb(y) {
+    var s = "", seg = 15, x = 0, k = 0;
+    for (; x < 320; x += seg, k++) {
+      var fill = (k % 2 === 0) ? "#F4F4F4" : ((x + seg) <= CT_XD ? "#D93636" : "#2F6BFF");
+      s += "<rect x='" + x + "' y='" + y + "' width='" + (seg + 0.6) + "' height='8' fill='" + fill + "'/>";
+    }
+    return s;
+  }
+  var CAR_TWIN_SVG =
+    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "aria-label='A car driving right along a racetrack: before the line it is the real car with red-and-white kerbs, after crossing the line it becomes a blue wireframe digital twin and the kerbs turn blue'>" +
+    "<style>" +
+      ".ctw .w{fill:#242424}.ctw .bd{fill:#E1954D}.ctw .cp{fill:#CE8438}.ctw .rf{fill:#B9752F}" +
+      ".ctw .gl{fill:#A9C0CE}.ctw .hl{fill:#F3D45F}.ctw .mr{fill:#242424}.ctw .ln{fill:none;stroke:#9c6528}" +
+      ".ctw *{stroke:#1e1e1e;stroke-width:1.2;stroke-linejoin:round}" +
+      ".ctt *{fill:none;stroke:#2F6BFF;stroke-width:1.2;stroke-linejoin:round}" +
+      ".ctm line{stroke:#2F6BFF;stroke-width:.7;opacity:.5}" +
+      ".ctlane{stroke:#B9B9B9;stroke-width:2;stroke-dasharray:14 12}" +
+      ".ctdiv{stroke:#2F6BFF;stroke-width:1.6;stroke-dasharray:4 4;opacity:.9}" +
+      ".ctchev{fill:none;stroke:#2F6BFF;stroke-width:1.6}" +
+    "</style>" +
+    "<defs>" +
+      "<clipPath id='ctL'><rect x='0' y='0' width='" + CT_XD + "' height='200'/></clipPath>" +
+      "<clipPath id='ctR'><rect x='" + CT_XD + "' y='0' width='" + (320 - CT_XD) + "' height='200'/></clipPath>" +
+      "<clipPath id='ctBody'><path d='" + CT_BODY + "'/></clipPath>" +
+    "</defs>" +
+    "<rect x='0' y='46' width='320' height='108' fill='#EDECEA'/>" +
+    ctKerb(38) + ctKerb(154) +
+    "<line class='ctlane' x1='0' y1='100' x2='320' y2='100'/>" +
+    "<line class='ctdiv' x1='" + CT_XD + "' y1='30' x2='" + CT_XD + "' y2='170'/>" +
+    "<path class='ctchev' d='M" + (CT_XD + 4) + " 34l7 5-7 5'/>" +
+    "<g class='ctw' clip-path='url(#ctL)'>" + CT_SHAPES + "</g>" +
+    "<g class='ctt' clip-path='url(#ctR)'>" + CT_SHAPES + "</g>" +
+    "<g clip-path='url(#ctR)'><g clip-path='url(#ctBody)'><g class='ctm'>" + CT_MESH + "</g></g></g>" +
+    "</svg>";
+  function buildCarTwin(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media cartwin";
+    fig.innerHTML = CAR_TWIN_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
+  // ---- Context-4 pictogram: the testing lifecycle as a left-to-right ----
+  // timeline -- three circular nodes (R&D -> V&V -> Prod) over a right-
+  // pointing time arrow. Monochrome (contour, no colour) like the rest.
+  var LC_ICONS = {
+    rnd:  "<path d='M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1.1 2h5a3.4 3.4 0 011.1-2A6 6 0 0012 3z'/><path d='M9.6 19h4.8M10.6 21.5h2.8'/>",
+    vnv:  "<path d='M4 12.5l5 5L20 6.5'/>",
+    prod: "<circle cx='12' cy='12' r='3.4'/><path d='M12 2.6v3.1M12 18.3v3.1M2.6 12h3.1M18.3 12h3.1M5.2 5.2l2.2 2.2M16.6 16.6l2.2 2.2M18.8 5.2l-2.2 2.2M7.4 16.6l-2.2 2.2'/>"
+  };
+  var LC_NODES = [
+    { code: "R&D",  n1: "Research &",     n2: "Development", ic: "rnd" },
+    { code: "V&V",   code2: "V&amp;V", n1: "Verification &", n2: "Validation", ic: "vnv" },
+    { code: "Prod",  n1: "Production",    n2: "",            ic: "prod" }
+  ];
+  var LIFECYCLE_SVG = (function () {
+    var cx = [58, 160, 262], cy = 84, r = 36, axisY = 168;
+    function esc(s) { return String(s).replace(/&/g, "&amp;"); }
+    var s =
+      "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+      "aria-label='Testing lifecycle timeline, left to right: R and D (research and development), then V and V (verification and validation), then Prod (production)'>" +
+      "<style>" +
+        "text{font-family:inherit;text-anchor:middle;dominant-baseline:middle}" +
+        ".lc-node{fill:var(--bg);stroke:var(--ink);stroke-width:2}" +
+        ".lc-ic{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}" +
+        ".lc-code{fill:var(--ink);font-weight:700;font-size:15px}" +
+        ".lc-name{fill:var(--muted);font-size:8px}" +
+        ".lc-conn{stroke:var(--hair);stroke-width:2}" +
+        ".lc-axis{stroke:var(--ink);stroke-width:2}" +
+        ".lc-head{fill:var(--ink)}" +
+        ".lc-time{fill:var(--muted);font-size:8px;font-style:italic}" +
+      "</style>";
+    // connectors between adjacent nodes
+    for (var i = 0; i < cx.length - 1; i++) {
+      s += "<line class='lc-conn' x1='" + (cx[i] + r) + "' y1='" + cy + "' x2='" + (cx[i + 1] - r) + "' y2='" + cy + "'/>";
+    }
+    // nodes
+    LC_NODES.forEach(function (nd, i) {
+      var x = cx[i];
+      s += "<circle class='lc-node' cx='" + x + "' cy='" + cy + "' r='" + r + "'/>";
+      s += "<svg class='lc-ic' x='" + (x - 11) + "' y='" + (cy - 24) + "' width='22' height='22' viewBox='0 0 24 24'>" + LC_ICONS[nd.ic] + "</svg>";
+      s += "<text class='lc-code' x='" + x + "' y='" + (cy + 15) + "'>" + (nd.code2 || esc(nd.code)) + "</text>";
+      s += "<text class='lc-name' x='" + x + "' y='" + (cy + r + 13) + "'>" + esc(nd.n1) + "</text>";
+      if (nd.n2) s += "<text class='lc-name' x='" + x + "' y='" + (cy + r + 23) + "'>" + esc(nd.n2) + "</text>";
+    });
+    // time arrow (R&D -> Prod)
+    s += "<line class='lc-axis' x1='20' y1='" + axisY + "' x2='296' y2='" + axisY + "'/>";
+    s += "<path class='lc-head' d='M296 " + axisY + "l-10 -5v10z'/>";
+    s += "<text class='lc-time' x='288' y='" + (axisY + 12) + "' text-anchor='end'>time</text>";
+    return s + "</svg>";
+  })();
+  function buildLifecycle(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media lifecycle";
+    fig.innerHTML = LIFECYCLE_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
+  // ---- Context-5 pictogram: "then only experts, now anyone" -------------
+  // Left scene: an expert (mortarboard, glasses) sweating at a wall of
+  // dials. Right scene: a baby tapping one big button. Both make the SAME
+  // little workflow shown at the top. A bold arrow crosses from one to the
+  // other. Monochrome, contour only.
+  var EXPERT_EASY_SVG =
+    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "aria-label='Then, only an expert at a complex control panel could produce an expert-grade workflow; now a baby can make the same workflow by tapping one button'>" +
+    "<style>" +
+      "text{font-family:inherit}" +
+      ".ee-l{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}" +
+      ".ee-f{fill:var(--ink);stroke:none}" +
+      ".ee-s{fill:none;stroke:var(--hair);stroke-width:1.6}" +
+      ".ee-div{stroke:var(--hair);stroke-width:1.4;stroke-dasharray:4 4}" +
+      ".ee-arr{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}" +
+      ".ee-head{fill:var(--ink)}" +
+      ".ee-lbl{fill:var(--muted);font-size:8px;font-weight:700;letter-spacing:.09em;text-anchor:middle}" +
+      ".ee-cap{fill:var(--muted);font-size:7px;text-anchor:middle}" +
+    "</style>" +
+    // --- divider ---
+    "<line class='ee-div' x1='160' y1='24' x2='160' y2='168'/>" +
+    "<text class='ee-lbl' x='74' y='30'>THEN · EXPERTS</text>" +
+    "<text class='ee-lbl' x='240' y='30'>NOW · ANYONE</text>" +
+    // --- left scene: expert at a wall of dials ---
+    "<g class='ee-l'>" +
+      "<path d='M50 74 64 68 78 74 64 80Z'/><path d='M78 74 80 82'/>" +           // mortarboard
+      "<circle cx='64' cy='89' r='9'/>" +                                          // head
+      "<circle cx='60.5' cy='89' r='2'/><circle cx='67.5' cy='89' r='2'/><path d='M62.5 89h3'/>" + // glasses
+      "<path d='M64 98v22'/>" +                                                    // torso
+      "<path d='M64 104 84 111M64 110 82 121'/>" +                                 // arms to panel
+      "<path d='M64 120 56 136M64 120 72 136'/>" +                                 // legs
+    "</g>" +
+    "<path class='ee-l' d='M76 78c2 2 2 5-1 5s-3-3-1-5z'/>" +                       // sweat drop
+    // scattered nodes the expert is struggling to organise
+    "<g class='ee-l'>" +
+      "<circle cx='97' cy='101' r='6'/>" +
+      "<rect x='112' y='94' width='16' height='10' rx='3' transform='rotate(-13 120 99)'/>" +
+      "<rect x='89' y='117' width='18' height='9' rx='4.5' transform='rotate(9 98 121)'/>" +
+      "<circle cx='125' cy='123' r='6'/>" +
+      "<rect x='103' y='135' width='15' height='9' rx='2' transform='rotate(-7 110 139)'/>" +
+      "<circle cx='134' cy='108' r='4'/>" +
+    "</g>" +
+    "<g class='ee-s'>" +                                                            // tangled, crossing wires
+      "<path d='M99 107C106 119 120 99 125 117'/>" +
+      "<path d='M118 104C108 120 132 128 125 123'/>" +
+      "<path d='M104 124C114 132 98 140 110 143'/>" +
+      "<path d='M103 101C95 108 95 116 100 118'/>" +
+    "</g>" +
+    // --- right scene: a baby taps one big button ---
+    "<circle class='ee-l' cx='228' cy='96' r='16'/>" +                             // head
+    "<path class='ee-l' d='M228 80c1-5 7-6 9-1'/>" +                               // hair curl
+    "<circle class='ee-f' cx='222' cy='95' r='1.7'/><circle class='ee-f' cx='234' cy='95' r='1.7'/>" + // eyes
+    "<path class='ee-l' d='M223 101q5 4 10 0'/>" +                                 // smile
+    "<circle class='ee-l' cx='228' cy='105' r='3.4'/>" +                           // pacifier
+    "<path class='ee-l' d='M215 113c-2 9 3 16 13 16s15-7 13-16'/>" +               // onesie
+    "<path class='ee-l' d='M242 118 266 121'/>" +                                  // arm toward the tidy stack
+    // the baby already has everything organised: a clean node chain
+    "<g class='ee-l'>" +
+      "<rect x='268' y='108' width='22' height='11' rx='5.5'/>" +
+      "<rect x='268' y='123' width='22' height='11' rx='3'/>" +
+      "<rect x='268' y='138' width='22' height='11' rx='3'/>" +
+      "<path d='M279 119v4M279 134v4'/>" +
+      "<path d='M296 111l3 3 6-7'/>" +                                             // tidy check
+    "</g>" +
+    // --- transition arrow THEN -> NOW, across the divider at mid-height ---
+    "<line class='ee-arr' x1='146' y1='98' x2='182' y2='98'/>" +
+    "<path class='ee-head' d='M182 98 171 92v12z'/>" +
+    "</svg>";
+  function buildExpertEasy(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media lifecycle";
+    fig.innerHTML = EXPERT_EASY_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
   function blockEl(b) {
     var e;
     if (b.t === "list") {
@@ -497,6 +731,15 @@
       // Sentinel src -> the Context-1 industry-bubble cluster (built in JS,
       // not a static image, so each bubble pops in with the slide entrance).
       e = buildBubbles();
+    } else if (b.t === "media" && /(^|\/)car-twin\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-3 split real-car / digital-twin pictogram.
+      e = buildCarTwin(b.cap);
+    } else if (b.t === "media" && /(^|\/)lifecycle\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-4 R&D -> V&V -> Prod timeline diagram.
+      e = buildLifecycle(b.cap);
+    } else if (b.t === "media" && /(^|\/)expert-to-anyone\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-5 "then experts, now anyone" pictogram.
+      e = buildExpertEasy(b.cap);
     } else if (b.t === "media") {
       e = document.createElement("figure");
       e.className = "media";

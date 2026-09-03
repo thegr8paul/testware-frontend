@@ -66,7 +66,7 @@
 - Realistic Models + Real-Time Simulators
 - TDD using Mimics with Convincing Fidelity
 
-![The modelling-fidelity spectrum](placeholder-fidelity.svg)
+![Car crossing the line from real to digital twin on a racetrack](car-twin.svg)
 
 ---
 
@@ -79,7 +79,7 @@
 - V&V: certification, commissioning, ...
 - Production: monitoring, maintenance, ...
 
-![The modelling-fidelity spectrum](placeholder-fidelity.svg)
+![Testing lifecycle timeline: R&D to V&V to Production](lifecycle.svg)
 
 ---
 
@@ -92,7 +92,7 @@
 - What methods and tools are needed ?
 - How much will it cost / How long to set up ?
 
-![The X-in-the-Loop test setup](placeholder-xil.svg)
+![Then only experts could do it, now anyone can](expert-to-anyone.svg)
 
 ---
 
