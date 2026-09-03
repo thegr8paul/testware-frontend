@@ -84,6 +84,10 @@
      inside its own snap area). scroll-snap-align pins each slide's top to
      the scroller top; scroll-snap-stop:always keeps one gesture from
      skipping a slide. */
+  /* The slide box itself never animates (no opacity/transform on it) -- only
+     its content items do, via playEntrance() in the script. Animating the box
+     as well used to compound with the scroll-snap correction and read as a
+     rough snap at the end of every transition. */
   .slide {
     min-height: 100vh;
     scroll-snap-align: start;
@@ -91,11 +95,7 @@
     display: grid;
     place-items: center;
     padding: clamp(3.5rem, 9vw, 5.5rem) clamp(1.25rem, 6vw, 5rem) clamp(2.25rem, 5vw, 3.5rem);
-    opacity: 0;
-    transform: translateY(14px);
-    transition: opacity .5s var(--ease), transform .5s var(--ease);
   }
-  .slide.is-visible { opacity: 1; transform: none; }
 
   .frame { width: min(1000px, 100%); }
   .slide[data-layout="content"] .frame,
@@ -216,14 +216,12 @@
     color: var(--muted);
   }
 
-  /* staged entrance */
+  /* Staged entrance -- every content item starts hidden here. playEntrance()
+     in the script staggers them in (Web Animations API) every time a slide
+     becomes the current one, so the animation is identical on every visit to
+     every slide EXCEPT the first (shown instantly). --i, set per item in
+     build(), is the stagger order. */
   [data-anim] { opacity: 0; transform: translateY(14px); }
-  .slide.is-visible [data-anim] {
-    opacity: 1;
-    transform: none;
-    transition: opacity .55s var(--ease), transform .55s var(--ease);
-    transition-delay: calc(var(--i, 0) * 70ms);
-  }
 
   /* ---- chrome: the deck's own dot-nav is retired -- the page now has a
      single left-edge rail (app | slide | ... | examples) rendered by the
@@ -456,8 +454,10 @@
     });
 
     idx = 0;
+    animIdx = -1;
     renderChrome();
     installObserver();
+    setActive(0);   // slide 1 present immediately, no entrance animation
   }
 
   function renderChrome() {
@@ -477,6 +477,55 @@
 
   function updateChrome() {
     for (var k = 0; k < dotsWrap.children.length; k++) dotsWrap.children[k].classList.toggle("on", k <= idx);
+  }
+
+  // ---- staged entrance ------------------------------------------------
+  // Each slide's content items ([data-anim]) start hidden (CSS). When a
+  // slide becomes the current one -- settled and filling the viewport --
+  // its items animate in with a stagger, and the identical animation
+  // replays on every later visit. Slide 1 is shown instantly, no entrance.
+  // The slide box itself is never transformed, so nothing "snaps" at the
+  // end of a scroll. Driven here (Web Animations API) rather than by a CSS
+  // `.is-visible` class so a revisit reliably restarts it.
+  var animIdx = -1;
+  var ENTRANCE = [
+    { opacity: 0, transform: "translateY(14px)" },
+    { opacity: 1, transform: "translateY(0)" }
+  ];
+  function animItems(sec) { return sec ? sec.querySelectorAll("[data-anim]") : []; }
+  function cancelAnims(el) { if (el.getAnimations) el.getAnimations().forEach(function (a) { a.cancel(); }); }
+  function clearSlide(sec) { animItems(sec).forEach(cancelAnims); }   // -> back to hidden CSS base
+  function showInstant(sec) {
+    animItems(sec).forEach(function (el) {
+      cancelAnims(el);
+      el.style.opacity = "1";
+      el.style.transform = "none";
+    });
+  }
+  function playEntrance(sec) {
+    animItems(sec).forEach(function (el) {
+      cancelAnims(el);
+      el.style.opacity = "";
+      el.style.transform = "";
+      var d = parseInt(getComputedStyle(el).getPropertyValue("--i"), 10) || 0;
+      if (el.animate) {
+        el.animate(ENTRANCE, {
+          duration: 550, delay: d * 70,
+          easing: "cubic-bezier(.2,.7,.2,1)", fill: "both"
+        });
+      } else {
+        el.style.opacity = "1";
+        el.style.transform = "none";
+      }
+    });
+  }
+  // Make slide `k` the animated-active one (no-op if it already is).
+  function setActive(k) {
+    if (k === animIdx || !slides.length || !slides[k]) return;
+    if (animIdx > 0 && slides[animIdx]) clearSlide(slides[animIdx]);   // arm for replay; never blank slide 1
+    animIdx = k;
+    if (reduce || k === 0) showInstant(slides[k]);
+    else playEntrance(slides[k]);
   }
 
   // Internal scroll -- #scroller is the ONE scrolling element in this
@@ -508,33 +557,56 @@
     }
   });
 
-  // Reveal each slide (staged entrance) the first time it scrolls into
-  // view, and keep the dot chrome tracking which slide is current. Rooted
-  // at #scroller -- the actual (and only) scrolling element in THIS
-  // document, so this is a standard, same-document IntersectionObserver
-  // usage (no cross-frame "implicit root" concerns). Never calls
-  // setValue() / reports anything back to Streamlit -- purely local, so
-  // scrolling never triggers a rerun.
+  // Track which slide is current (by how much of the viewport it covers, so
+  // it works for slides taller than one screen too) and, once that slide is
+  // settled, (re)play its entrance. Rooted at #scroller -- the actual (and
+  // only) scrolling element in THIS document. Never reports anything back to
+  // Streamlit -- purely local, so scrolling never triggers a rerun.
   var io = null;
+  function currentByCoverage() {
+    var vh = scroller.clientHeight || 1;
+    var base = scroller.getBoundingClientRect();
+    var bestK = -1, bestCov = 0;
+    slides.forEach(function (s, k) {
+      var r = s.getBoundingClientRect();
+      var cov = Math.max(0, Math.min(r.bottom, base.bottom) - Math.max(r.top, base.top)) / vh;
+      if (cov > bestCov) { bestCov = cov; bestK = k; }
+    });
+    return { k: bestK, cov: bestCov };
+  }
   function installObserver() {
     if (io) io.disconnect();
     if (!("IntersectionObserver" in window) || !slides.length) return;
     io = new IntersectionObserver(function (entries) {
-      var bestK = -1, bestRatio = 0;
+      var bestK = -1, bestCov = 0;
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) entry.target.classList.add("is-visible");
         var k = slides.indexOf(entry.target);
-        if (k !== -1 && entry.intersectionRatio > bestRatio) { bestRatio = entry.intersectionRatio; bestK = k; }
+        if (k === -1) return;
+        var vh = (entry.rootBounds && entry.rootBounds.height) || scroller.clientHeight || 1;
+        var cov = entry.isIntersecting ? entry.intersectionRect.height / vh : 0;
+        if (cov > bestCov) { bestCov = cov; bestK = k; }
       });
       if (bestK !== -1) {
         idx = bestK;
         updateChrome();
-        // let the parent's left rail follow the current slide
+        if (bestCov >= 0.85) setActive(bestK);   // settled -> entrance
         try { if (window.parent && window.parent.__twRailSync) window.parent.__twRailSync(); } catch (e) {}
       }
-    }, { root: scroller, threshold: [0, 0.25, 0.5, 0.75, 1] });
+    }, { root: scroller, threshold: [0, 0.15, 0.35, 0.55, 0.75, 0.9, 1] });
     slides.forEach(function (s) { io.observe(s); });
   }
+
+  // Safety net: if the observer's last callback lands a hair under the 0.85
+  // "settled" line (sub-pixel, or a taller-than-screen slide), still play the
+  // current slide's entrance ~100ms after the scroll comes to rest.
+  var settleT;
+  scroller.addEventListener("scroll", function () {
+    clearTimeout(settleT);
+    settleT = setTimeout(function () {
+      var c = currentByCoverage();
+      if (c.k !== -1 && c.cov >= 0.6) { idx = c.k; updateChrome(); setActive(c.k); }
+    }, 100);
+  }, { passive: true });
 
   // ---- height --------------------------------------------------------
   // This iframe owns its own bounded viewport again (one slide = 100vh of
