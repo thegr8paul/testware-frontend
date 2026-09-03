@@ -44,20 +44,20 @@
 
 ---
 
-<!-- layout: media -->
+<!-- layout: mediawide -->
 
 #### Context - 2
 ## Vibecoded Car Brakes ?
 
 - How to test software that will live in a car ...
-- ... without the actual car ...
+- ... without the actual car
 - ... whilst being lean, agile, safe, compliant, ...
 
 ![Vibecoding a car straight into a crash](vibecode-crash.svg)
 
 ---
 
-<!-- layout: media -->
+<!-- layout: mediawide -->
 
 #### Context - 3
 ## Test Doubles 4.0
@@ -83,7 +83,7 @@
 
 ---
 
-<!-- layout: media -->
+<!-- layout: mediawide -->
 
 #### Challenge - 5
 ## Expert-Friendly
@@ -132,4 +132,3 @@
 - Simulation Target Builder
 
 ![App pictogram: user profile, dashboard canvas with a workflow, and a templates area](app-features.svg)
-

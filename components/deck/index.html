@@ -274,7 +274,7 @@
     background: var(--bg);
     color: var(--ink);
     /* same soft lift as the search bar */
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .10), 0 8px 20px rgba(0, 0, 0, .12);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .14), 0 10px 24px rgba(0, 0, 0, .16);
   }
   .bubble svg {
     width: 56%;
@@ -301,8 +301,14 @@
        area isn't near-black-on-near-black and the shapes actually read */
     background: var(--panel);
   }
+  .cartwin svg { max-height: 66vh; }   /* Context-3: run the pictogram larger */
+  .lifecycle.expert5 svg { max-height: 68vh; }   /* Challenge-5: larger */
   /* Context-4 R&D -> V&V -> Prod timeline (monochrome, contour only). */
   .lifecycle { margin: 0; display: grid; place-items: center; }
+  /* Context-2: the pictogram is wider than its column so the incoming car
+     overhangs the card's right border (extra space between it and the dev). */
+  .c2fig { margin: 0; }
+  .c2fig svg { display: block; width: calc(100% + 5rem); max-height: 58vh; }
   /* Context-8 app mock -- larger, borderless, thin dark-grey lines. */
   .appmock { margin: 0; display: grid; place-items: center; }
   .appmock svg { display: block; width: 100%; max-height: 72vh; }
@@ -536,65 +542,109 @@
   // wireframe digital twin and the kerbs turn blue. Colour is intentional
   // here, unlike the rest of the deck.
   var CT_XD = 172;   // the divider the car is crossing
-  // Car body + parts, nose pointing right, centred on y=100.
+  // Car body -- both ends the same rounded cap (no pointy nose), centred y=100.
   var CT_BODY =
-    "M104 74 L214 74 C233 74 249 82 253 100 C249 118 233 126 214 126 L104 126 " +
-    "C92 126 86 116 86 100 C86 84 92 74 104 74 Z";
+    "M100 74 L224 74 C236 74 243 81 245 90 C247 97 247 103 245 110 C243 119 236 126 224 126 " +
+    "L100 126 C88 126 81 119 79 110 C77 103 77 97 79 90 C81 81 88 74 100 74 Z";
   var CT_SHAPES =
-    "<rect class='w' x='104' y='61' width='22' height='14' rx='4'/>" +
-    "<rect class='w' x='104' y='125' width='22' height='14' rx='4'/>" +
-    "<rect class='w' x='192' y='61' width='22' height='14' rx='4'/>" +
-    "<rect class='w' x='192' y='125' width='22' height='14' rx='4'/>" +
+    // thin wheels, tucked almost fully inside the body
+    "<rect class='w' x='88' y='73' width='13' height='9' rx='3'/>" +
+    "<rect class='w' x='88' y='118' width='13' height='9' rx='3'/>" +
+    "<rect class='w' x='204' y='73' width='13' height='9' rx='3'/>" +
+    "<rect class='w' x='204' y='118' width='13' height='9' rx='3'/>" +
     "<path class='bd' d='" + CT_BODY + "'/>" +
-    "<path class='ln' d='M214 80v40M226 86v28'/>" +
-    "<rect class='cp' x='136' y='82' width='60' height='36' rx='11'/>" +
-    "<rect class='rf' x='146' y='90' width='42' height='20' rx='7'/>" +
-    "<path class='gl' d='M196 84l12 6v20l-12 6z'/>" +
-    "<path class='gl' d='M136 84l-10 6v20l10 6z'/>" +
-    "<path class='mr' d='M186 74l6-5 3 5z'/>" +
-    "<path class='mr' d='M186 126l6 5 3-5z'/>" +
-    "<rect class='hl' x='243' y='85' width='9' height='9' rx='2'/>" +
-    "<rect class='hl' x='243' y='106' width='9' height='9' rx='2'/>";
+    "<path class='ln' d='M210 80v40M222 86v28'/>" +
+    "<rect class='cp' x='134' y='82' width='58' height='36' rx='11'/>" +
+    "<rect class='rf' x='152' y='90' width='22' height='20' rx='6'/>" +
+    "<path class='gl' d='M192 84Q192 82 190 82.5L176 88Q174 89 174 91L174 109Q174 111 176 112L190 117.5Q192 118 192 116Z'/>" +
+    "<path class='gl' d='M134 84Q134 82 136 82.5L150 88Q152 89 152 91L152 109Q152 111 150 112L136 117.5Q134 118 134 116Z'/>" +
+    "<path class='mr' d='M184 74l6-5 3 5z'/>" +
+    "<path class='mr' d='M184 126l6 5 3-5z'/>" +
+    "<rect class='hl' x='233' y='86' width='8' height='8' rx='2'/>" +
+    "<rect class='hl' x='233' y='106' width='8' height='8' rx='2'/>";
   var CT_MESH = (function () {
     var s = "";
-    [82, 94, 106, 118].forEach(function (y) { s += "<line x1='86' y1='" + y + "' x2='253' y2='" + y + "'/>"; });
-    [130, 150, 170, 190, 210, 230].forEach(function (x) { s += "<line x1='" + x + "' y1='74' x2='" + x + "' y2='126'/>"; });
+    [82, 94, 106, 118].forEach(function (y) { s += "<line x1='80' y1='" + y + "' x2='244' y2='" + y + "'/>"; });
+    [110, 130, 150, 170, 190, 210, 230].forEach(function (x) { s += "<line x1='" + x + "' y1='76' x2='" + x + "' y2='124'/>"; });
     return s;
   })();
+  // hub -> light / four wheels / steering wheel: a small connection network
+  // in the slide-1 style (faint links + travelling pulses), twin-only.
+  function ctLinks() {
+    var hub = [160, 100];
+    var pts = [[238, 100], [207, 78], [207, 122], [95, 78], [95, 122]];
+    var s = "", i;
+    for (i = 0; i < pts.length; i++)
+      s += "<path id='ctl" + i + "' class='ct-link' d='M" + hub[0] + " " + hub[1] + "L" + pts[i][0] + " " + pts[i][1] + "'/>";
+    for (i = 0; i < pts.length; i++)
+      s += "<circle class='ct-node' cx='" + pts[i][0] + "' cy='" + pts[i][1] + "' r='2'/>";
+    s += "<circle class='ct-node' cx='" + hub[0] + "' cy='" + hub[1] + "' r='2.6'/>";
+    for (i = 0; i < pts.length; i++)
+      s += "<circle class='ct-pulse' r='1.6'><animateMotion dur='2.2s' repeatCount='indefinite' begin='-" +
+           (i * 0.44).toFixed(2) + "s'><mpath xlink:href='#ctl" + i + "' href='#ctl" + i + "'/></animateMotion></circle>";
+    return s;
+  }
   function ctKerb(y) {
     var s = "", seg = 15, x = 0, k = 0;
     for (; x < 320; x += seg, k++) {
-      var fill = (k % 2 === 0) ? "#F4F4F4" : ((x + seg) <= CT_XD ? "#D93636" : "#2F6BFF");
+      // real road (red/white) on the right where the car enters; sim (blue) on the left
+      var fill = (k % 2 === 0) ? "#F4F4F4" : ((x + seg) <= CT_XD ? "#2F6BFF" : "#D93636");
       s += "<rect x='" + x + "' y='" + y + "' width='" + (seg + 0.6) + "' height='8' fill='" + fill + "'/>";
     }
     return s;
   }
+  // The car enters from the right as the REAL car, decelerates smoothly and
+  // stops with its nose on the middle line, then converts to the blue
+  // wireframe simulation twin. Loops. (Pure CSS animation in the inline SVG.)
+  var CT_FLIP = "translate(342 0) scale(-1 1)";   // mirror: nose points left; rest position = car centred on the divider
   var CAR_TWIN_SVG =
-    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
-    "aria-label='A car driving right along a racetrack: before the line it is the real car with red-and-white kerbs, after crossing the line it becomes a blue wireframe digital twin and the kerbs turn blue'>" +
+    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' role='img' " +
+    "aria-label='A real car drives in from the right along a racetrack, brakes smoothly to a stop on the middle line, then becomes a blue x-ray wireframe digital twin -- a small live network links the headlight, the four wheels and the steering wheel'>" +
     "<style>" +
       ".ctw .w{fill:#242424}.ctw .bd{fill:#E1954D}.ctw .cp{fill:#CE8438}.ctw .rf{fill:#B9752F}" +
       ".ctw .gl{fill:#A9C0CE}.ctw .hl{fill:#F3D45F}.ctw .mr{fill:#242424}.ctw .ln{fill:none;stroke:#9c6528}" +
       ".ctw *{stroke:#1e1e1e;stroke-width:1.2;stroke-linejoin:round}" +
-      ".ctt *{fill:none;stroke:#2F6BFF;stroke-width:1.2;stroke-linejoin:round}" +
-      ".ctm line{stroke:#2F6BFF;stroke-width:.7;opacity:.5}" +
+      ".ctt *{fill:none;stroke:#2F6BFF;stroke-width:1.1;stroke-linejoin:round;stroke-linecap:round}" +
+      ".ctt .bd{stroke-width:1.6}" +
+      ".ctt .gl{stroke-opacity:.55}" +
+      ".ct-net path{fill:none;stroke:#2F6BFF;stroke-width:.8;opacity:.5}" +
+      ".ct-net circle{fill:#2F6BFF;stroke:none;opacity:.9}" +
+      ".ct-net .ct-pulse{opacity:1}" +
+      ".ctm line{stroke:#2F6BFF;stroke-width:.6;opacity:.35}" +
       ".ctlane{stroke:#B9B9B9;stroke-width:2;stroke-dasharray:14 12}" +
       ".ctdiv{stroke:#2F6BFF;stroke-width:1.6;stroke-dasharray:4 4;opacity:.9}" +
       ".ctchev{fill:none;stroke:#2F6BFF;stroke-width:1.6}" +
+      ".ct-speed{fill:none;stroke:#9c9c9c;stroke-width:2.4;stroke-linecap:round}" +
+      ".ct-car{animation:ct-drive 7s infinite,ct-fade 7s linear infinite}" +
+      ".ct-speed{animation:ct-slow 7s linear infinite}" +
+      "@keyframes ct-drive{0%{transform:translateX(240px);animation-timing-function:cubic-bezier(.12,.62,.26,1)}45%{transform:translateX(0)}95%{transform:translateX(0);animation-timing-function:steps(1,end)}100%{transform:translateX(240px)}}" +
+      "@keyframes ct-fade{0%{opacity:0}2%,90%{opacity:1}96%,100%{opacity:0}}" +
+      "@keyframes ct-slow{0%,18%{opacity:.75}42%,100%{opacity:0}}" +
+      "@media(prefers-reduced-motion:reduce){.ct-car,.ct-speed{animation:none}.ct-speed{opacity:0}.ct-car{transform:none}}" +
     "</style>" +
     "<defs>" +
-      "<clipPath id='ctL'><rect x='0' y='0' width='" + CT_XD + "' height='200'/></clipPath>" +
-      "<clipPath id='ctR'><rect x='" + CT_XD + "' y='0' width='" + (320 - CT_XD) + "' height='200'/></clipPath>" +
       "<clipPath id='ctBody'><path d='" + CT_BODY + "'/></clipPath>" +
+      "<clipPath id='ctReal'><rect x='" + CT_XD + "' y='0' width='" + (320 - CT_XD) + "' height='200'/></clipPath>" +
+      "<clipPath id='ctSim'><rect x='0' y='0' width='" + CT_XD + "' height='200'/></clipPath>" +
     "</defs>" +
     "<rect x='0' y='46' width='320' height='108' fill='#EDECEA'/>" +
     ctKerb(38) + ctKerb(154) +
     "<line class='ctlane' x1='0' y1='100' x2='320' y2='100'/>" +
     "<line class='ctdiv' x1='" + CT_XD + "' y1='30' x2='" + CT_XD + "' y2='170'/>" +
-    "<path class='ctchev' d='M" + (CT_XD + 4) + " 34l7 5-7 5'/>" +
-    "<g class='ctw' clip-path='url(#ctL)'>" + CT_SHAPES + "</g>" +
-    "<g class='ctt' clip-path='url(#ctR)'>" + CT_SHAPES + "</g>" +
-    "<g clip-path='url(#ctR)'><g clip-path='url(#ctBody)'><g class='ctm'>" + CT_MESH + "</g></g></g>" +
+    "<path class='ctchev' d='M" + (CT_XD - 4) + " 34l-7 5 7 5'/>" +
+    // right of the line: the car is still the REAL car
+    "<g clip-path='url(#ctReal)'><g class='ct-car'>" +
+      "<path class='ct-speed' d='M212 90h26M206 100h34M214 110h24'/>" +
+      "<g class='ctw' transform='" + CT_FLIP + "'>" + CT_SHAPES + "</g>" +
+    "</g></g>" +
+    // left of the line: whatever has crossed is the digital twin -- an x-ray
+    // wireframe (no fills), blueprint grid + engine internals showing through
+    "<g clip-path='url(#ctSim)'><g class='ct-car'>" +
+      "<g class='ctt' transform='" + CT_FLIP + "'>" + CT_SHAPES +
+        "<g clip-path='url(#ctBody)'><g class='ctm'>" + CT_MESH + "</g></g>" +
+        "<g class='ct-net'>" + ctLinks() + "</g>" +
+      "</g>" +
+    "</g></g>" +
     "</svg>";
   function buildCarTwin(cap) {
     var fig = document.createElement("figure");
@@ -629,7 +679,7 @@
       "aria-label='Testing lifecycle timeline, left to right: R and D (research and development), then V and V (verification and validation), then Prod (production)'>" +
       "<style>" +
         "text{font-family:inherit;text-anchor:middle;dominant-baseline:middle}" +
-        ".lc-node{fill:var(--bg);stroke:var(--ink);stroke-width:2}" +
+        ".lc-node{fill:var(--bg);stroke:var(--ink);stroke-width:2;filter:url(#lcShadow)}" +
         ".lc-ic{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}" +
         ".lc-code{fill:var(--ink);font-weight:700;font-size:15px}" +
         ".lc-name{fill:var(--muted);font-size:8px}" +
@@ -637,7 +687,10 @@
         ".lc-axis{stroke:var(--ink);stroke-width:2}" +
         ".lc-head{fill:var(--ink)}" +
         ".lc-time{fill:var(--muted);font-size:8px;font-style:italic}" +
-      "</style>";
+      "</style>" +
+      "<defs><filter id='lcShadow' x='-40%' y='-40%' width='180%' height='200%'>" +
+        "<feDropShadow dx='0' dy='2' stdDeviation='2.2' flood-color='#000' flood-opacity='0.2'/>" +
+      "</filter></defs>";
     // connectors between adjacent nodes
     for (var i = 0; i < cx.length - 1; i++) {
       s += "<line class='lc-conn' x1='" + (cx[i] + r) + "' y1='" + cy + "' x2='" + (cx[i + 1] - r) + "' y2='" + cy + "'/>";
@@ -739,7 +792,7 @@
     "</svg>";
   function buildExpertEasy(cap) {
     var fig = document.createElement("figure");
-    fig.className = "media lifecycle";
+    fig.className = "media lifecycle expert5";
     fig.innerHTML = EXPERT_EASY_SVG;
     if (cap) {
       var fc = document.createElement("figcaption");
@@ -787,8 +840,9 @@
     // 1. prompt bar (real search-bar style: white, rounded, firm contour)
     "<rect class='pf-fill' x='12' y='42' width='84' height='28' rx='14'/>" +
     "<line class='pf-txt' x1='24' y1='56' x2='62' y2='56'/>" +
-    "<circle cx='84' cy='56' r='8' fill='var(--ink)'/>" +
-    "<path d='M81 52l4 4-4 4' fill='none' stroke='var(--bg)' stroke-width='1.6' stroke-linecap='round'/>" +
+    "<circle cx='84' cy='56' r='8.5' fill='var(--accent)'/>" +
+    "<circle cx='82.8' cy='54.8' r='2.4' fill='none' stroke='var(--bg)' stroke-width='1.2'/>" +
+    "<line x1='84.5' y1='56.5' x2='86' y2='58' stroke='var(--bg)' stroke-width='1.4' stroke-linecap='round'/>" +
     "<text class='pf-sub' x='52' y='83'>PROMPT</text>" +
     // floating connection: prompt -> RAG (dots travel the line, slide-1 style)
     "<path id='pfl1' class='pf-flow' d='M96 56C112 47 126 65 140 56'/>" +
@@ -847,10 +901,13 @@
         "text{font-family:inherit}" +
         ".kp-conn{stroke:var(--ink);stroke-width:2}" +
         ".kp-dot{fill:var(--ink)}" +
-        ".kp-ring{fill:var(--bg);stroke:var(--ink);stroke-width:2.6}" +
+        ".kp-ring{fill:var(--bg);stroke:var(--ink);stroke-width:2.6;filter:url(#kpShadow)}" +
         ".kp-ic{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}" +
         ".kp-t{fill:var(--ink);font-size:9px;font-weight:700;text-anchor:middle}" +
-      "</style>";
+      "</style>" +
+      "<defs><filter id='kpShadow' x='-40%' y='-40%' width='180%' height='200%'>" +
+        "<feDropShadow dx='0' dy='2' stdDeviation='2.2' flood-color='#000' flood-opacity='0.2'/>" +
+      "</filter></defs>";
     // edges (behind the circles) + a dot at each midpoint
     [[0, 1], [0, 2], [1, 2]].forEach(function (p) {
       var a = KP_CIRCLES[p[0]], b = KP_CIRCLES[p[1]];
@@ -916,7 +973,7 @@
         ".ap-tag{fill:var(--bg);stroke:var(--muted);stroke-width:.6;filter:url(#apShadow)}" +
         ".ap-tagt{fill:var(--mock);font-size:7.5px;font-weight:700;text-anchor:middle;dominant-baseline:central;letter-spacing:.03em}" +
         ".ap-mut{fill:var(--muted);font-size:7px;dominant-baseline:central}" +
-        ".ap-toolframe{fill:none;stroke:var(--mock);stroke-width:.85}" +
+        ".ap-toolframe{fill:none;stroke:#2F6BFF;stroke-width:1.1}" +
         "@keyframes ap-tl{0%,15%{opacity:1}20%,100%{opacity:0}}" +
         ".ap-tl>g{opacity:0;animation:ap-tl 15s linear infinite}" +
         ".ap-tl>g:nth-child(1){animation-delay:0s}.ap-tl>g:nth-child(2){animation-delay:-2.5s}" +
@@ -939,14 +996,11 @@
       "<svg x='13' y='7.5' width='17' height='17' viewBox='0 0 24 24'>" +
         "<path class='ap-logo' d='M20 9V4H4V20H20V15'/>" +
       "</svg>" +
-      // account icon (title bar, right) -- minimal filled profile silhouette
-      "<circle class='ap-avatar' cx='288' cy='12' r='3.2'/>" +
-      "<path class='ap-avatar' d='M281 22c0-4.1 3.1-6.6 7-6.6s7 2.5 7 6.6z'/>" +
-      "<rect class='ap-tag' x='230' y='8' width='46' height='16' rx='8'/>" +
-      "<text class='ap-tagt' x='253' y='16'>Profile</text>" +
-      // Dashboard button in the top bar -- left edge on the sidebar divider (x60)
-      "<rect class='ap-tag' x='60' y='8' width='62' height='16' rx='8'/>" +
-      "<text class='ap-tagt' x='91' y='16'>Dashboard</text>" +
+      // title-bar buttons, both on the right: Dashboard + Save
+      "<rect class='ap-tag' x='196' y='8' width='62' height='16' rx='8'/>" +
+      "<text class='ap-tagt' x='227' y='16'>Dashboard</text>" +
+      "<rect class='ap-tag' x='262' y='8' width='46' height='16' rx='8'/>" +
+      "<text class='ap-tagt' x='285' y='16'>Save</text>" +
       // templates sidebar (narrow)
       "<rect class='ap-tag' x='5' y='36' width='50' height='16' rx='8'/>" +
       "<text class='ap-tagt' x='30' y='44'>Templates</text>";
@@ -1003,10 +1057,14 @@
     return fig;
   }
 
-  // ---- Context-2 pictogram: vibecoding straight into a car crash ---------
+  // ---- Context-2 pictogram: a car bears down on the vibecoder ----------
+  // Dev on the left, oblivious; a simplified SIDE-view car (same scale, and
+  // the same palette as the Context-3 top-view car) closing in from the
+  // right, still a car-length or two off. It overhangs the card's right
+  // border so the run-up looks longer.
   var VIBE_CRASH_SVG =
-    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
-    "aria-label='A developer vibecoding with headphones and a knob cranked to max; a messy wire runs to a car that has crashed nose-first into the ground, a wheel flying off, with an impact burst and a warning sign'>" +
+    "<svg viewBox='0 0 400 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "aria-label='A developer on the left vibecoding with headphones and a knob cranked to max, unaware of a simplified side-view car the same size as a person bearing down from the right'>" +
     "<style>" +
       "text{font-family:inherit}" +
       ".vc-l{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}" +
@@ -1014,62 +1072,59 @@
       ".vc-thin{fill:none;stroke:var(--ink);stroke-width:.8;stroke-linecap:round}" +
       ".vc-wire{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linecap:round}" +
       ".vc-ground{stroke:var(--muted);stroke-width:1.4}" +
-      ".vc-cap{fill:var(--muted);font-size:8px;font-weight:700;text-anchor:middle;letter-spacing:.08em}" +
+      ".c2-body{fill:#E1954D;stroke:#1e1e1e;stroke-width:1.6;stroke-linejoin:round}" +
+      ".c2-roof{fill:#CE8438;stroke:#1e1e1e;stroke-width:1.6;stroke-linejoin:round}" +
+      ".c2-glass{fill:#A9C0CE;stroke:#1e1e1e;stroke-width:1.3;stroke-linejoin:round}" +
+      ".c2-wheel{fill:#242424;stroke:#1e1e1e;stroke-width:1.6}" +
+      ".c2-hub{fill:#9aa0a6}" +
+      ".c2-light{fill:#F3D45F;stroke:#1e1e1e;stroke-width:1.1}" +
+      ".c2-ln{fill:none;stroke:#1e1e1e;stroke-width:1;stroke-linecap:round}" +
+      ".c2-speed{fill:none;stroke:var(--muted);stroke-width:2.4;stroke-linecap:round}" +
     "</style>" +
-    // --- developer, headphones on, cranking the vibe ---
-    "<path class='vc-l' d='M37 76a11 11 0 0 1 22 0'/>" +
-    "<rect class='vc-l' x='34' y='74' width='4.5' height='8' rx='2'/>" +
-    "<rect class='vc-l' x='57.5' y='74' width='4.5' height='8' rx='2'/>" +
-    "<circle class='vc-l' cx='48' cy='77' r='9'/>" +
-    "<path class='vc-thin' d='M44 75h3M50 75h3'/>" +
-    "<path class='vc-l' d='M43 80q5 4 10 0'/>" +
-    "<path class='vc-l' d='M48 86c-3 9-2 15 4 20'/>" +
-    "<path class='vc-l' d='M50 96c7 1 12 6 18 8'/>" +
-    "<path class='vc-l' d='M52 106l-3 17M52 106l9 15'/>" +
-    "<path class='vc-l' d='M64 104v-15h26v15'/>" +
-    "<path class='vc-thin' d='M68 92c3-3 3 3 6 0s3 3 6 0 3-3 4-1'/>" +
-    "<rect class='vc-l' x='60' y='104' width='34' height='11' rx='2'/>" +
-    "<path class='vc-thin' d='M64 108h2M69 108h2M74 108h2M79 108h2M84 108h2M89 108h2M64 112h24'/>" +
-    // vibe knob cranked past max + waves + a note
-    "<circle class='vc-l' cx='102' cy='90' r='8'/>" +
-    "<path class='vc-l' d='M102 90l6-5'/>" +
-    "<path class='vc-thin' d='M102 80v-2M112 90h2M102 100v2M92 90h-2'/>" +
-    "<path class='vc-mut' d='M112 84q6 6 0 12M116 80q10 10 0 20'/>" +
-    "<path class='vc-l' d='M120 70v11a3 3 0 1 1-3-3M120 70q4 1 4 4'/>" +
-    // --- messy wire to the car ---
-    "<path class='vc-wire' d='M108 96c12 6 2 18 14 22s2-14 16-10 4 18 20 14 6-10 14-6'/>" +
-    "<path class='vc-thin' d='M150 118l3-4M158 128l4 3M144 132l-4 2'/>" +
-    // --- the crash ---
-    "<line class='vc-ground' x1='150' y1='168' x2='316' y2='168'/>" +
-    "<path class='vc-thin' d='M164 168l-4 6M242 168l-4 6M258 168l-4 6M274 168l-4 6'/>" +
-    // the thing on the road in front of the car -- a little brick wall
-    "<rect class='vc-l' x='176' y='150' width='24' height='18' rx='1'/>" +
-    "<path class='vc-thin' d='M176 156h24M176 162h24M185 150v6M193 156v6M185 162v6M182 162v6'/>" +
-    "<g transform='translate(238 116) rotate(-30)'>" +
-      "<path class='vc-l' d='M-22 4 -16 -6Q-12 -9 -4 -9L6 -9Q13 -9 17 -3L21 4Q22 7 18 7L-18 7Q-22 7 -22 4Z'/>" +
-      "<path class='vc-l' d='M-13 -7 -5 -7 -5 -1 -14 -1ZM-3 -7 5 -7 8 -1 -3 -1Z'/>" +
-      "<circle class='vc-l' cx='12' cy='8' r='5'/><circle class='vc-thin' cx='12' cy='8' r='1.8'/>" +
-      "<path class='vc-l' d='M-22 4l-4-3 3-3-4-2 4-3-3-3'/>" +
-      "<path class='vc-thin' d='M-2 -9v16'/>" +
+    "<line class='vc-ground' x1='0' y1='168' x2='400' y2='168'/>" +
+    "<path class='vc-thin' d='M24 168l-4 6M120 168l-4 6M200 168l-4 6M280 168l-4 6M360 168l-4 6'/>" +
+    // --- the developer, headphones on, cranking the vibe, oblivious ---
+    "<path class='vc-l' d='M49 104a13 13 0 0 1 26 0'/>" +
+    "<rect class='vc-l' x='46' y='101' width='5' height='9' rx='2'/>" +
+    "<rect class='vc-l' x='73' y='101' width='5' height='9' rx='2'/>" +
+    "<circle class='vc-l' cx='62' cy='105' r='10'/>" +
+    "<path class='vc-thin' d='M57 103h4M63 103h4'/>" +
+    "<path class='vc-l' d='M57 109q5 4 10 0'/>" +
+    "<path class='vc-l' d='M62 115c-3 10-2 18 4 25'/>" +
+    "<path class='vc-l' d='M64 125c9 1 16 5 22 8'/>" +
+    "<path class='vc-l' d='M66 140l-4 21M66 140l9 20'/>" +
+    "<path class='vc-l' d='M58 144h-11M47 144v22'/>" +
+    "<path class='vc-l' d='M88 133v-16h24v16' fill='var(--bg)'/>" +
+    "<path class='vc-thin' d='M92 121c3-3 3 3 6 0s3 3 6 0 3-3 4-1'/>" +
+    "<rect class='vc-l' x='86' y='133' width='30' height='11' rx='2' fill='var(--bg)'/>" +
+    "<path class='vc-thin' d='M90 137h2M95 137h2M100 137h2M105 137h2M110 137h2M90 141h22'/>" +
+    "<circle class='vc-l' cx='60' cy='121' r='7'/>" +
+    "<path class='vc-l' d='M60 121l5-4'/>" +
+    "<path class='vc-thin' d='M60 112v-2M67 121h2M60 130v2M51 121h-2'/>" +
+    "<path class='vc-mut' d='M72 115q6 6 0 12M76 111q10 10 0 20'/>" +
+    "<path class='vc-l' d='M82 101v11a3 3 0 1 0 3-3M82 101q-4 1-4 4'/>" +
+    // --- the vibecoded wire, keyboard -> incoming car ---
+    "<path class='vc-wire' d='M114 138c14 6 4 18 18 22s12-12 26-8 8 16 24 12 10-8 22-4'/>" +
+    "<path class='vc-thin' d='M172 150l3-4M160 158l4 3M182 158l-3 4'/>" +
+    // warning sign between them, overhead
+    "<path class='vc-l' d='M182 52l9 17h-18z'/>" +
+    "<path class='vc-l' d='M182 58v6M182 66.5v.5'/>" +
+    // --- the car, side view, closing in from the right (mirrored) ---
+    "<g transform='translate(414 0) scale(-1 1)'>" +
+      "<path class='c2-body' d='M18 152Q18 132 40 132L150 132Q160 132 168 137L182 145Q187 148 187 152Q187 156 183 156L22 156Q18 156 18 152Z'/>" +
+      "<path class='c2-roof' d='M56 132L68 111Q71 108 78 108L118 108Q127 108 132 116L142 132Z'/>" +
+      "<path class='c2-glass' d='M70 130L79 114L97 114L97 130Z'/>" +
+      "<path class='c2-glass' d='M101 114L117 114L127 130L101 130Z'/>" +
+      "<path class='c2-ln' d='M99 132v22M104 138h7'/>" +
+      "<rect class='c2-light' x='179' y='140' width='7' height='6' rx='1.5'/>" +
+      "<circle class='c2-wheel' cx='58' cy='156' r='13'/><circle class='c2-hub' cx='58' cy='156' r='4.5'/>" +
+      "<circle class='c2-wheel' cx='150' cy='156' r='13'/><circle class='c2-hub' cx='150' cy='156' r='4.5'/>" +
     "</g>" +
-    // detached wheel flying off
-    "<circle class='vc-l' cx='266' cy='92' r='6'/><circle class='vc-thin' cx='266' cy='92' r='2'/>" +
-    "<path class='vc-thin' d='M254 100q-4 3-6 6M256 94q-6 0-9 2M260 88q-4-4-4-8'/>" +
-    // explosion where the car meets the wall
-    "<path class='vc-l' d='M200 150l4-16 5 11 7-12 1 13 13-4-8 10 15 4-15 3 6 15-11-6-1 16-7-13-10 6 2-15-15-1 11-8-10-3z'/>" +
-    "<path class='vc-l' d='M200 150l2-8 3 6 4-6 0 7 7-2-4 5 8 3-8 1 3 8-5-4-1 9-4-7-5 4 1-8-8-1 5-4-6-1z'/>" +
-    "<path class='vc-thin' d='M200 124v-9M176 132l-7-6M226 130l7-6M170 152l-9 1M232 150l9 2M184 168l-4 8M218 168l4 8'/>" +
-    // smoke
-    "<path class='vc-mut' d='M222 102a4 4 0 0 1 8-1 3 3 0 0 1 3 3h-13a3 3 0 0 1 2-5z'/>" +
-    "<path class='vc-mut' d='M232 88a3 3 0 0 1 6 0h-6z'/>" +
-    "<path class='vc-mut' d='M240 78a2 2 0 1 1 3 1h-4z'/>" +
-    // warning sign
-    "<path class='vc-l' d='M250 52l9 17h-18z'/>" +
-    "<path class='vc-l' d='M250 58v6M250 66.5v.5'/>" +
+    "<path class='c2-speed' d='M400 116h-16M400 132h-24M400 148h-14'/>" +
     "</svg>";
   function buildVibeCrash(cap) {
     var fig = document.createElement("figure");
-    fig.className = "media lifecycle";
+    fig.className = "media c2fig";
     fig.innerHTML = VIBE_CRASH_SVG;
     if (cap) {
       var fc = document.createElement("figcaption");
@@ -1553,18 +1608,22 @@
   var W = 0, H = 0, DPR = 1, NODES = 32;
   var pts = [], edges = [], pulses = [], clock = 0;
   var NODE_SHAPES = ["pill", "box", "boxsoft", "decision", "output", "model"];
-  var HUES = ["#8A8A8A", "#6B6B6B", "#A0A0A0", "#555555"];
-  var NET_EDGE = "rgba(26,26,26,.11)", NET_PULSE = "rgba(17,17,17,.55)",
-      NET_NODE_FILL = "#fff", NET_NODE_STROKE = "rgba(26,26,26,.30)";
+  // no per-node colour -- a real flowchart's nodes are one uniform style
+  var HUES = ["#6E6E6E", "#6E6E6E", "#6E6E6E", "#6E6E6E"];
+  var NET_EDGE = "rgba(20,20,20,.30)", NET_PULSE = "rgba(17,17,17,.55)",
+      NET_NODE_FILL = "#fff", NET_NODE_STROKE = "rgba(90,90,90,.55)",
+      NET_SHADOW = "rgba(0,0,0,.28)";
 
   // Canvas fill/strokeStyle can't read CSS variables directly -- cache
   // resolved colours here whenever the theme changes (see applyTheme below).
   function refreshNetColors() {
     var dark = document.documentElement.getAttribute("data-theme") === "dark";
-    NET_EDGE = dark ? "rgba(242,242,242,.13)" : "rgba(26,26,26,.11)";
-    NET_PULSE = dark ? "rgba(242,242,242,.6)" : "rgba(17,17,17,.55)";
-    NET_NODE_FILL = dark ? "#242424" : "#EDEDED";   // off the white/near-black stage so the shapes have a body
-    NET_NODE_STROKE = dark ? "rgba(242,242,242,.34)" : "rgba(26,26,26,.30)";
+    // match the real workflow-canvas node/wire tones
+    NET_EDGE = dark ? "rgba(242,242,242,.26)" : "rgba(20,20,20,.30)";
+    NET_PULSE = dark ? "rgba(242,242,242,.7)" : "rgba(17,17,17,.6)";
+    NET_NODE_FILL = dark ? "#242424" : "#FFFFFF";
+    NET_NODE_STROKE = dark ? "rgba(210,210,210,.42)" : "rgba(90,90,90,.55)";
+    NET_SHADOW = dark ? "rgba(0,0,0,.6)" : "rgba(0,0,0,.28)";
   }
 
   // Re-skins this iframe's own --bg/--ink/etc. palette (see :root /
@@ -1642,6 +1701,31 @@
     /* output */              return rrect(x, y, w, h, [1, 1, s * 0.5, s * 0.5]);
   }
 
+  // Flowchart-style routing between two node centres: leave one node, make a
+  // right-angle elbow at the midpoint, arrive at the other -- like the
+  // workflow-canvas connectors, not a straight diagonal.
+  function elbowPts(a, b, horiz) {
+    if (horiz) { var mx = (a[0] + b[0]) / 2; return [a, [mx, a[1]], [mx, b[1]], b]; }
+    var my = (a[1] + b[1]) / 2; return [a, [a[0], my], [b[0], my], b];
+  }
+  function polyLen(p) {
+    var L = 0;
+    for (var i = 1; i < p.length; i++) L += Math.abs(p[i][0] - p[i - 1][0]) + Math.abs(p[i][1] - p[i - 1][1]);
+    return L;
+  }
+  function polyAt(p, t) {
+    var d = t * polyLen(p);
+    for (var i = 1; i < p.length; i++) {
+      var seg = Math.abs(p[i][0] - p[i - 1][0]) + Math.abs(p[i][1] - p[i - 1][1]);
+      if (d <= seg || i === p.length - 1) {
+        var f = seg ? d / seg : 0;
+        return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * f, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * f];
+      }
+      d -= seg;
+    }
+    return p[p.length - 1];
+  }
+
   function resize() {
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = cv.clientWidth; H = cv.clientHeight;
@@ -1664,10 +1748,12 @@
 
     ctx.strokeStyle = NET_EDGE;
     ctx.lineWidth = 1;
+    ctx.lineJoin = "round";
     ctx.beginPath();
     for (var e = 0; e < edges.length; e++) {
-      ctx.moveTo(S[edges[e][0]][0], S[edges[e][0]][1]);
-      ctx.lineTo(S[edges[e][1]][0], S[edges[e][1]][1]);
+      var pp = elbowPts(S[edges[e][0]], S[edges[e][1]], (e & 1) === 0);
+      ctx.moveTo(pp[0][0], pp[0][1]);
+      for (var pi = 1; pi < pp.length; pi++) ctx.lineTo(pp[pi][0], pp[pi][1]);
     }
     ctx.stroke();
 
@@ -1678,8 +1764,8 @@
       for (var q = pulses.length - 1; q >= 0; q--) {
         var P = pulses[q]; P.t += 0.02;
         if (P.t >= 1) { pulses.splice(q, 1); continue; }
-        var A = S[edges[P.e][0]], B = S[edges[P.e][1]];
-        ctx.fillRect(A[0] + (B[0] - A[0]) * P.t - 1.5, A[1] + (B[1] - A[1]) * P.t - 1.5, 3, 3);
+        var pt = polyAt(elbowPts(S[edges[P.e][0]], S[edges[P.e][1]], (P.e & 1) === 0), P.t);
+        ctx.fillRect(pt[0] - 1.5, pt[1] - 1.5, 3, 3);
       }
     }
 
@@ -1687,8 +1773,10 @@
       var p = pts[n], w = p.w, h = w * p.ar;
       var x0 = S[n][0] - w / 2, y0 = S[n][1] - h / 2;
       nodePath(p.shape, x0, y0, w, h);
+      ctx.shadowColor = NET_SHADOW; ctx.shadowBlur = 7; ctx.shadowOffsetY = 2.5;
       ctx.fillStyle = NET_NODE_FILL;
       ctx.fill();
+      ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
       ctx.strokeStyle = p.hue || NET_NODE_STROKE;
       ctx.lineWidth = p.hue ? 1.6 : 1;
       ctx.stroke();

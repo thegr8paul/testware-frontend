@@ -11,13 +11,13 @@
      the app around it (light app, dark image, on the same page, whenever a
      viewer's OS happened to prefer dark). Fixed light colours keep it
      predictable everywhere instead. */
-  .card   { fill: rgba(255,255,255,0.92); stroke: rgba(26,26,26,0.4); }
+  .card   { fill: rgba(255,255,255,0.92); stroke: rgba(26,26,26,0.4); filter: url(#nodeShadow); }
   .skel   { fill: rgba(26,26,26,0.26); }
   .dot    { fill: #FFFFFF; stroke: #454542; }
   .wire   { stroke: rgba(17,17,17,0.5); }
   .pulse  { fill: rgba(17,17,17,0.88); }
   .icon   { fill: #1A1A1A; stroke: #1A1A1A; }
-  .ring   { stroke: #3F7D78; }
+  .ring   { stroke: #2F6BFF; }
   .mark   { stroke: #1A1A1A; }
 
   /* -- assembly: fade/scale in, left to right -------------------------------- */
@@ -65,6 +65,12 @@
     .flow { display: none; }
   }
 </style>
+
+<defs>
+  <filter id="nodeShadow" x="-40%" y="-40%" width="180%" height="200%">
+    <feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity="0.16"/>
+  </filter>
+</defs>
 
 <!-- wires: data flowing right, from the real world into the models, then into the twin -->
 <path class="path wire w1" d="M116,80  C195,80  195,70  275,70"  pathLength="1"/>

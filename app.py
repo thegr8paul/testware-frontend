@@ -962,6 +962,97 @@ def render_scroll_settle() -> None:
     st.html(_SCROLL_SETTLE_JS, unsafe_allow_javascript=True)
 
 
+# A SEPARATE, self-contained scroll assist that ONLY frames workflow-flowchart
+# canvases -- the generated result (.st-key-tw_wf) and the curated examples
+# (.st-key-tw_wf_ex_*). It never touches the deck slides, the search bar, or
+# the three-area seams: it just makes a small corrective nudge so a flowchart
+# you scrolled near comes to rest cleanly framed. Runs AFTER the main settle
+# (longer debounce), honours the deck's __twSettleSuppressUntil handoff flag
+# and sets it while it moves, so the two can't fight. Pure viewport JS --
+# no backend, no session state, no rerun.
+_FLOW_SNAP_JS = """
+<script>
+(function () {
+  if (window.__twFlowSnap) return;
+  window.__twFlowSnap = true;
+
+  var HEADER = 80;
+  var SEL = ".st-key-tw_wf, [class*='st-key-tw_wf_ex_']";
+
+  function scroller() {
+    var c = [
+      document.querySelector('[data-testid="stAppViewContainer"]'),
+      document.querySelector('[data-testid="stMain"]'),
+      document.scrollingElement, document.documentElement, document.body
+    ];
+    for (var i = 0; i < c.length; i++) {
+      if (c[i] && c[i].scrollHeight - c[i].clientHeight > 4) return c[i];
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  function isWin(el) {
+    return el === document.scrollingElement || el === document.documentElement
+        || el === document.body;
+  }
+  function pos(el) { return isWin(el) ? (window.scrollY || window.pageYOffset) : el.scrollTop; }
+  function go(el, top) {
+    if (isWin(el)) window.scrollTo({ top: top, behavior: "smooth" });
+    else el.scrollTo({ top: top, behavior: "smooth" });
+  }
+
+  var t, snapping = false, lastP = null;
+  var NEAR = 210;   // only correct a canvas that's ALMOST framed (px)
+  var DEAD = 10;    // already framed -> leave it
+
+  function snap() {
+    if (snapping) return;
+    if (window.__twSettleSuppressUntil && Date.now() < window.__twSettleSuppressUntil) return;
+    var vh = window.innerHeight;
+    var els = document.querySelectorAll(SEL);
+    var bestOff = null, bestAbs = 1e9;
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect();
+      if (r.height < 60) continue;
+      if (r.bottom <= HEADER + 20 || r.top >= vh - 20) continue;   // not in view
+      var fits = r.height <= (vh - HEADER - 24);
+      var off = fits ? ((r.top + r.bottom) / 2 - (HEADER + vh) / 2)   // centre it
+                     : (r.top - HEADER);                              // top under the header
+      if (Math.abs(off) < bestAbs) { bestAbs = Math.abs(off); bestOff = off; }
+    }
+    if (bestOff === null || bestAbs <= DEAD || bestAbs > NEAR) return;
+    var sc = scroller();
+    snapping = true;
+    window.__twSettleSuppressUntil = Date.now() + 700;
+    go(sc, Math.round(pos(sc) + bestOff));
+    setTimeout(function () { snapping = false; lastP = pos(scroller()); }, 640);
+  }
+
+  function onScroll() {
+    if (snapping) return;
+    lastP = pos(scroller());
+    clearTimeout(t);
+    t = setTimeout(snap, 200);   // fires after the main settle has had its turn
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(snap, 260); });
+  function bind() {
+    var sc = scroller();
+    if (sc && !sc.__twFlowBound) { sc.__twFlowBound = true; sc.addEventListener("scroll", onScroll, { passive: true }); }
+  }
+  bind();
+  setInterval(bind, 2000);
+})();
+</script>
+"""
+
+
+def render_flowchart_snap() -> None:
+    """Small, isolated snap that only frames workflow-flowchart canvases (the
+    generated result and the curated examples). Independent of the deck-slide
+    snap and the three-area settle -- pure viewport JS, no backend."""
+    st.html(_FLOW_SNAP_JS, unsafe_allow_javascript=True)
+
+
 def _count_slides(md: str) -> int:
     """How many slides presentation.md renders -- mirrors the deck parser
     (components/deck/index.html): split on a `---` / `***` line, drop chunks
@@ -1215,4 +1306,5 @@ with st.container(key="tw_section_examples"):
     render_examples_section()
 
 render_scroll_settle()
+render_flowchart_snap()
 render_nav_rail(_count_slides(_md))
