@@ -717,6 +717,123 @@
     return fig;
   }
 
+  // ---- Context-6 pictogram: prompt -> RAG -> workflow, ~5 min -----------
+  // A minimal prompt bar in the real app's search-bar style, joined by
+  // slide-1-style floating connections (faint line + drifting dots) to a
+  // RAG database cylinder, then to a small workflow flowchart. A bracket
+  // underneath marks the whole thing at about five minutes. Monochrome.
+  var PROMPT_FLOW_SVG =
+    "<svg viewBox='0 0 320 150' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "aria-label='A prompt bar connects to a RAG database, which connects to a generated workflow flowchart; the whole process takes about five minutes'>" +
+    "<style>" +
+      "text{font-family:inherit}" +
+      ".pf-fill{fill:var(--bg);stroke:var(--ink);stroke-width:2}" +
+      ".pf-l{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linecap:round}" +
+      ".pf-txt{stroke:var(--muted);stroke-width:3;stroke-linecap:round}" +
+      ".pf-node{fill:var(--bg);stroke:var(--ink);stroke-width:1.8}" +
+      ".pf-conn{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}" +
+      ".pf-flow{fill:none;stroke:var(--hair);stroke-width:1.6}" +
+      ".pf-dot{fill:var(--muted)}" +
+      ".pf-ic{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}" +
+      ".pf-cap{fill:var(--muted);font-size:9px;font-weight:600;text-anchor:middle}" +
+      ".pf-sub{fill:var(--muted);font-size:7px;text-anchor:middle;letter-spacing:.06em}" +
+    "</style>" +
+    // 1. prompt bar (real search-bar style: white, rounded, firm contour)
+    "<rect class='pf-fill' x='12' y='42' width='84' height='28' rx='14'/>" +
+    "<line class='pf-txt' x1='24' y1='56' x2='62' y2='56'/>" +
+    "<circle cx='84' cy='56' r='8' fill='var(--ink)'/>" +
+    "<path d='M81 52l4 4-4 4' fill='none' stroke='var(--bg)' stroke-width='1.6' stroke-linecap='round'/>" +
+    "<text class='pf-sub' x='52' y='83'>PROMPT</text>" +
+    // floating connection: prompt -> RAG
+    "<path class='pf-flow' d='M96 56C112 47 126 65 140 56'/>" +
+    "<circle class='pf-dot' cx='108' cy='53.5' r='1.8'/><circle class='pf-dot' cx='118' cy='58.5' r='1.8'/><circle class='pf-dot' cx='130' cy='55' r='1.8'/>" +
+    // 2. RAG database cylinder
+    "<path class='pf-fill' d='M140 48a20 7 0 0 0 40 0v22a20 7 0 0 1-40 0z'/>" +
+    "<ellipse class='pf-fill' cx='160' cy='48' rx='20' ry='7'/>" +
+    "<path class='pf-l' d='M140 57a20 7 0 0 0 40 0M140 65a20 7 0 0 0 40 0'/>" +
+    "<text class='pf-sub' x='160' y='86'>RAG</text>" +
+    // floating connection: RAG -> workflow
+    "<path class='pf-flow' d='M180 56C196 47 216 65 232 56'/>" +
+    "<circle class='pf-dot' cx='194' cy='53' r='1.8'/><circle class='pf-dot' cx='206' cy='59' r='1.8'/><circle class='pf-dot' cx='220' cy='54.5' r='1.8'/>" +
+    // 3. workflow flowchart
+    "<rect class='pf-node' x='234' y='37' width='20' height='11' rx='5.5'/>" +
+    "<rect class='pf-node' x='266' y='37' width='20' height='11' rx='2'/>" +
+    "<rect class='pf-node' x='234' y='61' width='20' height='11' rx='3'/>" +
+    "<circle class='pf-node' cx='282' cy='66' r='7'/>" +
+    "<path class='pf-conn' d='M254 42.5h12M276 48v5q0 4-4 4h-14M254 66.5h13q7 0 9-3'/>" +
+    "<text class='pf-sub' x='262' y='86'>WORKFLOW</text>" +
+    // ~5 min bracket under the whole flow
+    "<path class='pf-flow' d='M14 100v5h288v-5'/>" +
+    "<g class='pf-ic' transform='translate(150 120)'><circle cx='0' cy='1' r='6'/><path d='M0 1v-4M-2 -6h4M4 -5l2-2'/></g>" +
+    "<text class='pf-cap' x='176' y='124'>&#8776; 5 min</text>" +
+    "</svg>";
+  function buildPromptFlow(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media lifecycle";
+    fig.innerHTML = PROMPT_FLOW_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
+  // ---- Context-7 pictogram: the three marketing pillars -----------------
+  // One circle on top, two below -> a triangle, edges connected. Each circle
+  // = one buzzword with its own icon. Bold, medallion-style, monochrome.
+  var KP_ICONS = {
+    brain: "<path d='M12 4c-2.2 0-3.5 1.3-3.5 2.6C6.4 6.6 5 8 5 9.8c0 1 .3 1.8 1 2.4-1 .8-1.2 2.6.4 3.6-.2 2 1.2 3.6 3.3 3.6 1 0 1.8-.4 2.3-1'/><path d='M12 4c2.2 0 3.5 1.3 3.5 2.6C17.6 6.6 19 8 19 9.8c0 1-.3 1.8-1 2.4 1 .8 1.2 2.6-.4 3.6.2 2-1.2 3.6-3.3 3.6-1 0-1.8-.4-2.3-1'/><path d='M12 4v14M9 9h1.6M13.4 12H15M9.4 15h2'/>",
+    lock:  "<rect x='7' y='11' width='11' height='9' rx='1.6'/><path d='M9.6 11V8.2A3.2 3.2 0 0115.5 6'/><circle cx='12.5' cy='14.8' r='1.3'/><path d='M12.5 16.1v1.9'/>",
+    arch:  "<rect x='3.5' y='7.5' width='17' height='11.5' rx='1.6'/><rect x='6' y='10.3' width='5.2' height='6' rx='.8'/><rect x='12.8' y='10.3' width='5.2' height='6' rx='.8'/><path d='M11.2 13.3h1.6'/><path d='M3.5 7.5 7 4.5M20.5 7.5 17 4.5'/>",
+  };
+  var KP_CIRCLES = [
+    { cx: 160, cy: 54, ic: "brain", l1: "Niche",        l2: "Knowhow" },
+    { cx: 78,  cy: 150, ic: "lock", l1: "Proprietary &", l2: "Open Source" },
+    { cx: 242, cy: 150, ic: "arch", l1: "Integration",   l2: "Logic" }
+  ];
+  var THREE_PILLARS_SVG = (function () {
+    var R = 39;
+    var s =
+      "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+      "aria-label='Three connected pillars in a triangle: Niche Knowhow, Proprietary and Open Source, and Integration Logic'>" +
+      "<style>" +
+        "text{font-family:inherit}" +
+        ".kp-conn{stroke:var(--ink);stroke-width:2}" +
+        ".kp-dot{fill:var(--ink)}" +
+        ".kp-ring{fill:var(--bg);stroke:var(--ink);stroke-width:2.6}" +
+        ".kp-inner{fill:none;stroke:var(--hair);stroke-width:1.4}" +
+        ".kp-ic{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}" +
+        ".kp-t{fill:var(--ink);font-size:9px;font-weight:700;text-anchor:middle}" +
+      "</style>";
+    // edges (behind the circles) + a dot at each midpoint
+    [[0, 1], [0, 2], [1, 2]].forEach(function (p) {
+      var a = KP_CIRCLES[p[0]], b = KP_CIRCLES[p[1]];
+      s += "<line class='kp-conn' x1='" + a.cx + "' y1='" + a.cy + "' x2='" + b.cx + "' y2='" + b.cy + "'/>";
+      s += "<circle class='kp-dot' cx='" + ((a.cx + b.cx) / 2) + "' cy='" + ((a.cy + b.cy) / 2) + "' r='2.6'/>";
+    });
+    // circles (opaque, so they cover the edges) + icon + two-line label
+    KP_CIRCLES.forEach(function (c) {
+      s += "<circle class='kp-ring' cx='" + c.cx + "' cy='" + c.cy + "' r='" + R + "'/>";
+      s += "<circle class='kp-inner' cx='" + c.cx + "' cy='" + c.cy + "' r='" + (R - 4) + "'/>";
+      s += "<svg class='kp-ic' x='" + (c.cx - 11) + "' y='" + (c.cy - 24) + "' width='22' height='22' viewBox='0 0 24 24'>" + KP_ICONS[c.ic] + "</svg>";
+      s += "<text class='kp-t' x='" + c.cx + "' y='" + (c.cy + 8) + "'>" + c.l1 + "</text>";
+      s += "<text class='kp-t' x='" + c.cx + "' y='" + (c.cy + 20) + "'>" + c.l2 + "</text>";
+    });
+    return s + "</svg>";
+  })();
+  function buildPillars(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media lifecycle";
+    fig.innerHTML = THREE_PILLARS_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
   function blockEl(b) {
     var e;
     if (b.t === "list") {
@@ -740,6 +857,12 @@
     } else if (b.t === "media" && /(^|\/)expert-to-anyone\.svg$/i.test(b.src || "")) {
       // Sentinel src -> the Context-5 "then experts, now anyone" pictogram.
       e = buildExpertEasy(b.cap);
+    } else if (b.t === "media" && /(^|\/)prompt-to-workflow\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-6 prompt -> RAG -> workflow (~5 min) flow.
+      e = buildPromptFlow(b.cap);
+    } else if (b.t === "media" && /(^|\/)three-pillars\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-7 triangle of three marketing pillars.
+      e = buildPillars(b.cap);
     } else if (b.t === "media") {
       e = document.createElement("figure");
       e.className = "media";

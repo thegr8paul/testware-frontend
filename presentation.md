@@ -105,7 +105,7 @@
 - AI/RAG Research Grounded in Truth
 - Make Reliable Decisions Quickly
 
-![Three illustrative generated flowcharts](placeholder-cases.svg)
+![Prompt to RAG database to generated workflow, about five minutes](prompt-to-workflow.svg)
 
 ---
 
@@ -118,7 +118,7 @@
 - Aligned with Regulations
 - Interactive and Customisable
 
-![Pictogram — the missing on-ramp](placeholder-gap.svg)
+![Niche knowhow, proprietary and open source, integration logic](three-pillars.svg)
 
 ---
 
