@@ -40,7 +40,7 @@
 - ML/AI + Cloud meets XIL + IoT + Edge
 - Software-Defined = More LOCs + More GBs
 
-![Pictogram grid — the verticals](placeholder-verticals.svg)
+![Industry verticals](bubbles.svg)
 
 ---
 
