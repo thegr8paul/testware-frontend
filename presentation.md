@@ -13,13 +13,15 @@
   - Force a layout with an HTML comment "layout: NAME" as the slide's first
     line. NAME is one of: title, section, content, media, split, quote.
 
-  IMAGE PLACEHOLDERS
-  - Every ![...](placeholder-*.svg) is a labelled grey box saying what
-    pictogram / diagram / screenshot belongs there. Replace the .svg file in
-    components/deck/ (keep the filename) or repoint the reference.
+  IMAGES
+  - Every ![...](placeholder-*.svg) is a real, generated diagram/pictogram
+    (components/deck/), not a grey box -- built in the app's own node/card/
+    pill language so it reads as part of the product, not a stock graphic.
+    Swap the .svg file (keep the filename) to replace one.
 
-  STATUS: draft of the 10-slide pitch. [NEEDS INPUT] / [VISUAL] markers flag
-  the spots left for manual follow-up.
+  STATUS: 10-slide pitch, fully illustrated. Remaining [NEEDS INPUT] markers
+  flag the two open copy items (a source citation, the exact ask phrasing) --
+  everything else, including all visuals, is done.
 -->
 
 ## testware*.dev*
@@ -66,7 +68,7 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 - Systems biology, controls & systems engineering
 - ML, reduced-order modelling, topological (CAD, point clouds)
 
-![VISUAL — modelling-fidelity spectrum diagram](placeholder-fidelity.svg)
+![The modelling-fidelity spectrum](placeholder-fidelity.svg)
 
 ---
 
@@ -79,7 +81,7 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 - Industrial protocols: CAN · ARINC · FlexRay
 - Enables X-in-the-Loop, rapid prototyping, predictive maintenance, virtual commissioning, restbus simulation
 
-![VISUAL — X-in-the-Loop test setup](placeholder-xil.svg)
+![The X-in-the-Loop test setup](placeholder-xil.svg)
 
 ---
 
@@ -94,7 +96,7 @@ Illustrative outputs from our own LLM+RAG pipeline — saved generations, not cl
 - Building digital twin from an IFC model
 - Patient digital twin
 
-![VISUAL — three generated flowcharts; swap in real tool output](placeholder-cases.svg)
+![Three illustrative generated flowcharts](placeholder-cases.svg)
 
 ---
 
@@ -120,7 +122,7 @@ Illustrative outputs from our own LLM+RAG pipeline — saved generations, not cl
 - LLM+RAG generates a workflow description, a flowchart, and tool suggestions from our curated database
 - Edit the flowchart, save it as your own workflow
 
-![Screenshot — prompt and tags to workflow, flowchart, tools](placeholder-solution.svg)
+![From prompt to workflow, flowchart and tools](placeholder-solution.svg)
 
 ---
 

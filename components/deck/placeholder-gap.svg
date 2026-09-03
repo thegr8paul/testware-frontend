@@ -1,16 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="THE MISSING ON-RAMP placeholder">
-  <rect width="900" height="460" fill="#F1EFE9"/>
-  <rect x="0.5" y="0.5" width="899" height="459" fill="none" stroke="#E7E3DA"/>
-  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
-    <path d="M150 210 H300 M470 150 H600 M470 270 H600 M770 210 H620"/>
-    <path d="M300 210 C 385 210, 385 150, 470 150 M300 210 C 385 210, 385 270, 470 270"/>
-  </g>
-  <g fill="#FFFFFF" stroke-width="2">
-    <rect x="90" y="182" width="60" height="56" rx="8" stroke="#3F7D78"/>
-    <rect x="440" y="122" width="60" height="56" rx="8" stroke="#A9822F"/>
-    <rect x="440" y="242" width="60" height="56" rx="8" stroke="#54628A"/>
-    <rect x="760" y="182" width="60" height="56" rx="8" stroke="#3F7D55"/>
-  </g>
-  <text x="450" y="378" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">THE MISSING ON-RAMP</text>
-  <text x="450" y="406" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">PLACEHOLDER — REPLACE IN components/deck/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" role="img" aria-label="Three reasons the on-ramp to digital twins is missing: know-how is niche, tools are proprietary and expensive, and integrating across verticals is hard">
+<style>text{font-family:"Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;fill:#1A1A1A}</style>
+<circle cx="130.0" cy="70" r="42" fill="none" stroke="#C7C7C7" stroke-width="1.6" stroke-dasharray="2 6"/>
+<g transform="translate(130.0,70) scale(0.85) translate(-12.0,-12.0)"><path d="M6,10 V7 a6,6 0 0 1 12,0 V10 M4,10 H20 V21 H4 Z" fill="none" stroke="#6B6B6B" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></g>
+<text x="130.0" y="138" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">NICHE KNOW-HOW</text>
+<circle cx="410.0" cy="70" r="42" fill="none" stroke="#C7C7C7" stroke-width="1.6" stroke-dasharray="2 6"/>
+<g transform="translate(410.0,70) scale(0.85) translate(-12.0,-12.0)"><path d="M2,12 L12,2 H20 V10 L10,20 a2,2 0 0 1 -2.8,0 L2,14.8 a2,2 0 0 1 0,-2.8 Z M16,7 a1,1 0 1 0 0.01,0" fill="none" stroke="#6B6B6B" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></g>
+<text x="410.0" y="138" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">PROPRIETARY &amp; PRICEY</text>
+<circle cx="690.0" cy="70" r="42" fill="none" stroke="#C7C7C7" stroke-width="1.6" stroke-dasharray="2 6"/>
+<g transform="translate(690.0,70) scale(0.85) translate(-12.0,-12.0)"><path d="M4,9 H9 V6 a2,2 0 1 1 4,0 V9 H19 V14 a2,2 0 1 0 0,4 V22 H4 V16 a2,2 0 1 0 0,-4 Z" fill="none" stroke="#6B6B6B" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></g>
+<text x="690.0" y="138" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">HARD TO INTEGRATE</text>
 </svg>

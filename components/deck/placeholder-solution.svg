@@ -1,14 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-label="PROMPT + TAGS to WORKFLOW + FLOWCHART + TOOLS placeholder">
-  <rect width="900" height="560" fill="#F1EFE9"/>
-  <rect x="0.5" y="0.5" width="899" height="559" fill="none" stroke="#E7E3DA"/>
-  <rect x="60" y="60" width="780" height="440" rx="12" fill="#FBFAF7" stroke="#E7E3DA"/>
-  <line x1="60" y1="104" x2="840" y2="104" stroke="#E7E3DA"/>
-  <g fill="#D9D5CA"><circle cx="88" cy="82" r="5"/><circle cx="108" cy="82" r="5"/><circle cx="128" cy="82" r="5"/></g>
-  <g stroke="#1A1A1A" stroke-opacity="0.14" stroke-width="1.5" fill="none">
-    <rect x="100" y="150" width="220" height="300" rx="8"/>
-    <rect x="360" y="150" width="440" height="140" rx="8"/>
-    <path d="M420 330 H740 M420 380 H700 M420 430 H720"/>
-  </g>
-  <text x="450" y="524" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">PROMPT + TAGS to WORKFLOW + FLOWCHART + TOOLS</text>
-  <text x="450" y="548" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">SCREENSHOT PLACEHOLDER — REPLACE IN components/deck/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-label="A structured prompt with industry, application and project-type tags turns into a workflow description, a flowchart, and suggested tools from the catalogue">
+<style>text{font-family:"Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;fill:#1A1A1A}</style>
+<rect x="250" y="22" width="400" height="92" rx="24" ry="24" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.5"/>
+<rect x="276" y="46" width="230" height="9" rx="4" fill="rgba(26,26,26,0.26)"/>
+<circle cx="290" cy="88" r="15" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.1"/>
+<circle cx="330" cy="88" r="15" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.1"/>
+<circle cx="370" cy="88" r="15" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.1"/>
+<circle cx="618" cy="84" r="19" fill="#1A1A1A"/>
+<circle cx="613" cy="79" r="6" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+<line x1="617" y1="83" x2="622" y2="88" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+<line x1="450" y1="122" x2="450" y2="158" stroke="#C7C7C7" stroke-width="1.6"/>
+<path d="M443,151 L450,165 L457,151 Z" fill="#C7C7C7"/>
+<rect x="40" y="182" width="256" height="250" rx="12" ry="12" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.2"/>
+<text x="58" y="210" text-anchor="start" font-size="14" font-weight="700" letter-spacing="0" fill="#1A1A1A">Workflow description</text>
+<rect x="322" y="182" width="256" height="250" rx="12" ry="12" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.2"/>
+<text x="340" y="210" text-anchor="start" font-size="14" font-weight="700" letter-spacing="0" fill="#1A1A1A">Flowchart</text>
+<rect x="604" y="182" width="256" height="250" rx="12" ry="12" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1.2"/>
+<text x="622" y="210" text-anchor="start" font-size="14" font-weight="700" letter-spacing="0" fill="#1A1A1A">Suggested tools</text>
+<rect x="58" y="236" width="220" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="58" y="260" width="200" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="58" y="284" width="150" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="58" y="308" width="210" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="58" y="332" width="170" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="58" y="356" width="120" height="7" rx="3" fill="rgba(26,26,26,0.26)"/>
+<path d="M450.0,258 C450.0,277.0 450.0,277.0 450.0,292" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M450.0,332 C450.0,347.0 450.0,347.0 450.0,366" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<rect x="406.0" y="226" width="88" height="32" rx="16.0" ry="16.0" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.2"/>
+<rect x="400.0" y="292" width="100" height="40" rx="6" ry="6" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<path d="M410.0,368 H484.0 A3,3 0 0 1 490.0,374 V390 A16,16 0 0 1 474.0,406 H426.0 A16,16 0 0 1 410.0,390 V374 A3,3 0 0 1 410.0,368 Z" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<rect x="622" y="234" width="220" height="80" rx="8" ry="8" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<rect x="636" y="250" width="110" height="8" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="636" y="268" width="192" height="6" rx="3" fill="rgba(26,26,26,0.16)"/>
+<rect x="636" y="280" width="160" height="6" rx="3" fill="rgba(26,26,26,0.16)"/>
+<rect x="636" y="292" width="70" height="14" rx="7.0" ry="7.0" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1"/>
+<rect x="622" y="330" width="220" height="80" rx="8" ry="8" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<rect x="636" y="346" width="110" height="8" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="636" y="364" width="192" height="6" rx="3" fill="rgba(26,26,26,0.16)"/>
+<rect x="636" y="376" width="160" height="6" rx="3" fill="rgba(26,26,26,0.16)"/>
+<rect x="636" y="388" width="70" height="14" rx="7.0" ry="7.0" fill="#F0F0F0" stroke="#E3E3E3" stroke-width="1"/>
 </svg>

@@ -1,16 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="MODELLING-FIDELITY SPECTRUM placeholder">
-  <rect width="900" height="460" fill="#F1EFE9"/>
-  <rect x="0.5" y="0.5" width="899" height="459" fill="none" stroke="#E7E3DA"/>
-  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
-    <path d="M150 210 H300 M470 150 H600 M470 270 H600 M770 210 H620"/>
-    <path d="M300 210 C 385 210, 385 150, 470 150 M300 210 C 385 210, 385 270, 470 270"/>
-  </g>
-  <g fill="#FFFFFF" stroke-width="2">
-    <rect x="90" y="182" width="60" height="56" rx="8" stroke="#3F7D78"/>
-    <rect x="440" y="122" width="60" height="56" rx="8" stroke="#A9822F"/>
-    <rect x="440" y="242" width="60" height="56" rx="8" stroke="#54628A"/>
-    <rect x="760" y="182" width="60" height="56" rx="8" stroke="#3F7D55"/>
-  </g>
-  <text x="450" y="378" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">MODELLING-FIDELITY SPECTRUM</text>
-  <text x="450" y="406" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">PLACEHOLDER — REPLACE IN components/deck/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 240" role="img" aria-label="A spectrum from fast, approximate models to slow, exact ones: reduced-order and topological, machine learning, controls and systems engineering, systems biology, multiscale multiphysics and computational X-mechanics">
+<style>text{font-family:"Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;fill:#1A1A1A}</style>
+<line x1="60" y1="130" x2="746" y2="130" stroke="#C7C7C7" stroke-width="1.6"/>
+<path d="M740,123 L760,130 L740,137 Z" fill="#C7C7C7"/>
+<circle cx="60.0" cy="130" r="5.5" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="60.0" y="91" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Reduced-order /</text>
+<text x="60.0" y="106" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">topological</text>
+<circle cx="220.0" cy="130" r="5.5" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="220.0" y="164" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Machine</text>
+<text x="220.0" y="179" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">learning</text>
+<circle cx="380.0" cy="130" r="5.5" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="380.0" y="91" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Controls &amp;</text>
+<text x="380.0" y="106" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">systems eng.</text>
+<circle cx="540.0" cy="130" r="5.5" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="540.0" y="164" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Systems</text>
+<text x="540.0" y="179" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">biology</text>
+<circle cx="700.0" cy="130" r="5.5" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="700.0" y="91" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Multiscale</text>
+<text x="700.0" y="106" text-anchor="middle" font-size="12.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">X-mechanics</text>
+<text x="60" y="206" text-anchor="start" font-size="11.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">FAST, APPROXIMATE</text>
+<text x="746" y="206" text-anchor="end" font-size="11.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">DETAILED, EXACT</text>
 </svg>

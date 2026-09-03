@@ -1,16 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="3 GENERATED FLOWCHARTS — ICME / BUILDING (IFC) / PATIENT placeholder">
-  <rect width="900" height="460" fill="#F1EFE9"/>
-  <rect x="0.5" y="0.5" width="899" height="459" fill="none" stroke="#E7E3DA"/>
-  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
-    <path d="M150 210 H300 M470 150 H600 M470 270 H600 M770 210 H620"/>
-    <path d="M300 210 C 385 210, 385 150, 470 150 M300 210 C 385 210, 385 270, 470 270"/>
-  </g>
-  <g fill="#FFFFFF" stroke-width="2">
-    <rect x="90" y="182" width="60" height="56" rx="8" stroke="#3F7D78"/>
-    <rect x="440" y="122" width="60" height="56" rx="8" stroke="#A9822F"/>
-    <rect x="440" y="242" width="60" height="56" rx="8" stroke="#54628A"/>
-    <rect x="760" y="182" width="60" height="56" rx="8" stroke="#3F7D55"/>
-  </g>
-  <text x="450" y="378" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">3 GENERATED FLOWCHARTS — ICME / BUILDING (IFC) / PATIENT</text>
-  <text x="450" y="406" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">PLACEHOLDER — REPLACE IN components/deck/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="Three miniature generated flowcharts, one per illustrative example: an ICME material twin, a building digital twin from an IFC model, and a patient digital twin">
+<style>text{font-family:"Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;fill:#1A1A1A}</style>
+<path d="M74.0,70 C95.0,70 95.0,70 108.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M192.0,70 C205.0,70 205.0,70 226.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<rect x="6.0" y="48" width="68" height="44" rx="22.0" ry="22.0" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.3"/>
+<circle cx="74.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="108.0" y="40" width="84" height="60" rx="6" ry="6" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="108.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<circle cx="192.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="124.0" y="62" width="52" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="124.0" y="74" width="34" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<path d="M228.0,44 H288.0 A3,3 0 0 1 294.0,50 V86 A16,16 0 0 1 278.0,102 H242.0 A16,16 0 0 1 226.0,86 V50 A3,3 0 0 1 228.0,44 Z" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="226.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="150.0" y="152" text-anchor="middle" font-size="12.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">ICME MATERIAL TWIN</text>
+<path d="M374.0,70 C395.0,70 395.0,70 408.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M492.0,70 C505.0,70 505.0,70 526.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<rect x="306.0" y="48" width="68" height="44" rx="22.0" ry="22.0" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.3"/>
+<circle cx="374.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="408.0" y="40" width="84" height="60" rx="6" ry="6" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="408.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<circle cx="492.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="424.0" y="62" width="52" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="424.0" y="74" width="34" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<path d="M528.0,44 H588.0 A3,3 0 0 1 594.0,50 V86 A16,16 0 0 1 578.0,102 H542.0 A16,16 0 0 1 526.0,86 V50 A3,3 0 0 1 528.0,44 Z" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="526.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="450.0" y="152" text-anchor="middle" font-size="12.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">BUILDING TWIN (IFC)</text>
+<path d="M674.0,70 C695.0,70 695.0,70 708.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M792.0,70 C805.0,70 805.0,70 826.0,70" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<rect x="606.0" y="48" width="68" height="44" rx="22.0" ry="22.0" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.3"/>
+<circle cx="674.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="708.0" y="40" width="84" height="60" rx="6" ry="6" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="708.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<circle cx="792.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<rect x="724.0" y="62" width="52" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<rect x="724.0" y="74" width="34" height="5" rx="3" fill="rgba(26,26,26,0.26)"/>
+<path d="M828.0,44 H888.0 A3,3 0 0 1 894.0,50 V86 A16,16 0 0 1 878.0,102 H842.0 A16,16 0 0 1 826.0,86 V50 A3,3 0 0 1 828.0,44 Z" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<circle cx="826.0" cy="70" r="3.8" fill="#FFFFFF" stroke="#454542" stroke-width="1.3"/>
+<text x="750.0" y="152" text-anchor="middle" font-size="12.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">PATIENT TWIN</text>
 </svg>

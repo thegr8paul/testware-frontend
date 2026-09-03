@@ -1,16 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="X-IN-THE-LOOP TEST SETUP placeholder">
-  <rect width="900" height="460" fill="#F1EFE9"/>
-  <rect x="0.5" y="0.5" width="899" height="459" fill="none" stroke="#E7E3DA"/>
-  <g stroke="#1A1A1A" stroke-opacity="0.16" stroke-width="1.5" fill="none">
-    <path d="M150 210 H300 M470 150 H600 M470 270 H600 M770 210 H620"/>
-    <path d="M300 210 C 385 210, 385 150, 470 150 M300 210 C 385 210, 385 270, 470 270"/>
-  </g>
-  <g fill="#FFFFFF" stroke-width="2">
-    <rect x="90" y="182" width="60" height="56" rx="8" stroke="#3F7D78"/>
-    <rect x="440" y="122" width="60" height="56" rx="8" stroke="#A9822F"/>
-    <rect x="440" y="242" width="60" height="56" rx="8" stroke="#54628A"/>
-    <rect x="760" y="182" width="60" height="56" rx="8" stroke="#3F7D55"/>
-  </g>
-  <text x="450" y="378" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#7C7869">X-IN-THE-LOOP TEST SETUP</text>
-  <text x="450" y="406" text-anchor="middle" font-family="'Source Sans 3', system-ui, sans-serif" font-size="12.5" letter-spacing="2" fill="#9A968C">PLACEHOLDER — REPLACE IN components/deck/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="A digital model connected through a real-time target -- sensors, power electronics, FPGAs, industrial protocols CAN, ARINC, FlexRay -- to the physical device under test, feeding back both ways">
+<style>text{font-family:"Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;fill:#1A1A1A}</style>
+<path d="M175.0,116 C275.0,116 275.0,116 375.0,116" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M375.0,144 C275.0,144 275.0,144 175.0,144" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 7"/>
+<text x="275.0" y="106" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">CAN · ARINC · FLEXRAY</text>
+<text x="275.0" y="164" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">FEEDBACK</text>
+<path d="M525.0,116 C625.0,116 625.0,116 725.0,116" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M725.0,144 C625.0,144 625.0,144 525.0,144" fill="none" stroke="rgba(17,17,17,0.5)" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 7"/>
+<text x="625.0" y="106" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">CAN · ARINC · FLEXRAY</text>
+<text x="625.0" y="164" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing="1.6" fill="#6B6B6B">FEEDBACK</text>
+<rect x="25.0" y="76.0" width="150" height="108" rx="10" ry="10" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<path d="M86,128 V112 H114 V128 H86 V144 H114 V128" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="miter"/>
+<text x="100" y="168.0" text-anchor="middle" font-size="13.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Model</text>
+<rect x="375.0" y="76.0" width="150" height="108" rx="10" ry="10" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<g transform="translate(450,116) scale(1.1) translate(-12.0,-12.0)"><path d="M12,4 a8,8 0 1 0 0.01,0 M12,12 L16,8 M4,20 H20" fill="none" stroke="#1A1A1A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></g>
+<text x="450" y="168.0" text-anchor="middle" font-size="13.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Real-time target</text>
+<rect x="725.0" y="76.0" width="150" height="108" rx="10" ry="10" fill="rgba(255,255,255,0.92)" stroke="rgba(26,26,26,0.4)" stroke-width="1.4"/>
+<g transform="translate(800,116) scale(1.1) translate(-12.0,-12.0)"><path d="M8,4 V2 M12,4 V2 M16,4 V2 M8,22 V20 M12,22 V20 M16,22 V20 M4,8 H2 M4,16 H2 M22,8 H20 M22,16 H20 M6,6 H18 V18 H6 Z" fill="none" stroke="#1A1A1A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></g>
+<text x="800" y="168.0" text-anchor="middle" font-size="13.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">Device</text>
+<text x="800" y="183.0" text-anchor="middle" font-size="13.5" font-weight="600" letter-spacing="0" fill="#1A1A1A">under test</text>
 </svg>
