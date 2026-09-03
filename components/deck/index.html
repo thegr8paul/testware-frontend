@@ -60,12 +60,12 @@
 
   /* The ONE scrolling element in this document -- deliberately not `body`
      (avoids the standards-mode html-vs-body "scrollingElement" ambiguity).
-     No forced scroll-snap -- tried mandatory, then proximity, both still
-     read as fighting the user's own scroll (hard to scroll back up).
-     scroll-behavior:smooth plus each slide being a full screen tall (below)
-     keeps the "one slide at a time" impression without a hard snap forcing
-     it. Re-add `scroll-snap-type: y proximity;` here if free scroll ever
-     feels too loose -- everything else is unaffected either way. */
+     Mandatory scroll-snap: the deck always rests exactly on a slide, never
+     floating half-between two so the seam/space shows during a
+     presentation. Each wheel/track gesture pages one whole slide
+     (scroll-snap-stop:always on .slide). Handing back to the outer page at
+     the very top / bottom still works -- the wheel handler below intercepts
+     those before the snap container sees them. */
   #scroller {
     position: relative;
     z-index: 1;
@@ -74,16 +74,20 @@
     overflow-x: hidden;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: y mandatory;
   }
 
   /* Each slide is AT LEAST this iframe's own (bounded) viewport tall
      (min-height, not a fixed height) so a slide with more content than
      fits in one screen -- a tall image, a long list -- grows instead of
-     clipping. scroll-snap-align stays (harmless with no scroll-snap-type
-     set -- it's a no-op until/unless proximity comes back). */
+     clipping (a taller-than-viewport slide is still freely scrollable
+     inside its own snap area). scroll-snap-align pins each slide's top to
+     the scroller top; scroll-snap-stop:always keeps one gesture from
+     skipping a slide. */
   .slide {
     min-height: 100vh;
     scroll-snap-align: start;
+    scroll-snap-stop: always;
     display: grid;
     place-items: center;
     padding: clamp(3.5rem, 9vw, 5.5rem) clamp(1.25rem, 6vw, 5rem) clamp(2.25rem, 5vw, 3.5rem);
