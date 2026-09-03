@@ -640,9 +640,13 @@
     }
 
     // One smooth move of the outer page by `delta` px -- used for the
-    // last-slide -> Examples handoff so it lands in a single motion instead
-    // of the outer settle script easing onto the deck/examples seam first.
+    // last-slide -> Examples and first-slide -> app handoffs so each lands in
+    // a single motion. Also parks the outer settle script for the duration
+    // (render_scroll_settle in app.py honours __twSettleSuppressUntil), so it
+    // can't ease onto an intermediate seam mid-flight -- that was the little
+    // "snap in between".
     function outerSmoothBy(delta) {
+      try { parentWin.__twSettleSuppressUntil = Date.now() + 900; } catch (e) {}
       var el = outerScroller();
       if (el === parentDoc.scrollingElement || el === parentDoc.documentElement) {
         parentWin.scrollTo({ top: (parentWin.scrollY || parentWin.pageYOffset || 0) + delta, behavior: "smooth" });

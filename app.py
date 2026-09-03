@@ -844,6 +844,10 @@ _SCROLL_SETTLE_JS = """
 
   function settle() {
     if (settling) return;
+    // The deck parks us here while it runs a deliberate one-shot handoff
+    // (last slide <-> Examples, first slide <-> app) so we don't fight it
+    // with an intermediate seam snap mid-animation.
+    if (window.__twSettleSuppressUntil && Date.now() < window.__twSettleSuppressUntil) return;
     var areas = IDS.map(function (id) { return document.querySelector('.st-key-' + id); })
                    .filter(Boolean);
     if (areas.length < 2) return;
@@ -1147,7 +1151,16 @@ _NAV_RAIL_JS = """
     if (!d) return;
     var tgt = d.index() + (down ? 1 : -1);
     if (tgt > d.count() - 1) { e.preventDefault(); toEl(q(".st-key-tw_section_examples")); return; }
-    if (tgt < 0)             { e.preventDefault(); toEl(q(".st-key-tw_section_chat")); return; }
+    if (tgt < 0) {
+      // first slide, ArrowUp -> straight to the very top, one motion (no
+      // intermediate seam snap from settle()).
+      e.preventDefault();
+      window.__twSettleSuppressUntil = Date.now() + 900;
+      var sc = scroller();
+      if (isWin(sc)) window.scrollTo({ top: 0, behavior: "smooth" });
+      else sc.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     e.preventDefault();
     d.goto(tgt);
   });
