@@ -94,10 +94,13 @@
     scroll-snap-stop: always;
     display: grid;
     place-items: center;
-    padding: clamp(3.5rem, 9vw, 5.5rem) clamp(1.25rem, 6vw, 5rem) clamp(2.25rem, 5vw, 3.5rem);
+    padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 4vw, 3rem);
   }
 
-  .frame { width: min(1000px, 100%); }
+  /* Sized for a projector: the frame takes most of the screen width and the
+     type scale below is deliberately large so text/illustrations read from
+     the back of a room. */
+  .frame { width: min(1360px, 94vw); }
   .slide[data-layout="content"] .frame,
   .slide[data-layout="media"] .frame,
   .slide[data-layout="split"] .frame,
@@ -107,7 +110,7 @@
     backdrop-filter: blur(5px);
     border: 1px solid var(--hair);
     border-radius: 20px;
-    padding: clamp(1.5rem, 4vw, 3rem);
+    padding: clamp(2rem, 4.5vw, 3.75rem);
     box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 24px 60px rgba(0, 0, 0, .07);
   }
   .slide[data-layout="title"] .frame,
@@ -127,38 +130,38 @@
   .col-b { min-width: 0; }
 
   .kicker {
-    font-size: clamp(.66rem, 1.4vw, .8rem);
+    font-size: clamp(.9rem, 1.5vw, 1.15rem);
     font-weight: 600;
     letter-spacing: .15em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 1rem;
+    margin-bottom: 1.15rem;
   }
   .headline {
     font-weight: 700;
-    font-size: clamp(1.85rem, 4.6vw, 3.3rem);
+    font-size: clamp(2.6rem, 5.4vw, 4.4rem);
     line-height: 1.08;
     letter-spacing: -0.02em;
     text-wrap: balance;
     max-width: 22ch;
   }
-  .slide[data-layout="title"] .headline { font-size: clamp(2.4rem, 7vw, 4.6rem); margin-inline: auto; }
-  .slide[data-layout="section"] .headline { font-size: clamp(2.1rem, 6vw, 3.9rem); max-width: 18ch; margin-inline: auto; }
+  .slide[data-layout="title"] .headline { font-size: clamp(3.4rem, 8vw, 6rem); margin-inline: auto; }
+  .slide[data-layout="section"] .headline { font-size: clamp(3rem, 6.8vw, 5.2rem); max-width: 18ch; margin-inline: auto; }
   .headline i, .headline em { font-style: normal; color: var(--accent); }
   .subhead {
-    font-size: clamp(1rem, 2vw, 1.3rem);
+    font-size: clamp(1.35rem, 2.3vw, 1.8rem);
     line-height: 1.5;
     color: var(--muted);
-    max-width: 46ch;
-    margin-top: 1rem;
+    max-width: 48ch;
+    margin-top: 1.15rem;
   }
   .slide[data-layout="title"] .subhead,
   .slide[data-layout="section"] .subhead { margin-inline: auto; }
   .body {
-    font-size: clamp(.98rem, 1.7vw, 1.15rem);
-    line-height: 1.6;
-    max-width: 54ch;
-    margin-top: 1rem;
+    font-size: clamp(1.3rem, 2vw, 1.7rem);
+    line-height: 1.55;
+    max-width: 56ch;
+    margin-top: 1.15rem;
     color: var(--ink);
   }
   .body strong { font-weight: 700; }
@@ -166,52 +169,52 @@
 
   .list {
     list-style: none;
-    margin-top: 1.4rem;
+    margin-top: 1.7rem;
     display: flex;
     flex-direction: column;
-    gap: .8rem;
-    max-width: 54ch;
+    gap: 1rem;
+    max-width: 56ch;
   }
   .list li {
     position: relative;
-    padding-left: 1.4rem;
-    font-size: clamp(.98rem, 1.8vw, 1.18rem);
-    line-height: 1.45;
+    padding-left: 1.7rem;
+    font-size: clamp(1.3rem, 2.1vw, 1.75rem);
+    line-height: 1.4;
   }
   .list li::before {
     content: "";
     position: absolute;
     left: 0;
-    top: .58em;
-    width: .5rem;
-    height: .5rem;
+    top: .55em;
+    width: .6rem;
+    height: .6rem;
     border-radius: 50%;
     background: var(--accent);
   }
   .list li strong { font-weight: 700; }
 
   .quote {
-    font-size: clamp(1.35rem, 3vw, 2.05rem);
-    line-height: 1.4;
+    font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+    line-height: 1.35;
     letter-spacing: -0.01em;
-    max-width: 26ch;
+    max-width: 24ch;
     margin-inline: auto;
   }
-  .quote + .body { margin-top: 1.1rem; color: var(--muted); }
+  .quote + .body { margin-top: 1.25rem; color: var(--muted); }
 
   figure.media { margin: 0; }
   figure.media img {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 55vh;   /* shrink to fit one screen instead of forcing extra scroll to see the rest */
+    max-height: 66vh;   /* bigger illustration, still fits one screen */
     border-radius: 14px;
     border: 1px solid var(--hair);
     background: var(--panel-2);
   }
   figure.media figcaption {
-    margin-top: .6rem;
-    font-size: .85rem;
+    margin-top: .75rem;
+    font-size: clamp(1rem, 1.4vw, 1.15rem);
     line-height: 1.4;
     color: var(--muted);
   }
