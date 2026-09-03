@@ -160,41 +160,292 @@
   ],
   "workflow": {
     "nodes": [
-      { "id": "img", "type": "input", "label": "Chest CT / echo", "inputs": [], "outputs": ["imaging"] },
-      { "id": "ehr", "type": "input", "label": "EHR, labs, ABG", "inputs": [], "outputs": ["ehr"] },
-      { "id": "vent", "type": "input", "label": "Ventilator & monitor stream", "inputs": [], "outputs": ["signals"] },
-      { "id": "cat", "type": "database", "label": "Model catalogue", "inputs": [], "outputs": ["records"] },
-      { "id": "seg", "type": "process", "label": "Segment airways · estimate compliance", "inputs": ["imaging"], "outputs": ["anatomy"] },
-      { "id": "pers", "type": "process", "label": "Personalise model parameters", "inputs": ["anatomy", "ehr", "records"], "outputs": ["params"] },
-      { "id": "lung", "type": "model", "label": "Pulse lung mechanics (0D/1D)", "inputs": ["params"], "outputs": ["lung_state"], "catalogue_id": "pulse-engine" },
-      { "id": "cvs", "type": "model", "label": "OpenCOR cardiovascular (0D)", "inputs": ["params"], "outputs": ["cvs_state"], "catalogue_id": "opencor-cvs" },
-      { "id": "da", "type": "process", "label": "EnKF data assimilation", "inputs": ["lung_state", "cvs_state", "signals"], "outputs": ["assimilated"], "catalogue_id": "filterpy-enkf" },
-      { "id": "state", "type": "merge", "label": "Coupled patient state", "inputs": ["assimilated", "signals"], "outputs": ["patient_state"] },
-      { "id": "sweep", "type": "model", "label": "Forecast: PEEP / FiO2 sweep", "inputs": ["patient_state"], "outputs": ["forecast"] },
-      { "id": "uq", "type": "process", "label": "Uncertainty quantification", "inputs": ["forecast"], "outputs": ["forecast_ci"], "catalogue_id": "chaospy-uq" },
-      { "id": "gate", "type": "decision", "label": "Predicted PaO2 in target range?", "inputs": ["forecast_ci"], "outputs": ["yes", "no"] },
-      { "id": "rec", "type": "output", "label": "Advisory: suggested setting + CI", "inputs": ["advice"], "outputs": [] },
-      { "id": "hold", "type": "output", "label": "Hold · keep monitoring", "inputs": ["hold"], "outputs": [] },
-      { "id": "store", "type": "database", "label": "De-identified case store", "inputs": ["case"], "outputs": [] }
+      {
+        "id": "img",
+        "type": "input",
+        "label": "Chest CT / echo",
+        "inputs": [],
+        "outputs": [
+          "imaging"
+        ],
+        "x": 40,
+        "y": 60
+      },
+      {
+        "id": "ehr",
+        "type": "input",
+        "label": "EHR, labs, ABG",
+        "inputs": [],
+        "outputs": [
+          "ehr"
+        ],
+        "x": 40,
+        "y": 220
+      },
+      {
+        "id": "vent",
+        "type": "input",
+        "label": "Ventilator & monitor stream",
+        "inputs": [],
+        "outputs": [
+          "signals"
+        ],
+        "x": 40,
+        "y": 380
+      },
+      {
+        "id": "cat",
+        "type": "database",
+        "label": "Model catalogue",
+        "inputs": [],
+        "outputs": [
+          "records"
+        ],
+        "x": 40,
+        "y": 540
+      },
+      {
+        "id": "seg",
+        "type": "process",
+        "label": "Segment airways · estimate compliance",
+        "inputs": [
+          "imaging"
+        ],
+        "outputs": [
+          "anatomy"
+        ],
+        "x": 340,
+        "y": 60
+      },
+      {
+        "id": "pers",
+        "type": "process",
+        "label": "Personalise model parameters",
+        "inputs": [
+          "anatomy",
+          "ehr",
+          "records"
+        ],
+        "outputs": [
+          "params"
+        ],
+        "x": 640,
+        "y": 60
+      },
+      {
+        "id": "lung",
+        "type": "model",
+        "label": "Pulse lung mechanics (0D/1D)",
+        "inputs": [
+          "params"
+        ],
+        "outputs": [
+          "lung_state"
+        ],
+        "catalogue_id": "pulse-engine",
+        "x": 940,
+        "y": 60
+      },
+      {
+        "id": "cvs",
+        "type": "model",
+        "label": "OpenCOR cardiovascular (0D)",
+        "inputs": [
+          "params"
+        ],
+        "outputs": [
+          "cvs_state"
+        ],
+        "catalogue_id": "opencor-cvs",
+        "x": 940,
+        "y": 220
+      },
+      {
+        "id": "da",
+        "type": "process",
+        "label": "EnKF data assimilation",
+        "inputs": [
+          "lung_state",
+          "cvs_state",
+          "signals"
+        ],
+        "outputs": [
+          "assimilated"
+        ],
+        "catalogue_id": "filterpy-enkf",
+        "x": 1240,
+        "y": 60
+      },
+      {
+        "id": "state",
+        "type": "merge",
+        "label": "Coupled patient state",
+        "inputs": [
+          "assimilated",
+          "signals"
+        ],
+        "outputs": [
+          "patient_state"
+        ],
+        "x": 1540,
+        "y": 60
+      },
+      {
+        "id": "sweep",
+        "type": "model",
+        "label": "Forecast: PEEP / FiO2 sweep",
+        "inputs": [
+          "patient_state"
+        ],
+        "outputs": [
+          "forecast"
+        ],
+        "x": 1840,
+        "y": 60
+      },
+      {
+        "id": "uq",
+        "type": "process",
+        "label": "Uncertainty quantification",
+        "inputs": [
+          "forecast"
+        ],
+        "outputs": [
+          "forecast_ci"
+        ],
+        "catalogue_id": "chaospy-uq",
+        "x": 2140,
+        "y": 60
+      },
+      {
+        "id": "gate",
+        "type": "decision",
+        "label": "Predicted PaO2 in target range?",
+        "inputs": [
+          "forecast_ci"
+        ],
+        "outputs": [
+          "yes",
+          "no"
+        ],
+        "x": 2440,
+        "y": 60
+      },
+      {
+        "id": "rec",
+        "type": "output",
+        "label": "Advisory: suggested setting + CI",
+        "inputs": [
+          "advice"
+        ],
+        "outputs": [],
+        "x": 2740,
+        "y": 60
+      },
+      {
+        "id": "hold",
+        "type": "output",
+        "label": "Hold · keep monitoring",
+        "inputs": [
+          "hold"
+        ],
+        "outputs": [],
+        "x": 2740,
+        "y": 220
+      },
+      {
+        "id": "store",
+        "type": "database",
+        "label": "De-identified case store",
+        "inputs": [
+          "case"
+        ],
+        "outputs": [],
+        "x": 1840,
+        "y": 220
+      }
     ],
     "edges": [
-      { "source": "img", "target": "seg" },
-      { "source": "seg", "target": "pers", "target_port": 0 },
-      { "source": "ehr", "target": "pers", "target_port": 1 },
-      { "source": "cat", "target": "pers", "target_port": 2 },
-      { "source": "pers", "target": "lung" },
-      { "source": "pers", "target": "cvs" },
-      { "source": "lung", "target": "da", "target_port": 0 },
-      { "source": "cvs", "target": "da", "target_port": 1 },
-      { "source": "vent", "target": "da", "target_port": 2 },
-      { "source": "da", "target": "state", "target_port": 0 },
-      { "source": "vent", "target": "state", "target_port": 1 },
-      { "source": "state", "target": "sweep" },
-      { "source": "sweep", "target": "uq" },
-      { "source": "uq", "target": "gate" },
-      { "source": "gate", "target": "rec", "source_port": 0, "label": "yes" },
-      { "source": "gate", "target": "hold", "source_port": 1, "label": "no" },
-      { "source": "state", "target": "store" }
+      {
+        "source": "img",
+        "target": "seg"
+      },
+      {
+        "source": "seg",
+        "target": "pers",
+        "target_port": 0
+      },
+      {
+        "source": "ehr",
+        "target": "pers",
+        "target_port": 1
+      },
+      {
+        "source": "cat",
+        "target": "pers",
+        "target_port": 2
+      },
+      {
+        "source": "pers",
+        "target": "lung"
+      },
+      {
+        "source": "pers",
+        "target": "cvs"
+      },
+      {
+        "source": "lung",
+        "target": "da",
+        "target_port": 0
+      },
+      {
+        "source": "cvs",
+        "target": "da",
+        "target_port": 1
+      },
+      {
+        "source": "vent",
+        "target": "da",
+        "target_port": 2
+      },
+      {
+        "source": "da",
+        "target": "state",
+        "target_port": 0
+      },
+      {
+        "source": "vent",
+        "target": "state",
+        "target_port": 1
+      },
+      {
+        "source": "state",
+        "target": "sweep"
+      },
+      {
+        "source": "sweep",
+        "target": "uq"
+      },
+      {
+        "source": "uq",
+        "target": "gate"
+      },
+      {
+        "source": "gate",
+        "target": "rec",
+        "source_port": 0,
+        "label": "yes"
+      },
+      {
+        "source": "gate",
+        "target": "hold",
+        "source_port": 1,
+        "label": "no"
+      },
+      {
+        "source": "state",
+        "target": "store"
+      }
     ]
   }
 }

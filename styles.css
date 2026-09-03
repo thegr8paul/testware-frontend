@@ -292,17 +292,26 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 [data-testid="stExpander"] summary { font-size: 1rem; }
 
 /* The streamed/cached bot answer (app.py's st.container(key="tw_answer")) --
-   a darkish-grey bubble behind the answer prose so it reads as "the answer"
-   rather than bare body text sitting on the page background. Dedicated
-   --tw-bubble-* tokens (clearly darker than the page bg in both themes) --
-   earlier, lighter fills were too close to the background to be visible. */
+   same treatment as the search bar: white surface, firm near-black 2px
+   contour, the search bar's soft shadow. Minimal black prose inside, at a
+   comfortable reading size. */
 .st-key-tw_answer {
-  background: var(--tw-bubble-bg) !important;
-  border: 1px solid var(--tw-bubble-border) !important;
+  background: var(--tw-bg-elevated) !important;
+  border: 2px solid var(--tw-ink) !important;
   border-radius: 18px;
-  padding: 18px 20px;
-  margin: 0.5rem 0 1rem 0;
+  box-shadow: var(--tw-shadow-sm) !important;
+  padding: 22px 26px;
+  margin: 0.75rem 0 1.5rem 0;
 }
+.st-key-tw_answer,
+.st-key-tw_answer p,
+.st-key-tw_answer li,
+.st-key-tw_answer [data-testid="stMarkdownContainer"] p {
+  color: var(--tw-ink) !important;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.st-key-tw_answer p:last-child { margin-bottom: 0; }
 
 /* Uniform keyboard-focus ring across every interactive control -- several
    custom-styled buttons/pills below only defined a :hover state, leaving

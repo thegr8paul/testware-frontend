@@ -171,41 +171,289 @@
   ],
   "workflow": {
     "nodes": [
-      { "id": "ifc", "type": "input", "label": "IFC / BIM model", "inputs": [], "outputs": ["ifc"] },
-      { "id": "bms", "type": "input", "label": "BMS + IoT telemetry", "inputs": [], "outputs": ["telemetry"] },
-      { "id": "wx", "type": "input", "label": "Weather feed", "inputs": [], "outputs": ["weather"] },
-      { "id": "cat", "type": "database", "label": "Model catalogue", "inputs": [], "outputs": ["records"] },
-      { "id": "parse", "type": "process", "label": "IfcOpenShell: geometry + spaces", "inputs": ["ifc"], "outputs": ["geom"], "catalogue_id": "ifcopenshell" },
-      { "id": "takeoff", "type": "process", "label": "Zone & construction take-off", "inputs": ["geom"], "outputs": ["zones"] },
-      { "id": "eplus", "type": "model", "label": "EnergyPlus whole-building", "inputs": ["zones", "weather", "records"], "outputs": ["eplus_state"], "catalogue_id": "energyplus" },
-      { "id": "rc", "type": "model", "label": "Modelica RC reduced-order", "inputs": ["zones"], "outputs": ["rc_model"], "catalogue_id": "modelica-buildings" },
-      { "id": "calib", "type": "process", "label": "Bayesian calibration to BMS", "inputs": ["eplus_state", "rc_model", "telemetry"], "outputs": ["calibrated"] },
-      { "id": "state", "type": "merge", "label": "Live state estimate", "inputs": ["calibrated", "telemetry"], "outputs": ["state"] },
-      { "id": "mpc", "type": "model", "label": "MPC set-point optimiser", "inputs": ["state", "weather"], "outputs": ["setpoints"], "catalogue_id": "do-mpc" },
-      { "id": "gate", "type": "decision", "label": "Comfort & energy within bounds?", "inputs": ["state"], "outputs": ["yes", "no"] },
-      { "id": "push", "type": "output", "label": "Push set-points to BMS", "inputs": ["setpoints", "ok"], "outputs": [] },
-      { "id": "alert", "type": "output", "label": "Fault / drift alert", "inputs": ["fault"], "outputs": [] },
-      { "id": "hist", "type": "database", "label": "Building data historian", "inputs": ["log"], "outputs": [] }
+      {
+        "id": "ifc",
+        "type": "input",
+        "label": "IFC / BIM model",
+        "inputs": [],
+        "outputs": [
+          "ifc"
+        ],
+        "x": 40,
+        "y": 60
+      },
+      {
+        "id": "bms",
+        "type": "input",
+        "label": "BMS + IoT telemetry",
+        "inputs": [],
+        "outputs": [
+          "telemetry"
+        ],
+        "x": 40,
+        "y": 220
+      },
+      {
+        "id": "wx",
+        "type": "input",
+        "label": "Weather feed",
+        "inputs": [],
+        "outputs": [
+          "weather"
+        ],
+        "x": 40,
+        "y": 540
+      },
+      {
+        "id": "cat",
+        "type": "database",
+        "label": "Model catalogue",
+        "inputs": [],
+        "outputs": [
+          "records"
+        ],
+        "x": 40,
+        "y": 380
+      },
+      {
+        "id": "parse",
+        "type": "process",
+        "label": "IfcOpenShell: geometry + spaces",
+        "inputs": [
+          "ifc"
+        ],
+        "outputs": [
+          "geom"
+        ],
+        "catalogue_id": "ifcopenshell",
+        "x": 340,
+        "y": 60
+      },
+      {
+        "id": "takeoff",
+        "type": "process",
+        "label": "Zone & construction take-off",
+        "inputs": [
+          "geom"
+        ],
+        "outputs": [
+          "zones"
+        ],
+        "x": 640,
+        "y": 60
+      },
+      {
+        "id": "eplus",
+        "type": "model",
+        "label": "EnergyPlus whole-building",
+        "inputs": [
+          "zones",
+          "weather",
+          "records"
+        ],
+        "outputs": [
+          "eplus_state"
+        ],
+        "catalogue_id": "energyplus",
+        "x": 940,
+        "y": 60
+      },
+      {
+        "id": "rc",
+        "type": "model",
+        "label": "Modelica RC reduced-order",
+        "inputs": [
+          "zones"
+        ],
+        "outputs": [
+          "rc_model"
+        ],
+        "catalogue_id": "modelica-buildings",
+        "x": 940,
+        "y": 220
+      },
+      {
+        "id": "calib",
+        "type": "process",
+        "label": "Bayesian calibration to BMS",
+        "inputs": [
+          "eplus_state",
+          "rc_model",
+          "telemetry"
+        ],
+        "outputs": [
+          "calibrated"
+        ],
+        "x": 1240,
+        "y": 60
+      },
+      {
+        "id": "state",
+        "type": "merge",
+        "label": "Live state estimate",
+        "inputs": [
+          "calibrated",
+          "telemetry"
+        ],
+        "outputs": [
+          "state"
+        ],
+        "x": 1540,
+        "y": 60
+      },
+      {
+        "id": "mpc",
+        "type": "model",
+        "label": "MPC set-point optimiser",
+        "inputs": [
+          "state",
+          "weather"
+        ],
+        "outputs": [
+          "setpoints"
+        ],
+        "catalogue_id": "do-mpc",
+        "x": 1840,
+        "y": 220
+      },
+      {
+        "id": "gate",
+        "type": "decision",
+        "label": "Comfort & energy within bounds?",
+        "inputs": [
+          "state"
+        ],
+        "outputs": [
+          "yes",
+          "no"
+        ],
+        "x": 1840,
+        "y": 60
+      },
+      {
+        "id": "push",
+        "type": "output",
+        "label": "Push set-points to BMS",
+        "inputs": [
+          "setpoints",
+          "ok"
+        ],
+        "outputs": [],
+        "x": 2140,
+        "y": 220
+      },
+      {
+        "id": "alert",
+        "type": "output",
+        "label": "Fault / drift alert",
+        "inputs": [
+          "fault"
+        ],
+        "outputs": [],
+        "x": 2140,
+        "y": 60
+      },
+      {
+        "id": "hist",
+        "type": "database",
+        "label": "Building data historian",
+        "inputs": [
+          "log"
+        ],
+        "outputs": [],
+        "x": 1840,
+        "y": 380
+      }
     ],
     "edges": [
-      { "source": "ifc", "target": "parse" },
-      { "source": "parse", "target": "takeoff" },
-      { "source": "takeoff", "target": "eplus", "target_port": 0 },
-      { "source": "wx", "target": "eplus", "target_port": 1 },
-      { "source": "cat", "target": "eplus", "target_port": 2 },
-      { "source": "takeoff", "target": "rc" },
-      { "source": "eplus", "target": "calib", "target_port": 0 },
-      { "source": "rc", "target": "calib", "target_port": 1 },
-      { "source": "bms", "target": "calib", "target_port": 2 },
-      { "source": "calib", "target": "state", "target_port": 0 },
-      { "source": "bms", "target": "state", "target_port": 1 },
-      { "source": "state", "target": "mpc", "target_port": 0 },
-      { "source": "wx", "target": "mpc", "target_port": 1 },
-      { "source": "mpc", "target": "push", "target_port": 0 },
-      { "source": "state", "target": "gate" },
-      { "source": "gate", "target": "push", "source_port": 0, "target_port": 1, "label": "yes" },
-      { "source": "gate", "target": "alert", "source_port": 1, "label": "no" },
-      { "source": "state", "target": "hist" }
+      {
+        "source": "ifc",
+        "target": "parse"
+      },
+      {
+        "source": "parse",
+        "target": "takeoff"
+      },
+      {
+        "source": "takeoff",
+        "target": "eplus",
+        "target_port": 0
+      },
+      {
+        "source": "wx",
+        "target": "eplus",
+        "target_port": 1
+      },
+      {
+        "source": "cat",
+        "target": "eplus",
+        "target_port": 2
+      },
+      {
+        "source": "takeoff",
+        "target": "rc"
+      },
+      {
+        "source": "eplus",
+        "target": "calib",
+        "target_port": 0
+      },
+      {
+        "source": "rc",
+        "target": "calib",
+        "target_port": 1
+      },
+      {
+        "source": "bms",
+        "target": "calib",
+        "target_port": 2
+      },
+      {
+        "source": "calib",
+        "target": "state",
+        "target_port": 0
+      },
+      {
+        "source": "bms",
+        "target": "state",
+        "target_port": 1
+      },
+      {
+        "source": "state",
+        "target": "mpc",
+        "target_port": 0
+      },
+      {
+        "source": "wx",
+        "target": "mpc",
+        "target_port": 1
+      },
+      {
+        "source": "mpc",
+        "target": "push",
+        "target_port": 0
+      },
+      {
+        "source": "state",
+        "target": "gate"
+      },
+      {
+        "source": "gate",
+        "target": "push",
+        "source_port": 0,
+        "target_port": 1,
+        "label": "yes"
+      },
+      {
+        "source": "gate",
+        "target": "alert",
+        "source_port": 1,
+        "label": "no"
+      },
+      {
+        "source": "state",
+        "target": "hist"
+      }
     ]
   }
 }
