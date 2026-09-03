@@ -24,8 +24,8 @@
   everything else, including all visuals, is done.
 -->
 
-## testware*.dev*
-### One-stop webshop for digital-twin-based everything, everywhere, all at once.
+## Kickstart Digital Twin-Based Testing with testware 
+### Plan End-to-End Workflows in Minutes (Not Weeks)
 
 ![Hero visual](placeholder-hero.svg)
 
@@ -33,12 +33,12 @@
 
 <!-- layout: media -->
 
-#### Why now · 01
-## Every industry is becoming software-defined
+#### Context - 1
+## Industry 4.0
 
-- Three shifts at once: electrification, automation, digitalisation
-- Across auto/aero, energy, infrastructure, manufacturing, agriculture, life sciences
-- Software-defined plants — vehicles, grids, batteries, robots, medical devices — mean more code, more data, more complexity
+- Electrification + Automation + Digitalisation
+- Automotive/Aerospace, Energy, Infrastructure, Manufacturing, Agriculture, Life Sciences, ...
+- Software-Defined = More LOCs + More GBs
 
 ![Pictogram grid — the verticals](placeholder-verticals.svg)
 
@@ -46,14 +46,12 @@
 
 <!-- layout: media -->
 
-#### Why now · 02
-## Ship faster — and prove it's safe
+#### Context - 2
+## Vibecoded Car Brakes ?
 
-- Shorter release cycles collide with tighter regulation: ISO 26262 · DO-178C · IEC 62304
-- The response: left-shifted, test-driven development
-- **€50B** EU digital-twin market by 2030
-
-Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 2030" figure]
+- How to test software that will live in a car ...
+- ... without the actual car ...
+- ... whilst being lean, agile, safe, compliant, ...
 
 ![Market-size diagram](placeholder-market.svg)
 
@@ -61,12 +59,12 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 
 <!-- layout: media -->
 
-#### How · models
-## Right fidelity for the right problem
+#### Context - 3
+## Test Doubles 4.0
 
-- Multiscale & multiphysics, computational X-mechanics
-- Systems biology, controls & systems engineering
-- ML, reduced-order modelling, topological (CAD, point clouds)
+- Virtual Car, Plane, Grid, Patient, ...
+- Realistic Models + Real-Time Simulators = testware
+- Mimicry with Convincing Fidelity
 
 ![The modelling-fidelity spectrum](placeholder-fidelity.svg)
 
@@ -74,12 +72,12 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 
 <!-- layout: media -->
 
-#### How · simulators & workflows
-## From models to real-time testing
+#### Challenge
+## Too Expert-Friendly
 
-- Real-time targets, sensors, power electronics, FPGAs
-- Industrial protocols: CAN · ARINC · FlexRay
-- Enables X-in-the-Loop, rapid prototyping, predictive maintenance, virtual commissioning, restbus simulation
+- Where to get started?
+- What methods and tools are needed?
+- How much will it cost and how long will it take?
 
 ![The X-in-the-Loop test setup](placeholder-xil.svg)
 
@@ -87,14 +85,12 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 
 <!-- layout: media -->
 
-#### What · illustrative outputs
-## Three example workflows our tool generates
+#### Solution
+## testware.dev
 
-Illustrative outputs from our own LLM+RAG pipeline — saved generations, not client projects.
-
-- ICME-based digital twin for material-failure prediction
-- Building digital twin from an IFC model
-- Patient digital twin
+- Expert-Curated Catalogue of Models
+- RAG System Grounded in Truth
+- Chat to Workflow in Seconds
 
 ![Three illustrative generated flowcharts](placeholder-cases.svg)
 
