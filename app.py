@@ -614,7 +614,7 @@ def _render_workflow_result() -> None:
             st.write(description)
         # A previous fetch dropped mid-stream -- offer an explicit retry
         # instead of forcing a full page refresh to try again.
-        if allow_search and _cache.get("ok") is False:
+        if _cache.get("ok") is False:
             if st.button("Retry", icon=":material/refresh:", key="tw_retry"):
                 st.session_state.pop("results", None)
                 st.rerun()
