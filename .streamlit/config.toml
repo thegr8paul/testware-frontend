@@ -4,12 +4,14 @@
 runOnSave = true
 
 [theme]
-# Perplexity-inspired: warm off-white/cream ground, near-black text, black
-# accent. Colour is used ONLY on tags / canvas nodes (literal hex in their
-# own CSS) "for understanding" -- never on chrome. Typeface unchanged.
+# Minimalist / technical: neutral grayscale ground, near-black text, black
+# accent -- must match styles.css --tw-bg / --tw-panel-2 so Streamlit's own
+# baked theme (painted on the app shell and inside every component iframe's
+# default document background) doesn't flash a different tone at the seams.
+# Colour is used ONLY on tags / third-party tool logos -- never on chrome.
 base = "light"
 primaryColor = "#111111"
-backgroundColor = "#FBFAF7"
-secondaryBackgroundColor = "#F1EFE9"
+backgroundColor = "#FAFAFA"
+secondaryBackgroundColor = "#F0F0F0"
 textColor = "#1A1A1A"
 font = "sans serif"

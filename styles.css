@@ -133,6 +133,18 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 .st-key-tw_section_dashboard,
 .st-key-tw_section_examples {
   min-height: calc(100vh - 80px);
+  /* Solid page ground so any strip the deck / workflow iframe hasn't covered
+     yet on a cold load reads as page background, not a white/beige box. */
+  background: var(--tw-bg);
+}
+/* The dashboard section IS the deck -- no column padding or inter-block gap
+   above/around the iframe, or a strip of page shows before "the slides
+   start" and the deck never sits flush under the header. */
+.st-key-tw_section_dashboard {
+  padding: 0 !important;
+}
+.st-key-tw_section_dashboard [data-testid="stVerticalBlock"] {
+  gap: 0 !important;
 }
 .st-key-tw_section_examples {
   padding-top: 2.5rem;
@@ -248,7 +260,9 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 [class*="st-key-tw_wf_ex_"] [data-testid="stIFrame"],
 [class*="st-key-tw_wf_ex_"] [data-testid="stCustomComponentV1"] {
   width: 100% !important;
+  min-width: 100% !important;   /* defeat a too-narrow width latched at cold-load first paint */
   max-width: none !important;
+  display: block !important;
 }
 [class*="st-key-tw_wf_ex_"] { margin-bottom: 1.5rem; }
 
@@ -636,10 +650,22 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
+  background: var(--tw-bg);
 }
-.st-key-tw_readme iframe,
+/* Force the deck iframe to the full viewport width regardless of whatever
+   (often too-narrow) width Streamlit latched at first paint -- every wrapper
+   level, not just the <iframe>, or an intermediate box clips it and leaves a
+   blank strip on the right. min-width defeats a stale inline width; the
+   breakout margin lives on .st-key-tw_readme above so inner levels stay at 0. */
+.st-key-tw_readme > div,
+.st-key-tw_readme [data-testid="stElementContainer"],
+.st-key-tw_readme [data-testid="stVerticalBlock"],
 .st-key-tw_readme [data-testid="stIFrame"],
-.st-key-tw_readme [data-testid="stCustomComponentV1"] {
+.st-key-tw_readme [data-testid="stCustomComponentV1"],
+.st-key-tw_readme iframe {
   width: 100vw !important;
-  max-width: none !important;
+  min-width: 100vw !important;
+  max-width: 100vw !important;
+  margin: 0 !important;
 }
+.st-key-tw_readme iframe { display: block !important; }
