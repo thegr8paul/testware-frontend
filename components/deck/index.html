@@ -216,7 +216,14 @@
     max-height: 56vh;   /* big, but leaves room for the headline above it on one screen */
     border-radius: 14px;
     border: 1px solid var(--hair);
-    background: var(--panel-2);
+    background: var(--bg);   /* blend with the slide -- no distinct grey panel */
+  }
+  /* On the title slide the hero image stands in for the card the other
+     layouts have, so it carries the same 2px contour, radius and shadow. */
+  .slide[data-layout="title"] figure.media img {
+    border-width: 2px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .08), 0 24px 60px rgba(0, 0, 0, .13);
   }
   figure.media figcaption {
     margin-top: .75rem;

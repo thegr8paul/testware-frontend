@@ -403,8 +403,11 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 }
 
 /* --- Landing: eyebrow + rotating headline + bar, centred ----------------- */
+/* Fill the first screen so the deck below stays fully out of view until you
+   scroll to it -- otherwise the top of slide 1's headline peeks up under the
+   search bar at rest. (100vh minus ~the container's own top padding.) */
 .st-key-tw_landing {
-  min-height: 70vh;
+  min-height: calc(100vh - 6rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
