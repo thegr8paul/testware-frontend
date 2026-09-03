@@ -46,6 +46,13 @@
   .n-root .ring { animation: ringPulse 2.6s ease-in-out 2.5s infinite; }
 
   .flow { offset-rotate: 0deg; opacity: 0; animation: flow 2.6s linear infinite; }
+  /* left -> middle: data climbing in from the real-world sources */
+  .f4 { offset-path: path("M116,80  C195,80  195,70  275,70");  animation-delay: 1.5s; }
+  .f5 { offset-path: path("M116,180 C195,180 195,90  275,90");  animation-delay: 2.0s; }
+  .f6 { offset-path: path("M116,180 C195,180 195,170 275,170"); animation-delay: 1.8s; }
+  .f7 { offset-path: path("M116,280 C195,280 195,190 275,190"); animation-delay: 2.3s; }
+  .f8 { offset-path: path("M116,280 C195,280 195,280 275,280"); animation-delay: 1.6s; }
+  /* middle -> right: data converging into the twin */
   .f1 { offset-path: path("M385,80  C450,80  450,160 495,160"); animation-delay: 2.6s; }
   .f2 { offset-path: path("M385,180 C450,180 450,180 495,180"); animation-delay: 3.5s; }
   .f3 { offset-path: path("M385,280 C450,280 450,200 495,200"); animation-delay: 4.4s; }
@@ -69,9 +76,16 @@
 <path class="path wire w7" d="M385,180 C450,180 450,180 495,180" pathLength="1"/>
 <path class="path wire w8" d="M385,280 C450,280 450,200 495,200" pathLength="1"/>
 
-<!-- three little pulses of live data, once everything has settled: the same
-     neutral ink as the wires themselves, just more opaque, matching the
-     real canvas's own connection colour rather than inventing a new one -->
+<!-- little pulses of live data flowing along every wire, once things have
+     settled: first left -> middle as the sources feed the models, then
+     middle -> right as the models converge into the twin. Same neutral ink
+     as the wires themselves, just more opaque, matching the real canvas's
+     own connection colour rather than inventing a new one -->
+<circle class="flow pulse f4" r="3.5"/>
+<circle class="flow pulse f5" r="3.5"/>
+<circle class="flow pulse f6" r="3.5"/>
+<circle class="flow pulse f7" r="3.5"/>
+<circle class="flow pulse f8" r="3.5"/>
 <circle class="flow pulse f1" r="3.5"/>
 <circle class="flow pulse f2" r="3.5"/>
 <circle class="flow pulse f3" r="3.5"/>
