@@ -24,8 +24,8 @@
   everything else, including all visuals, is done.
 -->
 
-## testware*.dev*
-### One-stop webshop for digital-twin-based everything, everywhere, all at once.
+## Kickstart Digital Twin-Based Testing with testware 
+### Plan End-to-End Workflows in Minutes (Not Weeks)
 
 ![Hero visual](placeholder-hero.svg)
 
@@ -33,12 +33,12 @@
 
 <!-- layout: media -->
 
-#### Why now · 01
-## Every industry is becoming software-defined
+#### Context
+## Software-Defined Plants
 
-- Three shifts at once: electrification, automation, digitalisation
-- Across auto/aero, energy, infrastructure, manufacturing, agriculture, life sciences
-- Software-defined plants — vehicles, grids, batteries, robots, medical devices — mean more code, more data, more complexity
+- Electrification + Automation + Digitalisation
+- Automotive/Aerospace, Energy, Infrastructure, Manufacturing, Agriculture, Life Sciences, ...
+- More LOCs + More GBs
 
 ![Pictogram grid — the verticals](placeholder-verticals.svg)
 
@@ -46,14 +46,12 @@
 
 <!-- layout: media -->
 
-#### Why now · 02
-## Ship faster — and prove it's safe
+#### Challenges
+## Vibecoded Car Brake Software ?
 
-- Shorter release cycles collide with tighter regulation: ISO 26262 · DO-178C · IEC 62304
-- The response: left-shifted, test-driven development
-- **€50B** EU digital-twin market by 2030
-
-Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 2030" figure]
+- How to design software that will live in a car ...
+- ... without the actual car ...
+- ... whilst being lean, agile, safe, compliant, ...
 
 ![Market-size diagram](placeholder-market.svg)
 
@@ -61,12 +59,12 @@ Source: [NEEDS INPUT — citation URL for the "€50B EU digital-twin market by 
 
 <!-- layout: media -->
 
-#### How · models
-## Right fidelity for the right problem
+#### Solutions
+## Virtual Replica
 
-- Multiscale & multiphysics, computational X-mechanics
-- Systems biology, controls & systems engineering
-- ML, reduced-order modelling, topological (CAD, point clouds)
+- Digital Twin of a Plant = Car, Plane, Grid, Patient, ...
+- Realistic Models
+- Real-Time Simulators
 
 ![The modelling-fidelity spectrum](placeholder-fidelity.svg)
 
