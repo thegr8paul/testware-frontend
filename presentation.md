@@ -24,8 +24,8 @@
   everything else, including all visuals, is done.
 -->
 
-## Plan Digital Twin Workflows in Minutes (Not Weeks)
-### Digital Twin Engine
+## Digital Twin Workflows in Minutes
+### Not Weeks or Months
 
 ![Hero visual](placeholder-hero.svg)
 
@@ -37,7 +37,7 @@
 ## Industry 4.0
 
 - Electrification + Automation + Digitalisation
-- Automotive/Aerospace, Energy, Infrastructure, Manufacturing, Agriculture, Life Sciences, ...
+- ML/AI + Cloud meets XIL + IoT + Edge
 - Software-Defined = More LOCs + More GBs
 
 ![Pictogram grid — the verticals](placeholder-verticals.svg)
@@ -62,9 +62,9 @@
 #### Context - 3
 ## Test Doubles 4.0
 
-- Virtual Car, Plane, Grid, Patient, ...
-- Realistic Models + Real-Time Simulators = testware
-- Mimicry with Convincing Fidelity
+- Virtual Car and Car Parts
+- Realistic Models + Real-Time Simulators
+- TDD using Mimics with Convincing Fidelity
 
 ![The modelling-fidelity spectrum](placeholder-fidelity.svg)
 
@@ -72,12 +72,25 @@
 
 <!-- layout: media -->
 
-#### Challenge - 4
-## Too Expert-Friendly
+#### Context - 4
+## End-to-End Testing
+
+- R&D: prototyping, optimising, ...
+- V&V: certification, commissioning, ...
+- Production: monitoring, maintenance, ...
+
+![The modelling-fidelity spectrum](placeholder-fidelity.svg)
+
+---
+
+<!-- layout: media -->
+
+#### Challenge - 5
+## Expert-Friendly
 
 - Where to get started ?
 - What methods and tools are needed ?
-- How much will it cost and how long will it take ?
+- How much will it cost / How long to set up ?
 
 ![The X-in-the-Loop test setup](placeholder-xil.svg)
 
@@ -85,7 +98,7 @@
 
 <!-- layout: media -->
 
-#### Solution - 5
+#### Solution - 6
 ## Prompt to Workflow
 
 - Expert-Curated Catalogue of Tools/Techniques
@@ -98,8 +111,8 @@
 
 <!-- layout: media -->
 
-#### Solution - 6
-## Expansive Knowledgebase
+#### Solution - 7
+## Unique Knowledgebase
 
 - Various Verticals and Use Cases
 - Aligned with Regulations
@@ -111,7 +124,7 @@
 
 <!-- layout: media -->
 
-#### Solution - 7
+#### Solution - 8
 ## Upcoming Features
 
 - User Profiles + Dashboard + Templates
