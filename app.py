@@ -1122,19 +1122,32 @@ _NAV_RAIL_JS = """
   setInterval(bindSc, 2000);
   setInterval(sync, 1000);   // also catches deck slide changes if the notify was missed
 
-  // Arrow Up / Down pages the presentation while focus is on the page (the
-  // deck runs the same handler for when focus is inside its iframe). At the
-  // first / last slide the key is left alone so it scrolls out of the area.
+  // Arrow Up / Down drives the whole app -> deck -> examples flow while focus
+  // is on the page (the deck runs the same handler for when focus is inside
+  // its iframe). One key = one step, and the boundaries carry over: from the
+  // search area ArrowDown snaps onto the first slide; from the last slide one
+  // more ArrowDown continues to Examples (and the mirror going back up).
   window.addEventListener("keydown", function (e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
     var tag = (e.target && e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea" || (e.target && e.target.isContentEditable)) return;
-    if (currentG() < 1 || currentG() > N) return;   // only inside the presentation
-    var d = deck();
+    var down = e.key === "ArrowDown";
+    var g = currentG();
+
+    if (g < 1) {                       // app / search area
+      if (down) { e.preventDefault(); navTo(1); }
+      return;
+    }
+    if (g > N) {                       // Examples area
+      if (!down) { e.preventDefault(); navTo(N); }
+      return;
+    }
+    var d = deck();                    // inside the presentation
     if (!d) return;
-    var tgt = d.index() + (e.key === "ArrowDown" ? 1 : -1);
-    if (tgt < 0 || tgt > d.count() - 1) return;      // edges: let it scroll away
+    var tgt = d.index() + (down ? 1 : -1);
+    if (tgt > d.count() - 1) { e.preventDefault(); toEl(q(".st-key-tw_section_examples")); return; }
+    if (tgt < 0)             { e.preventDefault(); toEl(q(".st-key-tw_section_chat")); return; }
     e.preventDefault();
     d.goto(tgt);
   });

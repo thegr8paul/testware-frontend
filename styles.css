@@ -148,7 +148,6 @@ body { -webkit-font-smoothing: antialiased; background: var(--tw-bg); }
 }
 .st-key-tw_section_examples {
   padding-top: 2.5rem;
-  border-top: 1px solid var(--tw-card-border);
 }
 
 /* --- Examples: one example shown at a time, changed with the arrows -----
