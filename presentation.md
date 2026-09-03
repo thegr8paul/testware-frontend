@@ -33,12 +33,12 @@
 
 <!-- layout: media -->
 
-#### Context
-## Software-Defined Plants
+#### Context - 1
+## Industry 4.0
 
 - Electrification + Automation + Digitalisation
 - Automotive/Aerospace, Energy, Infrastructure, Manufacturing, Agriculture, Life Sciences, ...
-- More LOCs + More GBs
+- Software-Defined = More LOCs + More GBs
 
 ![Pictogram grid — the verticals](placeholder-verticals.svg)
 
@@ -46,10 +46,10 @@
 
 <!-- layout: media -->
 
-#### Challenges
-## Vibecoded Car Brake Software ?
+#### Context - 2
+## Vibecoded Car Brakes ?
 
-- How to design software that will live in a car ...
+- How to test software that will live in a car ...
 - ... without the actual car ...
 - ... whilst being lean, agile, safe, compliant, ...
 
@@ -59,12 +59,12 @@
 
 <!-- layout: media -->
 
-#### Solutions
-## Virtual Replica
+#### Context - 3
+## Test Doubles 4.0
 
-- Digital Twin of a Plant = Car, Plane, Grid, Patient, ...
-- Realistic Models
-- Real-Time Simulators
+- Virtual Car, Plane, Grid, Patient, ...
+- Realistic Models + Real-Time Simulators = testware
+- Mimicry with Convincing Fidelity
 
 ![The modelling-fidelity spectrum](placeholder-fidelity.svg)
 
@@ -72,12 +72,12 @@
 
 <!-- layout: media -->
 
-#### How · simulators & workflows
-## From models to real-time testing
+#### Challenge
+## Too Expert-Friendly
 
-- Real-time targets, sensors, power electronics, FPGAs
-- Industrial protocols: CAN · ARINC · FlexRay
-- Enables X-in-the-Loop, rapid prototyping, predictive maintenance, virtual commissioning, restbus simulation
+- Where to get started?
+- What methods and tools are needed?
+- How much will it cost and how long will it take?
 
 ![The X-in-the-Loop test setup](placeholder-xil.svg)
 
@@ -85,14 +85,12 @@
 
 <!-- layout: media -->
 
-#### What · illustrative outputs
-## Three example workflows our tool generates
+#### Solution
+## testware.dev
 
-Illustrative outputs from our own LLM+RAG pipeline — saved generations, not client projects.
-
-- ICME-based digital twin for material-failure prediction
-- Building digital twin from an IFC model
-- Patient digital twin
+- Expert-Curated Catalogue of Models
+- RAG System Grounded in Truth
+- Chat to Workflow in Seconds
 
 ![Three illustrative generated flowcharts](placeholder-cases.svg)
 
