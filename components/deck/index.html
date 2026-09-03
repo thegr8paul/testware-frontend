@@ -33,6 +33,10 @@
     --ink: #1A1A1A;
     --muted: #6B6B6B;
     --hair: #A8A8A8;
+    /* faint separator / connector lines inside the sample pictograms --
+       near-white in dark mode so they read on the dark card */
+    --line: #C4C4C4;
+    --mock: #4A4A4A;   /* app-mock contour: thin dark grey (light in dark mode) */
     --accent: #111111;
     --font: "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
     --ease: cubic-bezier(.2, .7, .2, 1);
@@ -47,6 +51,8 @@
     --ink: #F2F2F2;
     --muted: #9C9C9C;
     --hair: #555555;
+    --line: #CFCFCF;   /* near-white separator lines on the dark sample cards */
+    --mock: #C7C7C7;
     --accent: #F2F2F2;
   }
 
@@ -111,6 +117,7 @@
   .frame { width: min(1360px, 94vw); }
   .slide[data-layout="content"] .frame,
   .slide[data-layout="media"] .frame,
+  .slide[data-layout="mediawide"] .frame,
   .slide[data-layout="split"] .frame,
   .slide[data-layout="quote"] .frame {
     background: var(--panel);
@@ -123,14 +130,18 @@
   .slide[data-layout="section"] .frame,
   .slide[data-layout="quote"] .frame { text-align: center; }
   .slide[data-layout="media"] .frame,
+  .slide[data-layout="mediawide"] .frame,
   .slide[data-layout="split"] .frame {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: clamp(1.25rem, 3vw, 2.5rem);
     align-items: center;
   }
+  /* text left (narrower), pictogram right (wider) */
+  .slide[data-layout="mediawide"] .frame { grid-template-columns: 5fr 7fr; }
   @media (max-width: 760px) {
     .slide[data-layout="media"] .frame,
+    .slide[data-layout="mediawide"] .frame,
     .slide[data-layout="split"] .frame { grid-template-columns: 1fr; }
   }
   .col-b { min-width: 0; }
@@ -283,11 +294,16 @@
     width: 100%;
     max-height: 54vh;
     border-radius: 14px;
-    border: 1px solid var(--hair);
-    background: var(--bg);
+    border: 1px solid var(--line);
+    /* the card surface, not the page ground -- so in dark mode the pictogram
+       area isn't near-black-on-near-black and the shapes actually read */
+    background: var(--panel);
   }
   /* Context-4 R&D -> V&V -> Prod timeline (monochrome, contour only). */
   .lifecycle { margin: 0; display: grid; place-items: center; }
+  /* Context-8 app mock -- larger, borderless, thin dark-grey lines. */
+  .appmock { margin: 0; display: grid; place-items: center; }
+  .appmock svg { display: block; width: 100%; max-height: 72vh; }
 
   /* ---- chrome: the deck's own dot-nav is retired -- the page now has a
      single left-edge rail (app | slide | ... | examples) rendered by the
@@ -601,7 +617,7 @@
         ".lc-ic{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}" +
         ".lc-code{fill:var(--ink);font-weight:700;font-size:15px}" +
         ".lc-name{fill:var(--muted);font-size:8px}" +
-        ".lc-conn{stroke:var(--hair);stroke-width:2}" +
+        ".lc-conn{stroke:var(--line);stroke-width:2}" +
         ".lc-axis{stroke:var(--ink);stroke-width:2}" +
         ".lc-head{fill:var(--ink)}" +
         ".lc-time{fill:var(--muted);font-size:8px;font-style:italic}" +
@@ -649,8 +665,8 @@
       "text{font-family:inherit}" +
       ".ee-l{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}" +
       ".ee-f{fill:var(--ink);stroke:none}" +
-      ".ee-s{fill:none;stroke:var(--hair);stroke-width:1.6}" +
-      ".ee-div{stroke:var(--hair);stroke-width:1.4;stroke-dasharray:4 4}" +
+      ".ee-s{fill:none;stroke:var(--line);stroke-width:1.6}" +
+      ".ee-div{stroke:var(--line);stroke-width:1.4;stroke-dasharray:4 4}" +
       ".ee-arr{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}" +
       ".ee-head{fill:var(--ink)}" +
       ".ee-lbl{fill:var(--muted);font-size:8px;font-weight:700;letter-spacing:.09em;text-anchor:middle}" +
@@ -722,8 +738,22 @@
   // slide-1-style floating connections (faint line + drifting dots) to a
   // RAG database cylinder, then to a small workflow flowchart. A bracket
   // underneath marks the whole thing at about five minutes. Monochrome.
+  // Dots that ride a connector path (SMIL animateMotion) -- the slide-1
+  // "pulses travelling the wire" look.
+  function pfPulses(id) {
+    var s = "", n = 3, dur = 2.6;
+    for (var i = 0; i < n; i++) {
+      s += "<circle class='pf-dot' r='1.8'>" +
+             "<animateMotion dur='" + dur + "s' repeatCount='indefinite' begin='-" +
+               (i * dur / n).toFixed(2) + "s'>" +
+               "<mpath href='#" + id + "' xlink:href='#" + id + "'/>" +
+             "</animateMotion>" +
+           "</circle>";
+    }
+    return s;
+  }
   var PROMPT_FLOW_SVG =
-    "<svg viewBox='0 0 320 150' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "<svg viewBox='0 0 320 150' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' role='img' " +
     "aria-label='A prompt bar connects to a RAG database, which connects to a generated workflow flowchart; the whole process takes about five minutes'>" +
     "<style>" +
       "text{font-family:inherit}" +
@@ -732,7 +762,7 @@
       ".pf-txt{stroke:var(--muted);stroke-width:3;stroke-linecap:round}" +
       ".pf-node{fill:var(--bg);stroke:var(--ink);stroke-width:1.8}" +
       ".pf-conn{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}" +
-      ".pf-flow{fill:none;stroke:var(--hair);stroke-width:1.6}" +
+      ".pf-flow{fill:none;stroke:var(--line);stroke-width:1.6}" +
       ".pf-dot{fill:var(--muted)}" +
       ".pf-ic{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}" +
       ".pf-cap{fill:var(--muted);font-size:9px;font-weight:600;text-anchor:middle}" +
@@ -744,17 +774,17 @@
     "<circle cx='84' cy='56' r='8' fill='var(--ink)'/>" +
     "<path d='M81 52l4 4-4 4' fill='none' stroke='var(--bg)' stroke-width='1.6' stroke-linecap='round'/>" +
     "<text class='pf-sub' x='52' y='83'>PROMPT</text>" +
-    // floating connection: prompt -> RAG
-    "<path class='pf-flow' d='M96 56C112 47 126 65 140 56'/>" +
-    "<circle class='pf-dot' cx='108' cy='53.5' r='1.8'/><circle class='pf-dot' cx='118' cy='58.5' r='1.8'/><circle class='pf-dot' cx='130' cy='55' r='1.8'/>" +
+    // floating connection: prompt -> RAG (dots travel the line, slide-1 style)
+    "<path id='pfl1' class='pf-flow' d='M96 56C112 47 126 65 140 56'/>" +
+    pfPulses("pfl1") +
     // 2. RAG database cylinder
     "<path class='pf-fill' d='M140 48a20 7 0 0 0 40 0v22a20 7 0 0 1-40 0z'/>" +
     "<ellipse class='pf-fill' cx='160' cy='48' rx='20' ry='7'/>" +
     "<path class='pf-l' d='M140 57a20 7 0 0 0 40 0M140 65a20 7 0 0 0 40 0'/>" +
     "<text class='pf-sub' x='160' y='86'>RAG</text>" +
     // floating connection: RAG -> workflow
-    "<path class='pf-flow' d='M180 56C196 47 216 65 232 56'/>" +
-    "<circle class='pf-dot' cx='194' cy='53' r='1.8'/><circle class='pf-dot' cx='206' cy='59' r='1.8'/><circle class='pf-dot' cx='220' cy='54.5' r='1.8'/>" +
+    "<path id='pfl2' class='pf-flow' d='M180 56C196 47 216 65 232 56'/>" +
+    pfPulses("pfl2") +
     // 3. workflow flowchart
     "<rect class='pf-node' x='234' y='37' width='20' height='11' rx='5.5'/>" +
     "<rect class='pf-node' x='266' y='37' width='20' height='11' rx='2'/>" +
@@ -802,7 +832,6 @@
         ".kp-conn{stroke:var(--ink);stroke-width:2}" +
         ".kp-dot{fill:var(--ink)}" +
         ".kp-ring{fill:var(--bg);stroke:var(--ink);stroke-width:2.6}" +
-        ".kp-inner{fill:none;stroke:var(--hair);stroke-width:1.4}" +
         ".kp-ic{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}" +
         ".kp-t{fill:var(--ink);font-size:9px;font-weight:700;text-anchor:middle}" +
       "</style>";
@@ -815,7 +844,6 @@
     // circles (opaque, so they cover the edges) + icon + two-line label
     KP_CIRCLES.forEach(function (c) {
       s += "<circle class='kp-ring' cx='" + c.cx + "' cy='" + c.cy + "' r='" + R + "'/>";
-      s += "<circle class='kp-inner' cx='" + c.cx + "' cy='" + c.cy + "' r='" + (R - 4) + "'/>";
       s += "<svg class='kp-ic' x='" + (c.cx - 11) + "' y='" + (c.cy - 24) + "' width='22' height='22' viewBox='0 0 24 24'>" + KP_ICONS[c.ic] + "</svg>";
       s += "<text class='kp-t' x='" + c.cx + "' y='" + (c.cy + 8) + "'>" + c.l1 + "</text>";
       s += "<text class='kp-t' x='" + c.cx + "' y='" + (c.cy + 20) + "'>" + c.l2 + "</text>";
@@ -826,6 +854,207 @@
     var fig = document.createElement("figure");
     fig.className = "media lifecycle";
     fig.innerHTML = THREE_PILLARS_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
+  // ---- Context-8 pictogram: the app, reduced ---------------------------
+  // An app window: title bar with a user-profile avatar, a Templates
+  // sidebar (one selected) and a Dashboard canvas holding a small workflow
+  // flowchart. The three named features get tag labels. Monochrome.
+  var APP_FEATURES_SVG = (function () {
+    // Simplified, abstract vendor badges (generic geometric marks in each
+    // vendor's colour) -- the integration node cycles through them.
+    var AP_LOGOS = [
+      "<rect width='40' height='40' rx='8' fill='#F2B33D'/><path d='M10 29l10-18 10 18M15 24h10' fill='none' stroke='#20242A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>",
+      "<rect width='40' height='40' rx='8' fill='#0E76A8'/><path d='M6 25c7 0 7-11 14-11s7 11 14 11' fill='none' stroke='#FF8C2B' stroke-width='3' stroke-linecap='round'/><rect x='4' y='23' width='4.5' height='4.5' fill='#fff'/><rect x='31.5' y='11.5' width='4.5' height='4.5' fill='#fff'/>",
+      "<rect width='40' height='40' rx='8' fill='#D42B2B'/><circle cx='20' cy='20' r='9' fill='none' stroke='#fff' stroke-width='3.4'/>",
+      "<rect width='40' height='40' rx='8' fill='#0E8C9E'/><path d='M25 14c-3-2-11-2-11 3.5S25 21 25 25.5 18 30 15 28' fill='none' stroke='#fff' stroke-width='3' stroke-linecap='round'/>",
+      "<rect width='40' height='40' rx='8' fill='#1E3A8A'/><path d='M13 13h6a7 7 0 0 1 0 14h-6zM13 20h6' fill='none' stroke='#fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>",
+      "<rect width='40' height='40' rx='8' fill='#5FA912'/><path d='M9 20c4-6 18-6 22 0-4 6-18 6-22 0z' fill='none' stroke='#fff' stroke-width='3'/><circle cx='20' cy='20' r='3.4' fill='#fff'/>"
+    ];
+    var s =
+      "<svg viewBox='0 0 320 186' xmlns='http://www.w3.org/2000/svg' role='img' " +
+      "aria-label='The app as a pictogram: a window with a user-profile avatar in the title bar, a Templates sidebar with one template selected, and a Dashboard canvas showing a workflow flowchart'>" +
+      // Reduced, modern take on the real app -- near-full-bleed white window,
+      // thin dark-grey contours. Theme-aware.
+      "<style>" +
+        "text{font-family:inherit}" +
+        ".ap-frame{fill:var(--bg);stroke:var(--mock);stroke-width:.85}" +
+        ".ap-bar{stroke:var(--mock);stroke-width:.6}" +
+        ".ap-node{fill:var(--bg);stroke:var(--mock);stroke-width:.75;filter:url(#apShadow)}" +
+        ".ap-conn{fill:none;stroke:var(--mock);stroke-width:.75;stroke-linecap:round;stroke-linejoin:round}" +
+        ".ap-dot{fill:var(--mock)}" +
+        ".ap-card{fill:var(--bg);stroke:var(--muted);stroke-width:.6}" +
+        ".ap-sel{fill:var(--bg);stroke:var(--mock);stroke-width:1.05}" +
+        ".ap-thumb{fill:none;stroke:var(--muted);stroke-width:.6}" +
+        ".ap-thumb-s{fill:none;stroke:var(--mock);stroke-width:.6}" +
+        ".ap-ic{fill:none;stroke:var(--mock);stroke-width:.85;stroke-linecap:round;stroke-linejoin:round}" +
+        ".ap-fill{fill:var(--mock);stroke:none}" +
+        ".ap-logo{fill:none;stroke:var(--mock);stroke-width:2;stroke-linejoin:miter;stroke-linecap:square}" +
+        ".ap-avatar{fill:var(--mock);stroke:none}" +
+        ".ap-tag{fill:var(--bg);stroke:var(--muted);stroke-width:.6;filter:url(#apShadow)}" +
+        ".ap-tagt{fill:var(--mock);font-size:7.5px;font-weight:700;text-anchor:middle;dominant-baseline:central;letter-spacing:.03em}" +
+        ".ap-mut{fill:var(--muted);font-size:7px;dominant-baseline:central}" +
+        ".ap-toolframe{fill:none;stroke:var(--mock);stroke-width:.85}" +
+        "@keyframes ap-tl{0%,15%{opacity:1}20%,100%{opacity:0}}" +
+        ".ap-tl>g{opacity:0;animation:ap-tl 15s linear infinite}" +
+        ".ap-tl>g:nth-child(1){animation-delay:0s}.ap-tl>g:nth-child(2){animation-delay:-2.5s}" +
+        ".ap-tl>g:nth-child(3){animation-delay:-5s}.ap-tl>g:nth-child(4){animation-delay:-7.5s}" +
+        ".ap-tl>g:nth-child(5){animation-delay:-10s}.ap-tl>g:nth-child(6){animation-delay:-12.5s}" +
+        "@media(prefers-reduced-motion:reduce){.ap-tl>g{animation:none}.ap-tl>g:first-child{opacity:1}}" +
+      "</style>" +
+      "<defs>" +
+        "<filter id='apShadow' x='-50%' y='-50%' width='200%' height='240%'>" +
+          "<feDropShadow dx='0' dy='1.4' stdDeviation='1.6' flood-color='#000' flood-opacity='0.22'/>" +
+        "</filter>" +
+        "<clipPath id='apTool'><rect x='146' y='50.5' width='28' height='28' rx='5'/></clipPath>" +
+      "</defs>" +
+      // window + bars (near-full-bleed for a bigger, more modern read)
+      "<rect class='ap-frame' x='2' y='2' width='316' height='182' rx='13'/>" +
+      "<line class='ap-bar' x1='2' y1='30' x2='318' y2='30'/>" +
+      "<line class='ap-bar' x1='60' y1='30' x2='60' y2='184'/>" +
+      // logo + wordmark
+      // the real testware.dev mark (open square with a gap mid-right)
+      "<svg x='13' y='7.5' width='17' height='17' viewBox='0 0 24 24'>" +
+        "<path class='ap-logo' d='M20 9V4H4V20H20V15'/>" +
+      "</svg>" +
+      // account icon (title bar, right) -- minimal filled profile silhouette
+      "<circle class='ap-avatar' cx='288' cy='12' r='3.2'/>" +
+      "<path class='ap-avatar' d='M281 22c0-4.1 3.1-6.6 7-6.6s7 2.5 7 6.6z'/>" +
+      "<rect class='ap-tag' x='230' y='8' width='46' height='16' rx='8'/>" +
+      "<text class='ap-tagt' x='253' y='16'>Profile</text>" +
+      // Dashboard button in the top bar -- left edge on the sidebar divider (x60)
+      "<rect class='ap-tag' x='60' y='8' width='62' height='16' rx='8'/>" +
+      "<text class='ap-tagt' x='91' y='16'>Dashboard</text>" +
+      // templates sidebar (narrow)
+      "<rect class='ap-tag' x='5' y='36' width='50' height='16' rx='8'/>" +
+      "<text class='ap-tagt' x='30' y='44'>Templates</text>";
+    for (var i = 0; i < 3; i++) {
+      var y = 58 + i * 40, cy = y + 16, sel = i === 0;
+      s += "<rect class='" + (sel ? "ap-sel" : "ap-card") + "' x='7' y='" + y + "' width='46' height='32' rx='3'/>";
+      if (sel) s += "<path class='ap-fill' d='M7 " + y + "h9l-9 9z'/>";
+      var tc = sel ? "ap-thumb-s" : "ap-thumb";
+      s += "<circle class='" + tc + "' cx='16' cy='" + cy + "' r='2.2'/>" +
+           "<rect class='" + tc + "' x='24' y='" + (cy - 3) + "' width='11' height='6' rx='2'/>" +
+           "<circle class='" + tc + "' cx='44' cy='" + cy + "' r='2.2'/>" +
+           "<path class='" + tc + "' d='M18.2 " + cy + "H24M35 " + cy + "h6.6'/>";
+    }
+    // dashboard canvas: tag + small workflow flowchart, shifted right into
+    // the room freed by the narrower sidebar
+    s +=
+      "<g transform='translate(16 0)'>" +
+      // a real left-to-right flowchart: input -> process, then a branch
+      // (process straight on / via a step) that merges into the output.
+      "<rect class='ap-node' x='80' y='56' width='34' height='17' rx='8.5'/>" +   // input pill
+      // integration node -- cycles through simulation-tool vendor badges,
+      // full-colour, filling the node as its background
+      "<rect x='146' y='50.5' width='28' height='28' rx='5' fill='var(--bg)' filter='url(#apShadow)'/>" +
+      "<g class='ap-tl' clip-path='url(#apTool)'>" +
+        AP_LOGOS.map(function (l) { return "<g transform='translate(146 50.5) scale(.7)'>" + l + "</g>"; }).join("") +
+      "</g>" +
+      "<rect class='ap-toolframe' x='146' y='50.5' width='28' height='28' rx='5'/>" +
+      "<rect class='ap-node' x='142' y='98' width='32' height='17' rx='8.5'/>" +  // step pill
+      "<circle class='ap-node' cx='232' cy='78' r='13'/>" +                       // output
+      "<path class='ap-conn' d='M114 64.5H146M160 78.5V98M174 64.5H206V78M174 106.5H206V78M206 78H219'/>" +
+      "<circle class='ap-dot' cx='128' cy='64.5' r='1.6'/><circle class='ap-dot' cx='160' cy='88' r='1.6'/><circle class='ap-dot' cx='206' cy='71' r='1.6'/>" +
+      "<path class='ap-ic' d='M226 78l4 4 7-8'/>" +
+      "</g>" +
+      // one-line search bar beneath the flowchart: white pill + firm dark
+      // contour + soft shadow, placeholder line, circular dark submit button
+      // on the right (magnifier drawn to match the app's button).
+      "<rect x='109' y='138' width='160' height='30' rx='15' fill='var(--bg)' stroke='var(--mock)' stroke-width='1.6' filter='url(#apShadow)'/>" +
+      "<line x1='125' y1='153' x2='227' y2='153' stroke='var(--muted)' stroke-width='2.4' stroke-linecap='round'/>" +
+      "<circle cx='251' cy='153' r='13' fill='var(--accent)'/>" +
+      "<circle cx='250.5' cy='152.5' r='2.6' fill='none' stroke='var(--bg)' stroke-width='1.2'/>" +
+      "<line x1='252.4' y1='154.4' x2='253.9' y2='155.9' stroke='var(--bg)' stroke-width='1.6' stroke-linecap='round'/>" +
+      "</svg>";
+    return s;
+  })();
+  function buildAppFeatures(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media appmock";
+    fig.innerHTML = APP_FEATURES_SVG;
+    if (cap) {
+      var fc = document.createElement("figcaption");
+      fc.textContent = cap;
+      fig.appendChild(fc);
+    }
+    return fig;
+  }
+
+  // ---- Context-2 pictogram: vibecoding straight into a car crash ---------
+  var VIBE_CRASH_SVG =
+    "<svg viewBox='0 0 320 200' xmlns='http://www.w3.org/2000/svg' role='img' " +
+    "aria-label='A developer vibecoding with headphones and a knob cranked to max; a messy wire runs to a car that has crashed nose-first into the ground, a wheel flying off, with an impact burst and a warning sign'>" +
+    "<style>" +
+      "text{font-family:inherit}" +
+      ".vc-l{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}" +
+      ".vc-mut{fill:none;stroke:var(--muted);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}" +
+      ".vc-thin{fill:none;stroke:var(--ink);stroke-width:.8;stroke-linecap:round}" +
+      ".vc-wire{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linecap:round}" +
+      ".vc-ground{stroke:var(--muted);stroke-width:1.4}" +
+      ".vc-cap{fill:var(--muted);font-size:8px;font-weight:700;text-anchor:middle;letter-spacing:.08em}" +
+    "</style>" +
+    // --- developer, headphones on, cranking the vibe ---
+    "<path class='vc-l' d='M37 76a11 11 0 0 1 22 0'/>" +
+    "<rect class='vc-l' x='34' y='74' width='4.5' height='8' rx='2'/>" +
+    "<rect class='vc-l' x='57.5' y='74' width='4.5' height='8' rx='2'/>" +
+    "<circle class='vc-l' cx='48' cy='77' r='9'/>" +
+    "<path class='vc-thin' d='M44 75h3M50 75h3'/>" +
+    "<path class='vc-l' d='M43 80q5 4 10 0'/>" +
+    "<path class='vc-l' d='M48 86c-3 9-2 15 4 20'/>" +
+    "<path class='vc-l' d='M50 96c7 1 12 6 18 8'/>" +
+    "<path class='vc-l' d='M52 106l-3 17M52 106l9 15'/>" +
+    "<path class='vc-l' d='M64 104v-15h26v15'/>" +
+    "<path class='vc-thin' d='M68 92c3-3 3 3 6 0s3 3 6 0 3-3 4-1'/>" +
+    "<rect class='vc-l' x='60' y='104' width='34' height='11' rx='2'/>" +
+    "<path class='vc-thin' d='M64 108h2M69 108h2M74 108h2M79 108h2M84 108h2M89 108h2M64 112h24'/>" +
+    // vibe knob cranked past max + waves + a note
+    "<circle class='vc-l' cx='102' cy='90' r='8'/>" +
+    "<path class='vc-l' d='M102 90l6-5'/>" +
+    "<path class='vc-thin' d='M102 80v-2M112 90h2M102 100v2M92 90h-2'/>" +
+    "<path class='vc-mut' d='M112 84q6 6 0 12M116 80q10 10 0 20'/>" +
+    "<path class='vc-l' d='M120 70v11a3 3 0 1 1-3-3M120 70q4 1 4 4'/>" +
+    // --- messy wire to the car ---
+    "<path class='vc-wire' d='M108 96c12 6 2 18 14 22s2-14 16-10 4 18 20 14 6-10 14-6'/>" +
+    "<path class='vc-thin' d='M150 118l3-4M158 128l4 3M144 132l-4 2'/>" +
+    // --- the crash ---
+    "<line class='vc-ground' x1='150' y1='168' x2='316' y2='168'/>" +
+    "<path class='vc-thin' d='M164 168l-4 6M242 168l-4 6M258 168l-4 6M274 168l-4 6'/>" +
+    // the thing on the road in front of the car -- a little brick wall
+    "<rect class='vc-l' x='176' y='150' width='24' height='18' rx='1'/>" +
+    "<path class='vc-thin' d='M176 156h24M176 162h24M185 150v6M193 156v6M185 162v6M182 162v6'/>" +
+    "<g transform='translate(238 116) rotate(-30)'>" +
+      "<path class='vc-l' d='M-22 4 -16 -6Q-12 -9 -4 -9L6 -9Q13 -9 17 -3L21 4Q22 7 18 7L-18 7Q-22 7 -22 4Z'/>" +
+      "<path class='vc-l' d='M-13 -7 -5 -7 -5 -1 -14 -1ZM-3 -7 5 -7 8 -1 -3 -1Z'/>" +
+      "<circle class='vc-l' cx='12' cy='8' r='5'/><circle class='vc-thin' cx='12' cy='8' r='1.8'/>" +
+      "<path class='vc-l' d='M-22 4l-4-3 3-3-4-2 4-3-3-3'/>" +
+      "<path class='vc-thin' d='M-2 -9v16'/>" +
+    "</g>" +
+    // detached wheel flying off
+    "<circle class='vc-l' cx='266' cy='92' r='6'/><circle class='vc-thin' cx='266' cy='92' r='2'/>" +
+    "<path class='vc-thin' d='M254 100q-4 3-6 6M256 94q-6 0-9 2M260 88q-4-4-4-8'/>" +
+    // explosion where the car meets the wall
+    "<path class='vc-l' d='M200 150l4-16 5 11 7-12 1 13 13-4-8 10 15 4-15 3 6 15-11-6-1 16-7-13-10 6 2-15-15-1 11-8-10-3z'/>" +
+    "<path class='vc-l' d='M200 150l2-8 3 6 4-6 0 7 7-2-4 5 8 3-8 1 3 8-5-4-1 9-4-7-5 4 1-8-8-1 5-4-6-1z'/>" +
+    "<path class='vc-thin' d='M200 124v-9M176 132l-7-6M226 130l7-6M170 152l-9 1M232 150l9 2M184 168l-4 8M218 168l4 8'/>" +
+    // smoke
+    "<path class='vc-mut' d='M222 102a4 4 0 0 1 8-1 3 3 0 0 1 3 3h-13a3 3 0 0 1 2-5z'/>" +
+    "<path class='vc-mut' d='M232 88a3 3 0 0 1 6 0h-6z'/>" +
+    "<path class='vc-mut' d='M240 78a2 2 0 1 1 3 1h-4z'/>" +
+    // warning sign
+    "<path class='vc-l' d='M250 52l9 17h-18z'/>" +
+    "<path class='vc-l' d='M250 58v6M250 66.5v.5'/>" +
+    "</svg>";
+  function buildVibeCrash(cap) {
+    var fig = document.createElement("figure");
+    fig.className = "media lifecycle";
+    fig.innerHTML = VIBE_CRASH_SVG;
     if (cap) {
       var fc = document.createElement("figcaption");
       fc.textContent = cap;
@@ -848,6 +1077,9 @@
       // Sentinel src -> the Context-1 industry-bubble cluster (built in JS,
       // not a static image, so each bubble pops in with the slide entrance).
       e = buildBubbles();
+    } else if (b.t === "media" && /(^|\/)vibecode-crash\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-2 vibecode -> car crash pictogram.
+      e = buildVibeCrash(b.cap);
     } else if (b.t === "media" && /(^|\/)car-twin\.svg$/i.test(b.src || "")) {
       // Sentinel src -> the Context-3 split real-car / digital-twin pictogram.
       e = buildCarTwin(b.cap);
@@ -863,6 +1095,9 @@
     } else if (b.t === "media" && /(^|\/)three-pillars\.svg$/i.test(b.src || "")) {
       // Sentinel src -> the Context-7 triangle of three marketing pillars.
       e = buildPillars(b.cap);
+    } else if (b.t === "media" && /(^|\/)app-features\.svg$/i.test(b.src || "")) {
+      // Sentinel src -> the Context-8 reduced app pictogram.
+      e = buildAppFeatures(b.cap);
     } else if (b.t === "media") {
       e = document.createElement("figure");
       e.className = "media";
@@ -906,7 +1141,7 @@
       var frame = document.createElement("div");
       frame.className = "frame";
 
-      var twoCol = s.layout === "media" || s.layout === "split";
+      var twoCol = s.layout === "media" || s.layout === "mediawide" || s.layout === "split";
       var colA = frame, colB = null;
       if (twoCol) {
         colA = document.createElement("div"); colA.className = "col-a";

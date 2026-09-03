@@ -53,7 +53,7 @@
 - ... without the actual car ...
 - ... whilst being lean, agile, safe, compliant, ...
 
-![Market-size diagram](placeholder-market.svg)
+![Vibecoding a car straight into a crash](vibecode-crash.svg)
 
 ---
 
@@ -122,7 +122,7 @@
 
 ---
 
-<!-- layout: media -->
+<!-- layout: mediawide -->
 
 #### Solution - 8
 ## Upcoming Features
@@ -131,5 +131,5 @@
 - 3P Integration with Tool Providers (DTaaS / DTOps)
 - Simulation Target Builder
 
-![Pictogram — the missing on-ramp](placeholder-gap.svg)
+![App pictogram: user profile, dashboard canvas with a workflow, and a templates area](app-features.svg)
 
